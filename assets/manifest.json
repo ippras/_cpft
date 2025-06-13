@@ -1,0 +1,18 @@
+{
+  "name": "CPFT PWA",
+  "short_name": "CPFT",
+  "icons": [
+    {
+      "src": "./assets/logo.svg",
+      "sizes": "16x16 24x24 32x32 64x64 128x128 256x256 512x512 1024x1024",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "lang": "en-US",
+  "id": "/index.html",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "white",
+  "theme_color": "white"
+}
