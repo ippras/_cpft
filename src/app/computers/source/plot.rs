@@ -1,4 +1,4 @@
-use crate::app::{computers::plot::IndexKey, panes::source::settings::Settings};
+use crate::app::{computers::plot::IndexKey, states::source::Settings};
 use egui::{
     emath::Float,
     util::cache::{ComputerMut, FrameCache},
@@ -54,7 +54,7 @@ impl Computer {
         let mut value = Value::default();
         for (((fatty_acid, onset_temperature), temperature_steps), points) in
             data_frame["FattyAcid"]
-                .fa()
+                .fatty_acid()
                 .into_iter()
                 .zip(data_frame["OnsetTemperature"].f64()?.into_no_null_iter())
                 .zip(data_frame["TemperatureStep"].list()?.into_no_null_iter())

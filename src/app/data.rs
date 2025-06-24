@@ -15,50 +15,50 @@ impl Data {
         Ok(())
     }
 
-    pub(crate) fn join(&mut self, data_frame: DataFrame) -> Result<()> {
-        self.data_frame = self
-            .data_frame
-            .clone()
-            .lazy()
-            .unnest(["FA"])
-            .join(
-                data_frame.lazy().unnest(["FA"]),
-                [
-                    col("Carbons"),
-                    col("Indices"),
-                    col("Bounds"),
-                    col("Label"),
-                    col("OnsetTemperature"),
-                    col("TemperatureStep"),
-                    col("Time"),
-                ],
-                [
-                    col("Carbons"),
-                    col("Indices"),
-                    col("Bounds"),
-                    col("Label"),
-                    col("OnsetTemperature"),
-                    col("TemperatureStep"),
-                    col("Time"),
-                ],
-                JoinArgs::new(JoinType::Full).with_coalesce(JoinCoalesce::CoalesceColumns),
-            )
-            .select([
-                as_struct(vec![
-                    col("Carbons"),
-                    col("Indices"),
-                    col("Bounds"),
-                    col("Label"),
-                ])
-                .alias("FA"),
-                col("OnsetTemperature"),
-                col("TemperatureStep"),
-                col("Time"),
-            ])
-            .collect()?;
-        // println!("self.data_frame: {}", self.data_frame);
-        Ok(())
-    }
+    // pub(crate) fn join(&mut self, data_frame: DataFrame) -> Result<()> {
+    //     self.data_frame = self
+    //         .data_frame
+    //         .clone()
+    //         .lazy()
+    //         .unnest(["FA"])
+    //         .join(
+    //             data_frame.lazy().unnest(["FA"]),
+    //             [
+    //                 col("Carbons"),
+    //                 col("Indices"),
+    //                 col("Bounds"),
+    //                 col("Label"),
+    //                 col("OnsetTemperature"),
+    //                 col("TemperatureStep"),
+    //                 col("Time"),
+    //             ],
+    //             [
+    //                 col("Carbons"),
+    //                 col("Indices"),
+    //                 col("Bounds"),
+    //                 col("Label"),
+    //                 col("OnsetTemperature"),
+    //                 col("TemperatureStep"),
+    //                 col("Time"),
+    //             ],
+    //             JoinArgs::new(JoinType::Full).with_coalesce(JoinCoalesce::CoalesceColumns),
+    //         )
+    //         .select([
+    //             as_struct(vec![
+    //                 col("Carbons"),
+    //                 col("Indices"),
+    //                 col("Bounds"),
+    //                 col("Label"),
+    //             ])
+    //             .alias("FA"),
+    //             col("OnsetTemperature"),
+    //             col("TemperatureStep"),
+    //             col("Time"),
+    //         ])
+    //         .collect()?;
+    //     // println!("self.data_frame: {}", self.data_frame);
+    //     Ok(())
+    // }
 }
 
 impl Display for Data {

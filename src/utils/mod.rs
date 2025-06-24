@@ -1,6 +1,7 @@
-pub use self::{cross::cross, save::save, try_f::unwrap_f, vec::VecExt};
+pub use self::{cross::cross, try_f::unwrap_f, vec::VecExt};
 
-mod cross;
-mod save;
-mod try_f;
-mod vec;
+// mod save;
+pub(crate) mod cross;
+pub(crate) mod hash;
+pub(crate) mod try_f;
+pub(crate) mod vec;

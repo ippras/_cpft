@@ -1,42 +1,46 @@
-use self::panes::{Pane, behavior::Behavior};
+use self::{
+    panes::{Behavior, Pane},
+    states::State,
+};
 use crate::{localization::ContextExt as _, presets::AGILENT};
 use anyhow::Result;
 use data::Data;
 use eframe::{APP_KEY, get_value, set_value};
 use egui::{
     Align, Align2, CentralPanel, Color32, Context, FontDefinitions, Frame, Grid, Id, Label,
-    LayerId, Layout, Order, RichText, ScrollArea, TextStyle, TopBottomPanel, menu::bar,
-    warn_if_debug_build,
+    LayerId, Layout, MenuBar, Order, RichText, ScrollArea, Sides, TextStyle, TopBottomPanel, Ui,
+    Window, warn_if_debug_build,
 };
 use egui_ext::{DroppedFileExt, HoveredFileExt, LightDarkButton};
-use egui_l20n::{ResponseExt as _, ui::locale_button::LocaleButton};
+use egui_l20n::{ResponseExt as _, UiExt as _, ui::locale_button::LocaleButton};
 use egui_phosphor::{
     Variant, add_to_fonts,
     regular::{
-        ARROWS_CLOCKWISE, DATABASE, GRID_FOUR, ROCKET, SQUARE_SPLIT_HORIZONTAL,
-        SQUARE_SPLIT_VERTICAL, TABS, TRASH,
+        ARROWS_CLOCKWISE, DATABASE, GRID_FOUR, ROCKET, SIDEBAR_SIMPLE, SLIDERS_HORIZONTAL,
+        SQUARE_SPLIT_HORIZONTAL, SQUARE_SPLIT_VERTICAL, TABS, TRASH,
     },
 };
 use egui_tiles::{ContainerKind, Tile, Tree};
 use egui_tiles_ext::{TreeExt as _, VERTICAL};
-use metadata::MetaDataFrame;
+use metadata::egui::MetadataWidget;
 use serde::{Deserialize, Serialize};
 use std::{fmt::Write, io::Cursor, str, time::Duration};
 use tracing::{error, info, trace};
 
 /// IEEE 754-2008
 const MAX_PRECISION: usize = 16;
-const MAX_TEMPERATURE: f64 = 250.0;
 const _NOTIFICATIONS_DURATION: Duration = Duration::from_secs(15);
 const ICON_SIZE: f32 = 32.0;
+const ID_SOURCE: &str = "CPFT";
+const MAX_TEMPERATURE: f64 = 250.0;
 
 #[derive(Deserialize, Serialize)]
 #[serde(default)]
 pub struct App {
-    data: Data,
-    reactive: bool,
-    // Panels
     left_panel: bool,
+    reactive: bool,
+    // Data
+    data: Data,
     // Panes
     tree: Tree<Pane>,
     behavior: Behavior,
@@ -45,10 +49,10 @@ pub struct App {
 impl Default for App {
     fn default() -> Self {
         Self {
-            data: Data::default(),
-            reactive: true,
             left_panel: true,
-            tree: Tree::empty("tree"),
+            reactive: true,
+            data: Data::default(),
+            tree: Tree::empty("Tree"),
             behavior: Default::default(),
         }
     }
@@ -85,10 +89,10 @@ impl App {
         }) {
             let painter =
                 ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("file_drop_target")));
-            let screen_rect = ctx.screen_rect();
-            painter.rect_filled(screen_rect, 0.0, Color32::from_black_alpha(192));
+            let content_rect = ctx.content_rect();
+            painter.rect_filled(content_rect, 0.0, Color32::from_black_alpha(192));
             painter.text(
-                screen_rect.center(),
+                content_rect.center(),
                 Align2::CENTER_CENTER,
                 text,
                 TextStyle::Heading.resolve(&ctx.style()),
@@ -102,10 +106,10 @@ impl App {
             info!(?dropped_files);
             for dropped_file in dropped_files {
                 if let Err(error) = || -> Result<()> {
-                    let frame = MetaDataFrame::read(Cursor::new(dropped_file.bytes()?))?;
-                    trace!(?frame);
-                    self.data.stack(&frame.data)?;
-                    ctx.request_repaint();
+                    // let frame = MetaDataFrame::read(Cursor::new(dropped_file.bytes()?))?;
+                    // trace!(?frame);
+                    // self.data.stack(&frame.data)?;
+                    // ctx.request_repaint();
                     Ok(())
                 }() {
                     error!(%error);
@@ -167,19 +171,25 @@ impl App {
 }
 
 impl App {
-    fn panels(&mut self, ctx: &Context) {
-        self.top_panel(ctx);
+    fn panels(&mut self, ctx: &Context, state: &mut State) {
+        self.top_panel(ctx, state);
         self.bottom_panel(ctx);
         self.central_panel(ctx);
     }
 
     // Bottom panel
     fn bottom_panel(&mut self, ctx: &Context) {
-        TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
+        TopBottomPanel::bottom("BottomPanel").show(ctx, |ui| {
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                warn_if_debug_build(ui);
-                ui.label(RichText::new(env!("CARGO_PKG_VERSION")).small());
-                ui.separator();
+                Sides::new().show(
+                    ui,
+                    |_| {},
+                    |ui| {
+                        warn_if_debug_build(ui);
+                        ui.label(RichText::new(env!("CARGO_PKG_VERSION")).small());
+                        ui.separator();
+                    },
+                );
             });
         });
     }
@@ -189,37 +199,27 @@ impl App {
         CentralPanel::default()
             .frame(Frame::central_panel(&ctx.style()).inner_margin(0))
             .show(ctx, |ui| {
-                self.tree.ui(&mut self.behavior, ui);
-                if let Some(id) = self.behavior.close.take() {
+                let mut behavior = Behavior { close: None };
+                self.tree.ui(&mut behavior, ui);
+                if let Some(id) = behavior.close {
                     self.tree.tiles.remove(id);
                 }
             });
     }
 
     // Top panel
-    fn top_panel(&mut self, ctx: &Context) {
+    fn top_panel(&mut self, ctx: &Context, state: &mut State) {
         TopBottomPanel::top("TopPanel").show(ctx, |ui| {
-            bar(ui, |ui| {
+            MenuBar::new().ui(ui, |ui| {
                 ScrollArea::horizontal().show(ui, |ui| {
+                    // Left panel
+                    self.left_panel_button(ui);
+                    ui.separator();
+                    // Light/Dark
                     ui.light_dark_button(ICON_SIZE);
                     ui.separator();
-                    // Reactive
-                    ui.toggle_value(&mut self.reactive, RichText::new(ROCKET).size(ICON_SIZE))
-                        .on_hover_localized("reactive")
-                        .on_hover_localized("reactive.hover?state=enabled")
-                        .on_disabled_hover_localized("reactive.hover?state=disabled");
-                    ui.separator();
-                    // Reset state
-                    if ui
-                        .button(RichText::new(TRASH).size(ICON_SIZE))
-                        .on_hover_localized("reset-state")
-                        .clicked()
-                    {
-                        *self = Self {
-                            reactive: self.reactive,
-                            ..Default::default()
-                        };
-                    }
+                    // Reset app
+                    self.reset_button(ui);
                     ui.separator();
                     // Reset GUI
                     if ui
@@ -227,107 +227,173 @@ impl App {
                         .on_hover_localized("reset-gui")
                         .clicked()
                     {
+                        // Cache
+                        let caches = ui.memory_mut(|memory| memory.caches.clone());
                         ui.memory_mut(|memory| {
-                            memory.data = Default::default();
+                            memory.caches = caches;
                         });
                         ui.ctx().set_localizations();
                     }
                     ui.separator();
-                    if ui
-                        .button(RichText::new(SQUARE_SPLIT_VERTICAL).size(ICON_SIZE))
-                        .on_hover_localized("vertical")
-                        .clicked()
-                    {
-                        if let Some(id) = self.tree.root {
-                            if let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id) {
-                                container.set_kind(ContainerKind::Vertical);
-                            }
-                        }
-                    }
-                    if ui
-                        .button(RichText::new(SQUARE_SPLIT_HORIZONTAL).size(ICON_SIZE))
-                        .on_hover_localized("horizontal")
-                        .clicked()
-                    {
-                        if let Some(id) = self.tree.root {
-                            if let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id) {
-                                container.set_kind(ContainerKind::Horizontal);
-                            }
-                        }
-                    }
-                    if ui
-                        .button(RichText::new(GRID_FOUR).size(ICON_SIZE))
-                        .on_hover_localized("grid")
-                        .clicked()
-                    {
-                        if let Some(id) = self.tree.root {
-                            if let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id) {
-                                container.set_kind(ContainerKind::Grid);
-                            }
-                        }
-                    }
-                    if ui
-                        .button(RichText::new(TABS).size(ICON_SIZE))
-                        .on_hover_localized("tabs")
-                        .clicked()
-                    {
-                        if let Some(id) = self.tree.root {
-                            if let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id) {
-                                container.set_kind(ContainerKind::Tabs);
-                            }
-                        }
-                    }
+                    // Layout
+                    self.vertical_button(ui);
+                    self.horizontal_button(ui);
+                    self.grid_button(ui);
+                    self.tabs_button(ui);
                     ui.separator();
-                    ui.menu_button(RichText::new(DATABASE).size(ICON_SIZE), |ui| {
-                        let mut response = ui
-                            .button(RichText::new(format!("{DATABASE} IPPRAS/Agilent")).heading());
-                        response = response.on_hover_ui(|ui| {
-                            let meta = &AGILENT.meta;
-                            Grid::new(ui.next_auto_id()).show(ui, |ui| {
-                                ui.label("Name");
-                                ui.label(&meta.name);
-                                ui.end_row();
-
-                                if !meta.description.is_empty() {
-                                    ui.label("Description");
-                                    ui.add(Label::new(&meta.description).truncate());
-                                    ui.end_row();
-                                }
-
-                                // TODO
-                                // ui.label("Authors");
-                                // ui.label(meta.authors.join(", "));
-                                // ui.end_row();
-
-                                if let Some(version) = &meta.version {
-                                    ui.label("Version");
-                                    ui.label(version.to_string());
-                                    ui.end_row();
-                                }
-
-                                if let Some(date) = &meta.date {
-                                    ui.label("Date");
-                                    ui.label(date.to_string());
-                                    ui.end_row();
-                                }
-                            });
-                        });
-                        if response.clicked() {
-                            self.tree
-                                .insert_pane::<VERTICAL>(Pane::source(AGILENT.clone()));
-                            ui.close_menu();
-                        }
-                    })
-                    .response
-                    .on_hover_localized("database");
+                    // Settings
+                    self.settings_button(ui, state);
                     ui.separator();
-                    // Locale
-                    ui.add(LocaleButton::new().size(ICON_SIZE))
-                        .on_hover_localized("language");
+                    // Database
+                    self.database_button(ui);
                     ui.separator();
                 });
             });
         });
+    }
+
+    /// Left panel button
+    fn left_panel_button(&mut self, ui: &mut Ui) {
+        ui.toggle_value(
+            &mut self.left_panel,
+            RichText::new(SIDEBAR_SIMPLE).size(ICON_SIZE),
+        )
+        .on_hover_ui(|ui| {
+            ui.label(ui.localize("LeftPanel"));
+        });
+    }
+
+    /// Reset button
+    fn reset_button(&mut self, ui: &mut Ui) {
+        if ui
+            .button(RichText::new(TRASH).size(ICON_SIZE))
+            .on_hover_ui(|ui| {
+                ui.label(ui.localize("ResetApplication"));
+            })
+            .clicked()
+        {
+            *self = Default::default();
+        }
+    }
+
+    /// Vertical button
+    fn vertical_button(&mut self, ui: &mut Ui) {
+        if ui
+            .button(RichText::new(SQUARE_SPLIT_VERTICAL).size(ICON_SIZE))
+            .on_hover_ui(|ui| {
+                ui.label(ui.localize("Vertical"));
+            })
+            .clicked()
+        {
+            if let Some(id) = self.tree.root {
+                if let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id) {
+                    container.set_kind(ContainerKind::Vertical);
+                }
+            }
+        }
+    }
+
+    /// Horizontal button
+    fn horizontal_button(&mut self, ui: &mut Ui) {
+        if ui
+            .button(RichText::new(SQUARE_SPLIT_HORIZONTAL).size(ICON_SIZE))
+            .on_hover_ui(|ui| {
+                ui.label(ui.localize("Horizontal"));
+            })
+            .clicked()
+        {
+            if let Some(id) = self.tree.root {
+                if let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id) {
+                    container.set_kind(ContainerKind::Horizontal);
+                }
+            }
+        }
+    }
+
+    /// Grid button
+    fn grid_button(&mut self, ui: &mut Ui) {
+        if ui
+            .button(RichText::new(GRID_FOUR).size(ICON_SIZE))
+            .on_hover_ui(|ui| {
+                ui.label(ui.localize("Grid"));
+            })
+            .clicked()
+        {
+            if let Some(id) = self.tree.root {
+                if let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id) {
+                    container.set_kind(ContainerKind::Grid);
+                }
+            }
+        }
+    }
+
+    /// Tabs button
+    fn tabs_button(&mut self, ui: &mut Ui) {
+        if ui
+            .button(RichText::new(TABS).size(ICON_SIZE))
+            .on_hover_ui(|ui| {
+                ui.label(ui.localize("Tabs"));
+            })
+            .clicked()
+        {
+            if let Some(id) = self.tree.root {
+                if let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id) {
+                    container.set_kind(ContainerKind::Tabs);
+                }
+            }
+        }
+    }
+
+    /// Settings button
+    fn settings_button(&mut self, ui: &mut Ui, state: &mut State) {
+        if ui
+            .button(RichText::new(SLIDERS_HORIZONTAL).size(ICON_SIZE))
+            .on_hover_ui(|ui| {
+                ui.label(ui.localize("Settings"));
+            })
+            .clicked()
+        {
+            state.windows.open_settings ^= true;
+        }
+    }
+
+    /// Database button
+    fn database_button(&mut self, ui: &mut Ui) {
+        ui.menu_button(RichText::new(DATABASE).size(ICON_SIZE), |ui| {
+            let mut response =
+                ui.button(RichText::new(format!("{DATABASE} IPPRAS/Agilent")).heading());
+            response = response.on_hover_ui(|ui| {
+                MetadataWidget::new(&AGILENT.meta).show(ui);
+            });
+            if response.clicked() {
+                self.tree
+                    .insert_pane::<VERTICAL>(Pane::source(AGILENT.clone()));
+            }
+        })
+        .response
+        .on_hover_localized("Database");
+    }
+}
+
+// Windows
+impl App {
+    fn windows(&mut self, ctx: &Context, state: &mut State) {
+        // self.about_window(ctx, state);
+        self.settings_window(ctx, state);
+    }
+
+    // fn about_window(&mut self, ctx: &Context, state: &mut State) {
+    //     Window::new(format!("{INFO} About"))
+    //         .open(&mut state.windows.open_about)
+    //         .show(ctx, |ui| About.ui(ui));
+    // }
+
+    fn settings_window(&mut self, ctx: &Context, state: &mut State) {
+        Window::new(format!("{SLIDERS_HORIZONTAL} Settings"))
+            .open(&mut state.windows.open_settings)
+            .show(ctx, |ui| {
+                state.settings.show(ui);
+            });
     }
 }
 
@@ -347,9 +413,14 @@ impl eframe::App for App {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
+        let mut state = State::load(ctx, Id::new(ID_SOURCE));
         self.distance(ctx);
-        self.panels(ctx);
+        // Pre update
+        self.panels(ctx, &mut state);
+        self.windows(ctx, &mut state);
+        // Post update
         self.drag_and_drop(ctx);
+        state.store(ctx, Id::new(ID_SOURCE));
         if self.reactive {
             ctx.request_repaint();
         }
@@ -359,3 +430,4 @@ impl eframe::App for App {
 mod computers;
 mod data;
 mod panes;
+mod states;

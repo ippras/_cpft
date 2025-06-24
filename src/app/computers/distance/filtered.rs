@@ -1,59 +1,64 @@
-use crate::app::panes::{
-    distance::settings::{Aggregation, Settings, Sort, SortBy},
-    source::settings::{Filter, Order},
+use crate::{
+    app::states::distance::{Aggregation, Filter, Order, Settings, SortBy},
+    utils::hash::HashedDataFrame,
 };
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;
-use std::hash::{Hash, Hasher};
 
 /// Distance filtered computed
-pub(crate) type Computed = FrameCache<DataFrame, Computer>;
+pub(crate) type Computed = FrameCache<Value, Computer>;
 
 /// Distance filtered computer
 #[derive(Default)]
 pub(crate) struct Computer;
 
 impl Computer {
-    fn try_compute(&mut self, key: Key<'_>) -> PolarsResult<DataFrame> {
-        let mut lazy_frame = key.data_frame.clone().lazy();
+    fn try_compute(&mut self, key: Key) -> PolarsResult<Value> {
+        let mut lazy_frame = key.frame.data_frame.clone().lazy();
         // Filter
-        if let Some(predicate) = filter(&key.settings.filter) {
-            lazy_frame = lazy_frame.filter(predicate);
-        }
+        lazy_frame = filter(lazy_frame, key)?;
         // Sort
-        let (by_exprs, sort_options) = sort(key.settings.sort);
-        lazy_frame = lazy_frame.sort_by_exprs(by_exprs, sort_options);
-        lazy_frame.collect()
+        lazy_frame = sort(lazy_frame, key);
+        HashedDataFrame::new(lazy_frame.collect()?)
     }
 }
 
-impl ComputerMut<Key<'_>, DataFrame> for Computer {
-    fn compute(&mut self, key: Key<'_>) -> DataFrame {
+impl ComputerMut<Key<'_>, Value> for Computer {
+    fn compute(&mut self, key: Key) -> Value {
         self.try_compute(key).expect("compute distance filtered")
     }
 }
 
-fn sort(sort: Sort) -> (Vec<Expr>, SortMultipleOptions) {
-    let mut sort_options = SortMultipleOptions::new().with_nulls_last(true);
-    if sort.order == Order::Descending {
-        sort_options = sort_options.with_order_descending(true);
-    };
-    let sort_by = match sort.by {
-        SortBy::Key => vec![
-            col("Mode"),
-            col("FattyAcid").struct_().field_by_name("From"),
-            col("FattyAcid").struct_().field_by_name("To"),
-        ],
-        SortBy::Value => vec![col("Alpha").aggregate(sort.aggregation)],
-    };
-    (sort_by, sort_options)
+/// Distance filtered key
+#[derive(Clone, Copy, Debug, Hash)]
+pub struct Key<'a> {
+    pub(crate) frame: &'a HashedDataFrame,
+    pub(crate) aggregation: Aggregation,
+    pub(crate) filter: &'a Filter,
+    pub(crate) order: Order,
+    pub(crate) sort: SortBy,
 }
 
-fn filter(filter: &Filter) -> Option<Expr> {
+impl<'a> Key<'a> {
+    pub(crate) fn new(frame: &'a HashedDataFrame, settings: &'a Settings) -> Self {
+        Self {
+            frame,
+            aggregation: settings.sort.aggregation,
+            filter: &settings.filter,
+            order: settings.sort.order,
+            sort: settings.sort.by,
+        }
+    }
+}
+
+/// Distance filtered value
+type Value = HashedDataFrame;
+
+fn filter(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     let mut expr = None;
-    if !filter.onset_temperatures.is_empty() {
-        for &onset_temperature in &filter.onset_temperatures {
+    if !key.filter.onset_temperatures.is_empty() {
+        for &onset_temperature in &key.filter.onset_temperatures {
             expr = Some(
                 expr.unwrap_or(lit(true)).and(
                     col("Mode")
@@ -64,8 +69,8 @@ fn filter(filter: &Filter) -> Option<Expr> {
             );
         }
     }
-    if !filter.temperature_steps.is_empty() {
-        for &temperature_step in &filter.temperature_steps {
+    if !key.filter.temperature_steps.is_empty() {
+        for &temperature_step in &key.filter.temperature_steps {
             expr = Some(
                 expr.unwrap_or(lit(true)).and(
                     col("Mode")
@@ -76,30 +81,51 @@ fn filter(filter: &Filter) -> Option<Expr> {
             );
         }
     }
-    if !filter.fatty_acids.is_empty() {
-        for fatty_acid in &filter.fatty_acids {
+    if !key.filter.fatty_acids.is_empty() {
+        for fatty_acid in &key.filter.fatty_acids {
             expr = Some(
                 expr.unwrap_or(lit(true))
                     .and(
                         col("FattyAcid")
                             .struct_()
                             .field_by_name("From")
-                            .fa()
-                            .equal(fatty_acid)
+                            .fatty_acid()
+                            .equal(FattyAcidExpr::try_from(fatty_acid)?)
                             .not(),
                     )
                     .and(
                         col("FattyAcid")
                             .struct_()
                             .field_by_name("To")
-                            .fa()
-                            .equal(fatty_acid)
+                            .fatty_acid()
+                            .equal(FattyAcidExpr::try_from(fatty_acid)?)
                             .not(),
                     ),
             );
         }
     }
-    expr
+    if let Some(predicate) = expr {
+        lazy_frame = lazy_frame.filter(predicate);
+    }
+    Ok(lazy_frame)
+}
+
+fn sort(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
+    let mut sort_options = SortMultipleOptions::new().with_nulls_last(true);
+    if key.order == Order::Descending {
+        sort_options = sort_options.with_order_descending(true);
+    };
+    lazy_frame.sort_by_exprs(
+        match key.sort {
+            SortBy::Key => vec![
+                col("Mode"),
+                col("FattyAcid").struct_().field_by_name("From"),
+                col("FattyAcid").struct_().field_by_name("To"),
+            ],
+            SortBy::Value => vec![col("Alpha").aggregate(key.aggregation)],
+        },
+        sort_options,
+    )
 }
 
 /// Extension methods for [`Expr`]
@@ -115,19 +141,5 @@ impl ExprExt for Expr {
             Aggregation::Minimum => self.abs().min(),
         }
         .over([col("Mode")])
-    }
-}
-
-/// Distance filtered key
-#[derive(Clone, Copy, Debug)]
-pub struct Key<'a> {
-    pub(crate) data_frame: &'a DataFrame,
-    pub(crate) settings: &'a Settings,
-}
-
-impl Hash for Key<'_> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.settings.filter.hash(state);
-        self.settings.sort.hash(state);
     }
 }
