@@ -1,16 +1,16 @@
-pub(crate) use self::{
-    distance::{
-        Computed as DistanceComputed, Key as DistanceKey,
-        filtered::{Computed as DistanceFilteredComputed, Key as DistanceFilteredKey},
-        plot::{
-            Computed as DistancePlotComputed, Key as DistancePlotKey, Value as DistancePlotValue,
-        },
-    },
-    source::{
-        Computed as SourceComputed, Key as SourceKey,
-        plot::{Computed as SourcePlotComputed, Key as SourcePlotKey, Value as SourcePlotValue},
-    },
-};
+// pub(crate) use self::{
+//     // distance::{
+//     //     Computed as DistanceComputed, Key as DistanceKey,
+//     //     filtered::{Computed as DistanceFilteredComputed, Key as DistanceFilteredKey},
+//     //     plot::{
+//     //         Computed as DistancePlotComputed, Key as DistancePlotKey, Value as DistancePlotValue,
+//     //     },
+//     // },
+//     source::{
+//         Computed as SourceComputed, Key as SourceKey,
+//         plot::{Computed as SourcePlotComputed, Key as SourcePlotKey, Value as SourcePlotValue},
+//     },
+// };
 
 pub(crate) mod plot {
     use egui::emath::Float as _;
@@ -39,11 +39,27 @@ pub(crate) mod plot {
         }
     }
 
+    // impl Ord for IndexKey {
+    //     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    //         self.0
+    //             .x
+    //             .ord()
+    //             .cmp(&other.0.x.ord())
+    //             .then(self.0.y.ord().cmp(&other.0.y.ord()))
+    //     }
+    // }
+
     impl PartialEq for IndexKey {
         fn eq(&self, other: &Self) -> bool {
             self.0.x.ord() == other.0.x.ord() && self.0.y.ord() == other.0.y.ord()
         }
     }
+
+    // impl PartialOrd for IndexKey {
+    //     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+    //         Some(self.cmp(&other))
+    //     }
+    // }
 }
 
 pub(crate) mod distance;

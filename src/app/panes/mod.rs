@@ -1,7 +1,8 @@
 pub(crate) use self::{distance::Pane as DistancePane, source::Pane as SourcePane};
 
-use egui::{Response, Ui, Vec2, vec2};
-use metadata::MetaDataFrame;
+use crate::utils::hash::HashedMetaDataFrame;
+use egui::{Ui, Vec2, WidgetText, vec2};
+use egui_tiles::{TileId, UiResponse};
 use serde::{Deserialize, Serialize};
 
 const MARGIN: Vec2 = vec2(4.0, 2.0);
@@ -14,11 +15,11 @@ pub(crate) enum Pane {
 }
 
 impl Pane {
-    pub(crate) fn source(frame: MetaDataFrame) -> Self {
+    pub(crate) fn source(frame: HashedMetaDataFrame) -> Self {
         Self::Source(SourcePane::new(frame))
     }
 
-    pub(crate) fn distance(frame: MetaDataFrame) -> Self {
+    pub(crate) fn distance(frame: HashedMetaDataFrame) -> Self {
         Self::Distance(DistancePane::new(frame))
     }
 
@@ -30,23 +31,24 @@ impl Pane {
     }
 }
 
-impl Pane {
-    fn header(&mut self, ui: &mut Ui) -> Response {
-        match self {
-            Self::Source(pane) => pane.header(ui),
-            Self::Distance(pane) => pane.header(ui),
-        }
+/// Behavior
+#[derive(Debug, Default, Deserialize, Serialize)]
+pub(crate) struct Behavior {
+    pub(crate) close: Option<TileId>,
+}
+
+impl egui_tiles::Behavior<Pane> for Behavior {
+    fn tab_title_for_pane(&mut self, pane: &Pane) -> WidgetText {
+        pane.title().to_string().into()
     }
 
-    fn body(&mut self, ui: &mut Ui) {
-        match self {
-            Self::Source(pane) => pane.body(ui),
-            Self::Distance(pane) => pane.body(ui),
+    fn pane_ui(&mut self, ui: &mut Ui, tile_id: TileId, pane: &mut Pane) -> UiResponse {
+        match pane {
+            Pane::Source(pane) => pane.ui(ui, self, tile_id),
+            Pane::Distance(pane) => pane.ui(ui, self, tile_id),
         }
     }
 }
 
-pub(crate) mod behavior;
 pub(crate) mod distance;
 pub(crate) mod source;
-pub(crate) mod widgets;

@@ -4,7 +4,7 @@ use crate::{
 };
 use egui::{ComboBox, Grid, PopupCloseBehavior, RichText, Slider, TextWrapMode, Ui, emath::Float};
 use egui_ext::LabeledSeparator;
-use egui_l20n::{ResponseExt, UiExt as _};
+use egui_l20n::prelude::*;
 use egui_phosphor::regular::{FUNNEL, FUNNEL_X};
 use lipid::{
     fatty_acid::display::{COMMON, DisplayWithOptions as _},
@@ -28,7 +28,7 @@ pub(crate) struct Settings {
     pub(crate) logarithmic: bool,
     pub(crate) relative: Option<FattyAcid>,
     pub(crate) filter: Filter,
-    pub(crate) sort: SortBy,
+    pub(crate) sort: Sort,
     pub(crate) order: Order,
 
     pub(crate) legend: bool,
@@ -48,7 +48,7 @@ impl Settings {
             logarithmic: false,
             relative: None,
             filter: Filter::new(),
-            sort: SortBy::Time,
+            sort: Sort::Time,
             order: Order::Ascending,
 
             radius_of_points: 2,
@@ -149,16 +149,16 @@ impl Settings {
                     .show_ui(ui, |ui| {
                         ui.selectable_value(
                             &mut self.sort,
-                            SortBy::FattyAcid,
-                            ui.localize(SortBy::FattyAcid.text()),
+                            Sort::FattyAcid,
+                            ui.localize(Sort::FattyAcid.text()),
                         )
-                        .on_hover_localized(SortBy::FattyAcid.hover_text());
+                        .on_hover_localized(Sort::FattyAcid.hover_text());
                         ui.selectable_value(
                             &mut self.sort,
-                            SortBy::Time,
-                            ui.localize(SortBy::Time.text()),
+                            Sort::Time,
+                            ui.localize(Sort::Time.text()),
                         )
-                        .on_hover_localized(SortBy::Time.hover_text());
+                        .on_hover_localized(Sort::Time.hover_text());
                     })
                     .response
                     .on_hover_localized(self.sort.hover_text());
@@ -512,14 +512,14 @@ impl Filter {
     }
 }
 
-/// Sort by
-#[derive(Clone, Debug, Deserialize, Hash, PartialEq, Serialize)]
-pub(crate) enum SortBy {
+/// Sort
+#[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
+pub(crate) enum Sort {
     FattyAcid,
     Time,
 }
 
-impl Text for SortBy {
+impl Text for Sort {
     fn text(&self) -> &'static str {
         match self {
             Self::FattyAcid => "sort-by-fatty-acids",

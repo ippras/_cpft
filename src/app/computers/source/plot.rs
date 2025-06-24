@@ -1,4 +1,8 @@
-use crate::app::{computers::plot::IndexKey, panes::source::settings::Settings};
+use crate::{
+    app::{computers::plot::IndexKey, states::source::Settings},
+    r#const::{ONSET_TEMPERATURE, *},
+    utils::hash::HashedDataFrame,
+};
 use egui::{
     emath::Float,
     util::cache::{ComputerMut, FrameCache},
@@ -20,118 +24,47 @@ pub(crate) struct Computer;
 
 impl Computer {
     fn try_compute(&mut self, key: Key<'_>) -> PolarsResult<Value> {
-        let mut lazy_frame = key.data_frame.clone().lazy();
-        // println!(
-        //     "lazy_frame SOURCE: {}",
-        //     lazy_frame.clone().collect().unwrap()
-        // );
-        lazy_frame = lazy_frame.select([
-            col("Mode").struct_().field_by_name("OnsetTemperature"),
-            col("Mode").struct_().field_by_name("TemperatureStep"),
-            col("FattyAcid"),
-            col("RetentionTime")
-                .struct_()
-                .field_by_name("Absolute")
-                .struct_()
-                .field_by_name("Mean")
-                .alias("RetentionTime"),
-            col("ChainLength")
-                .struct_()
-                .field_by_name("EquivalentChainLength")
-                .alias("EquivalentChainLength"),
-        ]);
-        // println!("lazy_frame: {}", lazy_frame.clone().collect().unwrap());
-        lazy_frame = lazy_frame.select([
-            col("OnsetTemperature"),
-            col("TemperatureStep"),
-            col("FattyAcid"),
-            concat_arr(vec![col("RetentionTime"), col("EquivalentChainLength")])?.alias("Points"),
-        ]);
-        let lazy_frame1 = lazy_frame
-            .group_by([col("FattyAcid"), col("OnsetTemperature")])
-            .agg([col("TemperatureStep"), col("Points")]);
-        let data_frame = lazy_frame1.collect()?;
-        let mut value = Value::default();
-        for (((fatty_acid, onset_temperature), temperature_steps), points) in
-            data_frame["FattyAcid"]
-                .fa()
-                .into_iter()
-                .zip(data_frame["OnsetTemperature"].f64()?.into_no_null_iter())
-                .zip(data_frame["TemperatureStep"].list()?.into_no_null_iter())
-                .zip(data_frame["Points"].list()?.into_no_null_iter())
-        {
-            let fatty_acid = fatty_acid.unwrap(); // TODO
-            let mut line_points = Vec::new();
-            for (temperature_step, points) in temperature_steps
-                .f64()?
-                .into_no_null_iter()
-                .zip(points.array()?.into_no_null_iter())
-            {
-                let points = points.f64()?;
-                let Some(x) = points.get(0) else {
-                    continue;
-                };
-                let Some(y) = points.get(1) else {
-                    continue;
-                };
-                line_points.push(PlotPoint::new(x, y));
-                value
-                    .index
-                    .entry(IndexKey(PlotPoint::new(x, y)))
-                    .or_default()
-                    .insert(PointValue {
-                        onset_temperature,
-                        temperature_step,
-                    });
-            }
-            value.lines.temperature_step.push(TemperatureStepLine {
-                fatty_acid,
-                onset_temperature,
-                points: line_points,
-            });
-            // value.onset_temperatures.push(OnsetTemperaturePoints {
-            //     fatty_acid,
-            //     onset_temperature,
-            //     points: line_points,
-            // });
-            // let index = Int64Chunked::from_vec(PlSmallStr::EMPTY, vec![1]);
-            // let z = points.array()?.array_get(&index, false)?;
-        }
-        Ok(value)
+        let mut lazy_frame = key.frame.data_frame.clone().lazy();
+        // Filter
+        lazy_frame = lazy_frame.filter(col(FILTER));
+        // Compute
+        lazy_frame = compute(lazy_frame, key)?;
+        // Pack
+        pack(lazy_frame.collect()?, key)
 
         // // let lazy_frame = lazy_frame.rank()
         // let lazy_frame = lazy_frame
         //     .clone()
-        //     .group_by([col("FattyAcid"), col("OnsetTemperature")])
+        //     .group_by([col(FATTY_ACID), col(ONSET_TEMPERATURE)])
         //     .agg([
-        //         col("TemperatureStep"),
-        //         col("RetentionTime"),
-        //         col("EquivalentChainLength"),
+        //         col(TEMPERATURE_STEP),
+        //         col(RETENTION_TIME),
+        //         col(EQUIVALENT_CHAIN_LENGTH),
         //     ])
-        //     .group_by([col("FattyAcid")])
+        //     .group_by([col(FATTY_ACID)])
         //     .agg([
-        //         col("OnsetTemperature"),
-        //         col("TemperatureStep"),
-        //         col("RetentionTime"),
-        //         col("EquivalentChainLength"),
+        //         col(ONSET_TEMPERATURE),
+        //         col(TEMPERATURE_STEP),
+        //         col(RETENTION_TIME),
+        //         col(EQUIVALENT_CHAIN_LENGTH),
         //     ]);
 
         // let lazy_frame2 = lazy_frame
         //     .clone()
-        //     .group_by([col("FattyAcid"), col("TemperatureStep")])
+        //     .group_by([col(FATTY_ACID), col(TEMPERATURE_STEP)])
         //     .agg([
-        //         col("OnsetTemperature"),
-        //         col("RetentionTime"),
-        //         col("EquivalentChainLength"),
+        //         col(ONSET_TEMPERATURE),
+        //         col(RETENTION_TIME),
+        //         col(EQUIVALENT_CHAIN_LENGTH),
         //     ])
-        //     .group_by([col("FattyAcid")])
+        //     .group_by([col(FATTY_ACID)])
         //     .agg([
-        //         col("TemperatureStep"),
-        //         col("OnsetTemperature"),
-        //         col("RetentionTime"),
-        //         col("EquivalentChainLength"),
+        //         col(TEMPERATURE_STEP),
+        //         col(ONSET_TEMPERATURE),
+        //         col(RETENTION_TIME),
+        //         col(EQUIVALENT_CHAIN_LENGTH),
         //     ])
-        //     .sort(["FattyAcid"], Default::default());
+        //     .sort([FATTY_ACID], Default::default());
         // println!(
         //     "lazy_frame2 by FattyAcid/TemperatureStep/OnsetTemperature: {}",
         //     lazy_frame2.clone().collect().unwrap()
@@ -147,35 +80,46 @@ impl ComputerMut<Key<'_>, Value> for Computer {
 }
 
 /// Source plot key
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Hash)]
 pub(crate) struct Key<'a> {
-    pub(crate) data_frame: &'a DataFrame,
-    pub(crate) settings: &'a Settings,
+    pub(crate) frame: &'a HashedDataFrame,
+    pub(crate) precision: usize,
+    pub(crate) logarithmic: bool,
 }
 
-impl Hash for Key<'_> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.settings.ddof.hash(state);
-        self.settings.logarithmic.hash(state);
-        self.settings.filter.hash(state);
-        self.settings.radius_of_points.hash(state);
+impl<'a> Key<'a> {
+    pub(crate) fn new(frame: &'a HashedDataFrame, settings: &'a Settings) -> Self {
+        Self {
+            frame,
+            precision: settings.precision,
+            logarithmic: settings.logarithmic,
+        }
     }
 }
 
+// impl Hash for Key<'_> {
+//     fn hash<H: Hasher>(&self, state: &mut H) {
+//         self.settings.ddof.hash(state);
+//         self.settings.logarithmic.hash(state);
+//         self.settings.filter.hash(state);
+//         self.settings.radius_of_points.hash(state);
+//     }
+// }
+
 /// Source plot value
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct Value {
     pub(crate) lines: Lines,
     pub(crate) index: HashMap<IndexKey, HashSet<PointValue>>,
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct Lines {
     pub(crate) temperature_step: Vec<TemperatureStepLine>,
     // pub(crate) onset_temperature: Vec<OnsetTemperatureLine>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct TemperatureStepLine {
     pub(crate) fatty_acid: FattyAcid,
     pub(crate) onset_temperature: f64,
@@ -209,4 +153,92 @@ impl PartialEq for PointValue {
         self.onset_temperature.ord() == other.onset_temperature.ord()
             && self.temperature_step.ord() == other.temperature_step.ord()
     }
+}
+
+fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
+    // println!(
+    //     "lazy_frame: {}",
+    //     lazy_frame
+    //         .clone()
+    //         .select([col(CHAIN_LENGTH).struct_().field_by_name("*")])
+    //         .collect()?
+    // );
+    lazy_frame = lazy_frame.select([
+        col(MODE).struct_().field_by_name(ONSET_TEMPERATURE),
+        col(MODE).struct_().field_by_name(TEMPERATURE_STEP),
+        col(FATTY_ACID),
+        col(RETENTION_TIME)
+            .struct_()
+            .field_by_name(ABSOLUTE)
+            .struct_()
+            .field_by_name(MEAN)
+            .alias(RETENTION_TIME),
+        col(CHAIN_LENGTH)
+            .struct_()
+            .field_by_name(EQUIVALENT_CHAIN_LENGTH),
+    ]);
+    // println!("lazy_frame: {}", lazy_frame.clone().collect().unwrap());
+    lazy_frame = lazy_frame.select([
+        col(ONSET_TEMPERATURE),
+        col(TEMPERATURE_STEP),
+        col(FATTY_ACID),
+        concat_arr(vec![col(RETENTION_TIME), col(EQUIVALENT_CHAIN_LENGTH)])?.alias(POINTS),
+    ]);
+    lazy_frame = lazy_frame
+        .group_by([col(FATTY_ACID), col(ONSET_TEMPERATURE)])
+        .agg([col(TEMPERATURE_STEP), col(POINTS)]);
+    Ok(lazy_frame)
+}
+
+fn pack(data_frame: DataFrame, key: Key) -> PolarsResult<Value> {
+    let mut value = Value::default();
+    for (((fatty_acid, onset_temperature), temperature_steps), points) in data_frame[FATTY_ACID]
+        .fatty_acid()
+        .fields()?
+        .into_iter()
+        .zip(data_frame[ONSET_TEMPERATURE].f64()?.into_no_null_iter())
+        .zip(data_frame[TEMPERATURE_STEP].list()?.into_no_null_iter())
+        .zip(data_frame[POINTS].list()?.into_no_null_iter())
+    {
+        let Some(fatty_acid) = fatty_acid? else {
+            continue;
+        };
+        // let fatty_acid = fatty_acid?;
+        let mut line_points = Vec::new();
+        for (temperature_step, points) in temperature_steps
+            .f64()?
+            .into_no_null_iter()
+            .zip(points.array()?.into_no_null_iter())
+        {
+            let points = points.f64()?;
+            let Some(x) = points.get(0) else {
+                continue;
+            };
+            let Some(y) = points.get(1) else {
+                continue;
+            };
+            line_points.push(PlotPoint::new(x, y));
+            value
+                .index
+                .entry(IndexKey(PlotPoint::new(x, y)))
+                .or_default()
+                .insert(PointValue {
+                    onset_temperature,
+                    temperature_step,
+                });
+        }
+        value.lines.temperature_step.push(TemperatureStepLine {
+            fatty_acid,
+            onset_temperature,
+            points: line_points,
+        });
+        // value.onset_temperatures.push(OnsetTemperaturePoints {
+        //     fatty_acid,
+        //     onset_temperature,
+        //     points: line_points,
+        // });
+        // let index = Int64Chunked::from_vec(PlSmallStr::EMPTY, vec![1]);
+        // let z = points.array()?.array_get(&index, false)?;
+    }
+    Ok(value)
 }
