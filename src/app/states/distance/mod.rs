@@ -1,5 +1,5 @@
 pub(crate) use self::{
-    settings::{Aggregation, Settings, SortBy},
+    settings::{Priority, Settings, Sort},
     windows::Windows,
 };
 pub(crate) use crate::app::states::source::{Filter, Order, View};
@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
 /// State
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub(crate) struct State {
-    pub(crate) reset_table_state: bool,
     pub(crate) settings: Settings,
     pub(crate) windows: Windows,
 }
@@ -18,7 +17,6 @@ pub(crate) struct State {
 impl State {
     pub(crate) fn new() -> Self {
         Self {
-            reset_table_state: false,
             settings: Settings::new(),
             windows: Windows::new(),
         }

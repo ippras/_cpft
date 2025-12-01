@@ -5,6 +5,7 @@
 pub use app::App;
 
 mod app;
+mod r#const;
 mod export;
 mod localization;
 mod presets;

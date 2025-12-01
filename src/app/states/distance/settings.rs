@@ -1,6 +1,7 @@
 use crate::{
     app::{
         MAX_PRECISION,
+        panes::distance::table::NUM_COLUMNS,
         states::source::{Axis, Filter, Order, PlotSettings, View},
     },
     localization::Text,
@@ -10,6 +11,13 @@ use egui_l20n::UiExt as _;
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};
 
+const PRIORITIES: [Priority; 4] = [
+    Priority::Maximum,
+    Priority::Mean,
+    Priority::Median,
+    Priority::Minimum,
+];
+
 /// Settings
 #[derive(Clone, Debug, Deserialize, Hash, PartialEq, Serialize)]
 pub(crate) struct Settings {
@@ -18,11 +26,16 @@ pub(crate) struct Settings {
     pub(crate) sticky: usize,
     pub(crate) truncate: bool,
 
-    pub(crate) sort: Sort,
     pub(crate) filter: Filter,
+    pub(crate) sort: Sort,
+    pub(crate) order: Order,
+    pub(crate) priority: Priority,
 
     pub(crate) view: View,
     pub(crate) plot: PlotSettings,
+    // Reset
+    pub(crate) reset_sum: bool,
+    pub(crate) reset_table: bool,
 }
 
 impl Settings {
@@ -32,23 +45,30 @@ impl Settings {
             resizable: false,
             sticky: 0,
             truncate: false,
-            sort: Sort::new(),
+
             filter: Filter::new(),
+            sort: Sort::Value,
+            order: Order::Descending,
+            priority: Priority::Median,
+
             view: View::Table,
             plot: PlotSettings::new(),
+            // Reset
+            reset_sum: false,
+            reset_table: false,
         }
     }
 
-    pub(crate) fn show(&mut self, ui: &mut Ui, data_frame: &DataFrame) {
+    pub(crate) fn show(&mut self, ui: &mut Ui) {
         Grid::new("Calculation").show(ui, |ui| -> PolarsResult<()> {
-            // Precision floats
+            // Precision
             ui.label(ui.localize("precision"));
-            ui.add(Slider::new(&mut self.precision, 0..=MAX_PRECISION));
+            ui.add(Slider::new(&mut self.precision, 1..=MAX_PRECISION));
             ui.end_row();
 
             // Sticky columns
             ui.label(ui.localize("sticky"));
-            ui.add(Slider::new(&mut self.sticky, 0..=9));
+            ui.add(Slider::new(&mut self.sticky, 0..=NUM_COLUMNS));
             ui.end_row();
 
             // Truncate titles
@@ -61,7 +81,7 @@ impl Settings {
             ui.separator();
             ui.end_row();
 
-            self.filter.show(ui, data_frame)?;
+            // self.filter.show(ui, data_frame)?;
             ui.end_row();
 
             // Sort
@@ -69,8 +89,9 @@ impl Settings {
             ui.separator();
             ui.end_row();
 
-            self.sort.show(ui);
-            ui.end_row();
+            self.sort(ui);
+            self.order(ui);
+            self.priority(ui);
 
             if let View::Plot = self.view {
                 // Plot
@@ -135,102 +156,33 @@ impl Settings {
             Ok(())
         });
     }
-}
 
-impl Default for Settings {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Sort
-#[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
-pub(crate) struct Sort {
-    pub(crate) aggregation: Aggregation,
-    pub(crate) by: SortBy,
-    pub(crate) order: Order,
-}
-
-impl Sort {
-    fn new() -> Self {
-        Self {
-            aggregation: Aggregation::Maximum,
-            by: SortBy::Value,
-            order: Order::Descending,
-        }
-    }
-
-    fn show(&mut self, ui: &mut Ui) {
+    /// Sort
+    fn sort(&mut self, ui: &mut Ui) {
         ui.label(ui.localize("sort-by-distance")).on_hover_ui(|ui| {
             ui.label(ui.localize("sort-by-distance.hover"));
         });
         ComboBox::from_id_salt(ui.next_auto_id())
-            .selected_text(ui.localize(self.by.text()))
+            .selected_text(ui.localize(self.sort.text()))
             .show_ui(ui, |ui| {
-                ui.selectable_value(&mut self.by, SortBy::Key, ui.localize(SortBy::Key.text()))
+                ui.selectable_value(&mut self.sort, Sort::Key, ui.localize(Sort::Key.text()))
                     .on_hover_ui(|ui| {
-                        ui.label(ui.localize(SortBy::Key.hover_text()));
+                        ui.label(ui.localize(Sort::Key.hover_text()));
                     });
-                ui.selectable_value(
-                    &mut self.by,
-                    SortBy::Value,
-                    ui.localize(SortBy::Value.text()),
-                )
-                .on_hover_ui(|ui| {
-                    ui.label(ui.localize(SortBy::Value.hover_text()));
-                });
+                ui.selectable_value(&mut self.sort, Sort::Value, ui.localize(Sort::Value.text()))
+                    .on_hover_ui(|ui| {
+                        ui.label(ui.localize(Sort::Value.hover_text()));
+                    });
             })
             .response
             .on_hover_ui(|ui| {
-                ui.label(ui.localize(self.by.hover_text()));
+                ui.label(ui.localize(self.sort.hover_text()));
             });
         ui.end_row();
+    }
 
-        // Aggregation
-        ui.label(ui.localize("sort-by-aggregation"))
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize("sort-by-aggregation.hover"));
-            });
-        let enabled = self.by == SortBy::Value;
-        ui.add_enabled_ui(enabled, |ui| {
-            ComboBox::from_id_salt(ui.next_auto_id())
-                .selected_text(ui.localize(self.aggregation.text()))
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(
-                        &mut self.aggregation,
-                        Aggregation::Maximum,
-                        ui.localize(Aggregation::Maximum.text()),
-                    )
-                    .on_hover_ui(|ui| {
-                        ui.label(ui.localize(Aggregation::Maximum.hover_text()));
-                    });
-                    ui.selectable_value(
-                        &mut self.aggregation,
-                        Aggregation::Median,
-                        ui.localize(Aggregation::Median.text()),
-                    )
-                    .on_hover_ui(|ui| {
-                        ui.label(ui.localize(Aggregation::Median.hover_text()));
-                    });
-                    ui.selectable_value(
-                        &mut self.aggregation,
-                        Aggregation::Minimum,
-                        ui.localize(Aggregation::Minimum.text()),
-                    )
-                    .on_hover_ui(|ui| {
-                        ui.label(ui.localize(Aggregation::Minimum.hover_text()));
-                    });
-                })
-                .response
-                .on_hover_ui(|ui| {
-                    ui.label(ui.localize(self.aggregation.hover_text()));
-                });
-        })
-        .response
-        .on_disabled_hover_text("Used only for sort by value");
-        ui.end_row();
-
-        // Order
+    /// Order
+    fn order(&mut self, ui: &mut Ui) {
         ui.label(ui.localize("order"));
         ComboBox::from_id_salt(ui.next_auto_id())
             .selected_text(ui.localize(self.order.text()))
@@ -256,17 +208,56 @@ impl Sort {
             .on_hover_ui(|ui| {
                 ui.label(ui.localize(self.order.hover_text()));
             });
+        ui.end_row();
+    }
+
+    /// Priority
+    fn priority(&mut self, ui: &mut Ui) {
+        ui.label(ui.localize("sort-by-aggregation"))
+            .on_hover_ui(|ui| {
+                ui.label(ui.localize("sort-by-aggregation.hover"));
+            });
+        let enabled = self.sort == Sort::Value;
+        ui.add_enabled_ui(enabled, |ui| {
+            ComboBox::from_id_salt(ui.next_auto_id())
+                .selected_text(ui.localize(self.priority.text()))
+                .show_ui(ui, |ui| {
+                    for priority in PRIORITIES {
+                        ui.selectable_value(
+                            &mut self.priority,
+                            priority,
+                            ui.localize(priority.text()),
+                        )
+                        .on_hover_ui(|ui| {
+                            ui.label(ui.localize(priority.hover_text()));
+                        });
+                    }
+                })
+                .response
+                .on_hover_ui(|ui| {
+                    ui.label(ui.localize(self.priority.hover_text()));
+                });
+        })
+        .response
+        .on_disabled_hover_text("Used only for sort by value");
+        ui.end_row();
     }
 }
 
-/// Sort by
+impl Default for Settings {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Sort
 #[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
-pub(crate) enum SortBy {
+pub(crate) enum Sort {
     Key,
     Value,
 }
 
-impl Text for SortBy {
+impl Text for Sort {
     fn text(&self) -> &'static str {
         match self {
             Self::Key => "sort-by-key",
@@ -282,19 +273,20 @@ impl Text for SortBy {
     }
 }
 
-/// Sort aggregation
-#[derive(Clone, Copy, Debug, Default, Deserialize, Hash, PartialEq, Serialize)]
-pub(crate) enum Aggregation {
-    #[default]
+/// Priority
+#[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
+pub(crate) enum Priority {
     Maximum,
+    Mean,
     Median,
     Minimum,
 }
 
-impl Text for Aggregation {
+impl Text for Priority {
     fn text(&self) -> &'static str {
         match self {
             Self::Maximum => "sort-by-maximum",
+            Self::Mean => "sort-by-mean",
             Self::Median => "sort-by-median",
             Self::Minimum => "sort-by-minimum",
         }
@@ -303,6 +295,7 @@ impl Text for Aggregation {
     fn hover_text(&self) -> &'static str {
         match self {
             Self::Maximum => "sort-by-maximum.hover",
+            Self::Mean => "sort-by-mean.hover",
             Self::Median => "sort-by-median.hover",
             Self::Minimum => "sort-by-minimum.hover",
         }

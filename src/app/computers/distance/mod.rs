@@ -1,5 +1,6 @@
-use crate::{app::states::distance::Settings, utils::hash::HashedDataFrame};
+use crate::{app::states::distance::Settings, r#const::*, utils::hash::HashedDataFrame};
 use egui::util::cache::{ComputerMut, FrameCache};
+use lipid::prelude::FATTY_ACID;
 use polars::prelude::*;
 
 /// Distance computed
@@ -39,122 +40,120 @@ impl<'a> Key<'a> {
 type Value = HashedDataFrame;
 
 fn compute(mut lazy_frame: LazyFrame, key: Key) -> LazyFrame {
+    // Filter
+    lazy_frame = lazy_frame.filter(col(FILTER));
     // Join
     lazy_frame = lazy_frame
         .clone()
         .select([
-            // col("Mode").hash().alias("LeftHash"),
-            col("Mode").alias("LeftHash"),
+            col(MODE).alias("LeftKey"),
             as_struct(vec![
-                col("FattyAcid"),
-                col("RetentionTime")
+                col(FATTY_ACID),
+                col(RETENTION_TIME)
                     .struct_()
-                    .field_by_name("Absolute")
+                    .field_by_name(ABSOLUTE)
                     .struct_()
-                    .field_by_name("Mean")
+                    .field_by_name(MEAN)
                     .name()
                     .keep(),
-                col("ChainLength")
+                col(CHAIN_LENGTH)
                     .struct_()
-                    .field_by_name("EquivalentChainLength"),
+                    .field_by_name(EQUIVALENT_CHAIN_LENGTH),
             ])
-            .alias("From"),
-            col("Mode"),
-            col("DeadTime"),
+            .alias(FROM),
+            col(MODE),
+            col(DEAD_TIME),
         ])
         .with_row_index("LeftIndex", None)
         .join_builder()
         .with(
             lazy_frame
                 .select([
-                    // col("Mode").hash().alias("RightHash"),
-                    col("Mode").alias("RightHash"),
+                    col(MODE).alias("RightKey"),
                     as_struct(vec![
-                        col("FattyAcid"),
-                        col("RetentionTime")
+                        col(FATTY_ACID),
+                        col(RETENTION_TIME)
                             .struct_()
-                            .field_by_name("Absolute")
+                            .field_by_name(ABSOLUTE)
                             .struct_()
-                            .field_by_name("Mean")
+                            .field_by_name(MEAN)
                             .name()
                             .keep(),
-                        col("ChainLength")
+                        col(CHAIN_LENGTH)
                             .struct_()
-                            .field_by_name("EquivalentChainLength"),
+                            .field_by_name(EQUIVALENT_CHAIN_LENGTH),
                     ])
-                    .alias("To"),
+                    .alias(TO),
                 ])
                 .with_row_index("RightIndex", None),
         )
         .join_where(vec![
             // Same modes
-            col("LeftHash").eq(col("RightHash")),
+            col("LeftKey").eq(col("RightKey")),
             // Fatty asids not equals combination
             col("LeftIndex").lt(col("RightIndex")),
         ]);
-    // Select
+    // Restructure
     lazy_frame
         .select([
-            col("Mode"),
-            col("DeadTime"),
+            col(MODE),
+            col(DEAD_TIME),
             as_struct(vec![
-                col("From")
-                    .struct_()
-                    .field_by_name("FattyAcid")
-                    .name()
-                    .keep(),
-                col("To").struct_().field_by_name("FattyAcid").name().keep(),
+                col(FROM).struct_().field_by_name(FATTY_ACID).name().keep(),
+                col(TO).struct_().field_by_name(FATTY_ACID).name().keep(),
             ])
-            .alias("FattyAcid"),
+            .alias(FATTY_ACID),
             as_struct(vec![
-                col("From")
+                col(FROM)
                     .struct_()
-                    .field_by_name("RetentionTime")
+                    .field_by_name(RETENTION_TIME)
                     .name()
                     .keep(),
-                col("To")
+                col(TO)
                     .struct_()
-                    .field_by_name("RetentionTime")
+                    .field_by_name(RETENTION_TIME)
                     .name()
                     .keep(),
-                (col("To").struct_().field_by_name("RetentionTime")
-                    - col("From").struct_().field_by_name("RetentionTime"))
-                .over([col("Mode")])
-                .alias("Delta"),
+                (col(TO).struct_().field_by_name(RETENTION_TIME)
+                    - col(FROM).struct_().field_by_name(RETENTION_TIME))
+                .over([col(MODE)])
+                .alias(DELTA),
             ])
-            .alias("RetentionTime"),
+            .alias(RETENTION_TIME),
             as_struct(vec![
-                col("From")
+                col(FROM)
                     .struct_()
-                    .field_by_name("EquivalentChainLength")
+                    .field_by_name(EQUIVALENT_CHAIN_LENGTH)
                     .name()
                     .keep(),
-                col("To")
+                col(TO)
                     .struct_()
-                    .field_by_name("EquivalentChainLength")
+                    .field_by_name(EQUIVALENT_CHAIN_LENGTH)
                     .name()
                     .keep(),
-                (col("To").struct_().field_by_name("EquivalentChainLength")
-                    - col("From").struct_().field_by_name("EquivalentChainLength"))
-                .over([col("Mode")])
-                .alias("Delta"),
+                (col(TO).struct_().field_by_name(EQUIVALENT_CHAIN_LENGTH)
+                    - col(FROM).struct_().field_by_name(EQUIVALENT_CHAIN_LENGTH))
+                .over([col(MODE)])
+                .alias(DELTA),
             ])
-            .alias("EquivalentChainLength"),
-            ((col("From").struct_().field_by_name("RetentionTime") - col("DeadTime"))
-                / (col("To").struct_().field_by_name("RetentionTime") - col("DeadTime"))
-                    .over([col("Mode")]))
-            .alias("Alpha"),
+            .alias(EQUIVALENT_CHAIN_LENGTH),
+            ((col(FROM).struct_().field_by_name(RETENTION_TIME) - col(DEAD_TIME))
+                / (col(TO).struct_().field_by_name(RETENTION_TIME) - col(DEAD_TIME))
+                    .over([col(MODE)]))
+            .alias(ALPHA),
         ])
         .with_column(
-            (col("RetentionTime").struct_().field_by_name("Delta").pow(2)
-                + col("EquivalentChainLength")
+            (col(RETENTION_TIME).struct_().field_by_name(DELTA).pow(2)
+                + col(EQUIVALENT_CHAIN_LENGTH)
                     .struct_()
-                    .field_by_name("Delta")
+                    .field_by_name(DELTA)
                     .pow(2))
             .sqrt()
-            .alias("EuclideanDistance"),
+            .alias(EUCLIDEAN_DISTANCE),
         )
 }
 
+pub(crate) mod display;
 pub(crate) mod filtered;
+pub(crate) mod sum;
 // pub(crate) mod plot;

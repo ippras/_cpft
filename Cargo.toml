@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.100"
+const_format = "0.2.35"
 eframe = { version = "0.33.2", default-features = false, features = [
     "accesskit",
     "default_fonts",

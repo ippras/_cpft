@@ -1,15 +1,15 @@
-use self::table::TableView;
-use super::{Behavior, MARGIN, widgets::ViewWidget};
+use self::{plot::PlotView, table::TableView};
 use crate::{
     app::{
         computers::source::{
-            Computed as SourceComputed,
-            Key as SourceKey,
+            Computed as SourceComputed, Key as SourceKey,
             display::{Computed as DisplayComputed, Key as DisplayKey},
-            // plot::{Key as PlotKey, Computed as PlotComputed},
+            plot::{Computed as PlotComputed, Key as PlotKey},
         },
+        panes::{Behavior, MARGIN, widgets::ViewWidget},
         states::source::{ID_SOURCE, State, View},
     },
+    r#const::{MODE, ONSET_TEMPERATURE, TEMPERATURE_STEP},
     utils::hash::{HashedDataFrame, HashedMetaDataFrame},
 };
 use anyhow::Result;
@@ -24,6 +24,10 @@ use egui_phosphor::regular::{
 use egui_tiles::{TileId, UiResponse};
 use lipid::prelude::*;
 use metadata::Metadata;
+use polars::{
+    error::PolarsResult,
+    prelude::{ChunkSort, ChunkUnique as _},
+};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display, from_fn};
 use tracing::instrument;
@@ -33,11 +37,16 @@ use tracing::instrument;
 pub(crate) struct Pane {
     id: Option<Id>,
     frame: HashedMetaDataFrame,
+    calculated: HashedDataFrame,
 }
 
 impl Pane {
     pub(crate) fn new(frame: HashedMetaDataFrame) -> Self {
-        Self { id: None, frame }
+        Self {
+            id: None,
+            frame,
+            calculated: HashedDataFrame::EMPTY,
+        }
     }
 
     pub(crate) fn title(&self) -> String {
@@ -52,15 +61,6 @@ impl Pane {
             write!(f, "{}", hash(&self.frame))
         })
     }
-
-    fn calculate(&self, ui: &mut Ui, state: &mut State) -> HashedDataFrame {
-        ui.memory_mut(|memory| {
-            memory
-                .caches
-                .cache::<SourceComputed>()
-                .get(SourceKey::new(&self.frame.data, &state.settings))
-        })
-    }
 }
 
 impl Pane {
@@ -72,6 +72,7 @@ impl Pane {
     ) -> UiResponse {
         let id = *self.id.get_or_insert_with(|| ui.next_auto_id());
         let mut state = State::load(ui.ctx(), id);
+        _ = self.init(ui, &mut state);
         let response = TopBottomPanel::top(ui.auto_id_with("Pane"))
             .show_inside(ui, |ui| {
                 MenuBar::new()
@@ -111,39 +112,63 @@ impl Pane {
         }
     }
 
+    #[instrument(skip_all, err)]
+    fn init(&mut self, ui: &mut Ui, state: &mut State) -> Result<()> {
+        self.calculated = ui.memory_mut(|memory| {
+            memory
+                .caches
+                .cache::<SourceComputed>()
+                .get(SourceKey::new(&self.frame.data, &state.settings))
+        });
+        state.settings.cache.onset_temperatures = self.calculated.data_frame[MODE]
+            .struct_()?
+            .field_by_name(ONSET_TEMPERATURE)?
+            .f64()?
+            .unique()?
+            .sort(false)
+            .into_no_null_iter()
+            .collect::<Vec<_>>();
+        state.settings.cache.temperature_steps = self.calculated.data_frame[MODE]
+            .struct_()?
+            .field_by_name(TEMPERATURE_STEP)?
+            .f64()?
+            .unique()?
+            .sort(false)
+            .into_no_null_iter()
+            .collect::<Vec<_>>();
+        state.settings.cache.fatty_acids = self.calculated.data_frame[FATTY_ACID]
+            .unique_stable()?
+            .fatty_acid()
+            .fields()?
+            .into_iter()
+            .filter_map(|fatty_acid| fatty_acid.transpose())
+            .collect::<PolarsResult<Vec<_>>>()?;
+        Ok(())
+    }
+
     fn top(&mut self, ui: &mut Ui, state: &mut State) -> Response {
         let mut response = ui.heading(TABLE).on_hover_text(ui.localize("source"));
         response |= ui.heading(self.title());
         response = response
-            .on_hover_text(format!(
-                "{}/{:x}",
-                self.id(),
-                self.calculate(ui, state).hash
-            ))
+            .on_hover_text(format!("{}/{:x}", self.id(), self.calculated.hash))
             .on_hover_cursor(CursorIcon::Grab);
         ui.separator();
-        // Reset
         self.reset_button(ui, state);
         ui.separator();
-        // Resize
         self.resize_button(ui, state);
         ui.separator();
-        // Settings
         self.settings_button(ui, state);
         ui.separator();
-        // View
         ui.add(ViewWidget::new(&mut state.settings.view));
         ui.separator();
-        // Distance
-        self.distance_button(ui, state);
-        ui.separator();
-        // Save
         self.save_button(ui);
+        ui.separator();
+        self.distance_button(ui, state);
         ui.separator();
         response
     }
 
-    // Reset button
+    /// Reset button
     fn reset_button(&mut self, ui: &mut Ui, state: &mut State) {
         ui.toggle_value(
             &mut state.reset_table_state,
@@ -154,7 +179,7 @@ impl Pane {
         });
     }
 
-    // Resize button
+    /// Resize button
     fn resize_button(&mut self, ui: &mut Ui, state: &mut State) {
         ui.toggle_value(
             &mut state.settings.resizable,
@@ -176,22 +201,7 @@ impl Pane {
         });
     }
 
-    /// Distance button
-    fn distance_button(&mut self, ui: &mut Ui, state: &mut State) {
-        if ui
-            .add_enabled(
-                state.settings.view == View::Table,
-                Button::new(RichText::new(EXCLUDE).heading()),
-            )
-            .clicked()
-        {
-            let data = self.calculate(ui, state);
-            let meta = self.frame.meta.clone();
-            let frame = HashedMetaDataFrame::new(meta, data);
-            ui.data_mut(|data| data.insert_temp(Id::new("Distance"), frame))
-        }
-    }
-
+    /// Save button
     fn save_button(&self, ui: &mut Ui) {
         ui.menu_button(RichText::new(FLOPPY_DISK).heading(), |ui| {
             let meta = &self.frame.meta;
@@ -231,27 +241,39 @@ impl Pane {
         Ok(())
     }
 
+    /// Distance button
+    fn distance_button(&mut self, ui: &mut Ui, state: &mut State) {
+        if ui
+            .add_enabled(
+                state.settings.view == View::Table,
+                Button::new(RichText::new(EXCLUDE).heading()),
+            )
+            .clicked()
+        {
+            let data = self.calculated.clone();
+            let meta = self.frame.meta.clone();
+            let frame = HashedMetaDataFrame::new(meta, data);
+            ui.data_mut(|data| data.insert_temp(Id::new("Distance"), frame))
+        }
+    }
+
     fn central(&mut self, ui: &mut Ui, state: &mut State) {
-        let frame = self.calculate(ui, state);
         match state.settings.view {
             View::Plot => {
-                // let points = ui.memory_mut(|memory| {
-                //     memory
-                //         .caches
-                //         .cache::<SourcePlotComputed>()
-                //         .get(SourcePlotKey {
-                //             data_frame: &self.target,
-                //             settings: &state.settings,
-                //         })
-                // });
-                // PlotView::new(points, &state.settings).show(ui)
+                let points = ui.memory_mut(|memory| {
+                    memory
+                        .caches
+                        .cache::<PlotComputed>()
+                        .get(PlotKey::new(&self.calculated, &state.settings))
+                });
+                PlotView::new(points, &state.settings).show(ui)
             }
             View::Table => {
                 let data_frame = ui.memory_mut(|memory| {
                     memory
                         .caches
                         .cache::<DisplayComputed>()
-                        .get(DisplayKey::new(&frame, &state.settings))
+                        .get(DisplayKey::new(&self.calculated, &state.settings))
                 });
                 TableView::new(&data_frame, state).show(ui)
             }
@@ -275,5 +297,5 @@ impl Pane {
     }
 }
 
-// mod plot;
-mod table;
+pub(crate) mod plot;
+pub(crate) mod table;

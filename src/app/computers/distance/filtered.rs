@@ -1,5 +1,6 @@
 use crate::{
-    app::states::distance::{Aggregation, Filter, Order, Settings, SortBy},
+    app::states::distance::{Filter, Order, Priority, Settings, Sort},
+    r#const::*,
     utils::hash::HashedDataFrame,
 };
 use egui::util::cache::{ComputerMut, FrameCache};
@@ -34,20 +35,20 @@ impl ComputerMut<Key<'_>, Value> for Computer {
 #[derive(Clone, Copy, Debug, Hash)]
 pub struct Key<'a> {
     pub(crate) frame: &'a HashedDataFrame,
-    pub(crate) aggregation: Aggregation,
     pub(crate) filter: &'a Filter,
     pub(crate) order: Order,
-    pub(crate) sort: SortBy,
+    pub(crate) priority: Priority,
+    pub(crate) sort: Sort,
 }
 
 impl<'a> Key<'a> {
     pub(crate) fn new(frame: &'a HashedDataFrame, settings: &'a Settings) -> Self {
         Self {
             frame,
-            aggregation: settings.sort.aggregation,
             filter: &settings.filter,
-            order: settings.sort.order,
-            sort: settings.sort.by,
+            order: settings.order,
+            priority: settings.priority,
+            sort: settings.sort,
         }
     }
 }
@@ -55,58 +56,88 @@ impl<'a> Key<'a> {
 /// Distance filtered value
 type Value = HashedDataFrame;
 
+// fn filter(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
+//     let mut expr = None;
+//     if !key.filter.onset_temperatures.is_empty() {
+//         for &onset_temperature in &key.filter.onset_temperatures {
+//             expr = Some(
+//                 expr.unwrap_or(lit(true)).and(
+//                     col(MODE)
+//                         .struct_()
+//                         .field_by_name(ONSET_TEMPERATURE)
+//                         .neq(onset_temperature),
+//                 ),
+//             );
+//         }
+//     }
+//     if !key.filter.temperature_steps.is_empty() {
+//         for &temperature_step in &key.filter.temperature_steps {
+//             expr = Some(
+//                 expr.unwrap_or(lit(true)).and(
+//                     col(MODE)
+//                         .struct_()
+//                         .field_by_name(TEMPERATURE_STEP)
+//                         .neq(temperature_step),
+//                 ),
+//             );
+//         }
+//     }
+//     if !key.filter.fatty_acids.is_empty() {
+//         for fatty_acid in &key.filter.fatty_acids {
+//             expr = Some(
+//                 expr.unwrap_or(lit(true))
+//                     .and(
+//                         col(FATTY_ACID)
+//                             .struct_()
+//                             .field_by_name(FROM)
+//                             .fatty_acid()
+//                             .equal(FattyAcidExpr::try_from(fatty_acid)?)
+//                             .not(),
+//                     )
+//                     .and(
+//                         col(FATTY_ACID)
+//                             .struct_()
+//                             .field_by_name(TO)
+//                             .fatty_acid()
+//                             .equal(FattyAcidExpr::try_from(fatty_acid)?)
+//                             .not(),
+//                     ),
+//             );
+//         }
+//     }
+//     if let Some(predicate) = expr {
+//         lazy_frame = lazy_frame.filter(predicate);
+//     }
+//     Ok(lazy_frame)
+// }
+
 fn filter(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
-    let mut expr = None;
-    if !key.filter.onset_temperatures.is_empty() {
-        for &onset_temperature in &key.filter.onset_temperatures {
-            expr = Some(
-                expr.unwrap_or(lit(true)).and(
-                    col("Mode")
-                        .struct_()
-                        .field_by_name("OnsetTemperature")
-                        .neq(onset_temperature),
-                ),
-            );
-        }
+    let mut expr = lit(true);
+    for &onset_temperature in &key.filter.onset_temperatures {
+        expr = expr.and(
+            col(MODE)
+                .struct_()
+                .field_by_name(ONSET_TEMPERATURE)
+                .neq(onset_temperature),
+        );
     }
-    if !key.filter.temperature_steps.is_empty() {
-        for &temperature_step in &key.filter.temperature_steps {
-            expr = Some(
-                expr.unwrap_or(lit(true)).and(
-                    col("Mode")
-                        .struct_()
-                        .field_by_name("TemperatureStep")
-                        .neq(temperature_step),
-                ),
-            );
-        }
+    for &temperature_step in &key.filter.temperature_steps {
+        expr = expr.and(
+            col(MODE)
+                .struct_()
+                .field_by_name(TEMPERATURE_STEP)
+                .neq(temperature_step),
+        );
     }
-    if !key.filter.fatty_acids.is_empty() {
-        for fatty_acid in &key.filter.fatty_acids {
-            expr = Some(
-                expr.unwrap_or(lit(true))
-                    .and(
-                        col("FattyAcid")
-                            .struct_()
-                            .field_by_name("From")
-                            .fatty_acid()
-                            .equal(FattyAcidExpr::try_from(fatty_acid)?)
-                            .not(),
-                    )
-                    .and(
-                        col("FattyAcid")
-                            .struct_()
-                            .field_by_name("To")
-                            .fatty_acid()
-                            .equal(FattyAcidExpr::try_from(fatty_acid)?)
-                            .not(),
-                    ),
-            );
-        }
+    for fatty_acid in &key.filter.fatty_acids {
+        expr = expr.and(
+            col(FATTY_ACID)
+                .fatty_acid()
+                .equal(FattyAcidExpr::try_from(fatty_acid)?)
+                .not(),
+        );
     }
-    if let Some(predicate) = expr {
-        lazy_frame = lazy_frame.filter(predicate);
-    }
+    lazy_frame = lazy_frame.with_column(expr.alias(FILTER));
     Ok(lazy_frame)
 }
 
@@ -117,12 +148,12 @@ fn sort(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
     };
     lazy_frame.sort_by_exprs(
         match key.sort {
-            SortBy::Key => vec![
-                col("Mode"),
-                col("FattyAcid").struct_().field_by_name("From"),
-                col("FattyAcid").struct_().field_by_name("To"),
+            Sort::Key => vec![
+                col(MODE),
+                col(FATTY_ACID).struct_().field_by_name(FROM),
+                col(FATTY_ACID).struct_().field_by_name(TO),
             ],
-            SortBy::Value => vec![col("Alpha").aggregate(key.aggregation)],
+            Sort::Value => vec![col(ALPHA).aggregate(key.priority)],
         },
         sort_options,
     )
@@ -130,16 +161,17 @@ fn sort(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
 
 /// Extension methods for [`Expr`]
 trait ExprExt {
-    fn aggregate(self, aggregation: Aggregation) -> Expr;
+    fn aggregate(self, aggregation: Priority) -> Expr;
 }
 
 impl ExprExt for Expr {
-    fn aggregate(self, aggregation: Aggregation) -> Expr {
+    fn aggregate(self, aggregation: Priority) -> Expr {
         match aggregation {
-            Aggregation::Maximum => self.abs().max(),
-            Aggregation::Median => self.abs().median(),
-            Aggregation::Minimum => self.abs().min(),
+            Priority::Maximum => self.abs().max(),
+            Priority::Mean => self.abs().mean(),
+            Priority::Median => self.abs().median(),
+            Priority::Minimum => self.abs().min(),
         }
-        .over([col("Mode")])
+        .over([col(MODE)])
     }
 }

@@ -1,8 +1,12 @@
-use crate::app::{
-    panes::{MARGIN, widgets::float::FloatValue},
-    states::source::{ID_SOURCE, State},
+use crate::{
+    app::{
+        panes::MARGIN,
+        states::source::{ID_SOURCE, State},
+    },
+    r#const::*,
+    utils::polars::SeriesExt as _,
 };
-use egui::{Color32, Frame, Grid, Id, Margin, TextStyle, TextWrapMode, Ui, WidgetText};
+use egui::{Color32, Frame, Grid, Id, Margin, TextStyle, TextWrapMode, Ui};
 use egui_ext::ResponseExt;
 use egui_l20n::{ResponseExt as _, UiExt};
 use egui_phosphor::regular::HASH;
@@ -11,9 +15,11 @@ use egui_table::{
 };
 use lipid::prelude::*;
 use polars::prelude::*;
-use std::ops::Range;
+use polars_utils::format_list;
+use std::{borrow::Cow, ops::Range};
 
-const NUM_COLUMNS: usize = top::DERIVATIVE.end;
+pub(crate) const NUM_COLUMNS: usize = top::DERIVATIVE.end;
+
 const TOP: &[Range<usize>] = &[
     top::INDEX,
     top::MODE,
@@ -158,43 +164,42 @@ impl TableView<'_> {
         row: usize,
         column: Range<usize>,
     ) -> PolarsResult<()> {
-        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
         match (row, column) {
             (row, top::INDEX) => {
-                ui.label(row.to_string());
+                ui.label(row.to_string())
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        ui.heading(ui.localize("DeadTime"));
+                        ui.label(self.data_frame[DEAD_TIME].get(row)?.str_value());
+                        Ok(())
+                    })?;
             }
             (row, bottom::ONSET) => {
-                let mode = self.data_frame["Mode"].struct_()?;
-                let onset_temperature = mode.field_by_name("OnsetTemperature")?;
-                ui.label(onset_temperature.str_value(row)?)
-                    .on_hover_ui(|ui| {
-                        (|| -> PolarsResult<()> {
-                            let Some(dead_time) = self.data_frame["DeadTime"].f64()?.get(row)
-                            else {
-                                polars_bail!(NoData: "DeadTime[{row}]");
-                            };
-                            ui.label(dead_time.to_string());
-                            Ok(())
-                        })()
-                        .unwrap()
-                    });
+                ui.label(
+                    self.data_frame[MODE]
+                        .struct_()?
+                        .field_by_name(ONSET_TEMPERATURE)?
+                        .str_value(row)?,
+                );
             }
             (row, bottom::STEP) => {
-                let mode = self.data_frame["Mode"].struct_()?;
-                let temperature_step = mode.field_by_name("TemperatureStep")?;
-                ui.label(temperature_step.str_value(row)?);
+                ui.label(
+                    self.data_frame[MODE]
+                        .struct_()?
+                        .field_by_name(TEMPERATURE_STEP)?
+                        .str_value(row)?,
+                );
             }
             (row, top::FATTY_ACID) => {
                 ui.label(self.data_frame[FATTY_ACID].str()?.get(row).unwrap_or("-"));
             }
             (row, bottom::ABSOLUTE) => {
-                let absolute_series = self.data_frame["RetentionTime"]
+                let absolute_series = self.data_frame[RETENTION_TIME]
                     .struct_()?
-                    .field_by_name("Absolute")?;
-                let mean_series = absolute_series.struct_()?.field_by_name("Mean")?;
+                    .field_by_name(ABSOLUTE)?;
+                let mean_series = absolute_series.struct_()?.field_by_name(MEAN)?;
                 let standard_deviation_series = absolute_series
                     .struct_()?
-                    .field_by_name("StandardDeviation")?;
+                    .field_by_name(STANDARD_DEVIATION)?;
                 if let Some(standard_deviation) = standard_deviation_series.f64()?.get(row) {
                     if standard_deviation > 0.1 {
                         ui.visuals_mut().override_text_color = Some(Color32::RED);
@@ -205,11 +210,11 @@ impl TableView<'_> {
                 let text = mean_series
                     .f64()?
                     .get(row)
-                    .map_or(WidgetText::from("-"), |mean| {
-                        WidgetText::from(format!("{mean}"))
-                    });
+                    .map_or(Cow::Borrowed("-"), |mean| mean.to_string().into());
                 ui.label(text)
                     .try_on_hover_ui(|ui| {
+                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+                        ui.heading(ui.localize("StandardDeviation"));
                         let Some(mean) = mean_series.f64()?.get(row) else {
                             polars_bail!(NoData: "Mean[{row}]");
                         };
@@ -221,7 +226,8 @@ impl TableView<'_> {
                         Ok(())
                     })?
                     .try_on_hover_ui(|ui| {
-                        ui.heading("Sample");
+                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+                        ui.heading(ui.localize("Sample"));
                         let Some(sample) = absolute_series
                             .struct_()?
                             .field_by_name("Sample")?
@@ -230,113 +236,96 @@ impl TableView<'_> {
                         else {
                             polars_bail!(NoData: "Sample[{row}]");
                         };
-                        ui.vertical(|ui| {
-                            for value in sample.iter() {
-                                ui.label(value.to_string());
-                            }
-                        });
+                        ui.label(format_list!(sample.iter()));
                         Ok(())
                     })?;
             }
             (row, bottom::RELATIVE) => {
-                let retention_time = self.data_frame["RetentionTime"].struct_()?;
-                let relative_series = retention_time.field_by_name("Relative")?;
-                ui.add(
-                    FloatValue::new(relative_series.f64()?.get(row))
-                        .precision(Some(self.state.settings.precision))
-                        .hover(),
+                ui.label(
+                    self.data_frame[RETENTION_TIME]
+                        .struct_()?
+                        .field_by_name(RELATIVE)?
+                        .str_f64(row)?,
                 );
             }
             (row, bottom::DELTA) => {
-                let retention_time = self.data_frame["RetentionTime"].struct_()?;
-                let delta = retention_time.field_by_name("Delta")?;
-                ui.add(
-                    FloatValue::new(delta.f64()?.get(row))
-                        .precision(Some(self.state.settings.precision))
-                        .hover(),
+                ui.label(
+                    self.data_frame[RETENTION_TIME]
+                        .struct_()?
+                        .field_by_name(DELTA)?
+                        .str_f64(row)?,
                 );
             }
             (row, top::TEMPERATURE) => {
-                let temperature = &self.data_frame["Temperature"];
-                ui.add(
-                    FloatValue::new(temperature.f64()?.get(row))
-                        .precision(Some(self.state.settings.precision))
-                        .hover(),
+                ui.label(
+                    self.data_frame[TEMPERATURE]
+                        .as_materialized_series()
+                        .str_f64(row)?,
                 );
             }
             (row, bottom::ECL) => {
-                let chain_length = self.data_frame["ChainLength"].struct_()?;
-                let ecl = chain_length.field_by_name("EquivalentChainLength")?;
-                ui.add(
-                    FloatValue::new(ecl.f64()?.get(row))
-                        .precision(Some(self.state.settings.precision))
-                        .hover(),
+                ui.label(
+                    self.data_frame[CHAIN_LENGTH]
+                        .struct_()?
+                        .field_by_name(EQUIVALENT_CHAIN_LENGTH)?
+                        .str_f64(row)?,
                 );
             }
             (row, bottom::FCL) => {
-                let chain_length = self.data_frame["ChainLength"].struct_()?;
-                let fcl = chain_length.field_by_name("FCL")?;
-                ui.add(
-                    FloatValue::new(fcl.f64()?.get(row))
-                        .precision(Some(self.state.settings.precision))
-                        .hover(),
+                ui.label(
+                    self.data_frame[CHAIN_LENGTH]
+                        .struct_()?
+                        .field_by_name(FRACTIONAL_CHAIN_LENGTH)?
+                        .str_f64(row)?,
                 );
             }
             (row, bottom::ECN) => {
-                let chain_length = self.data_frame["ChainLength"].struct_()?;
-                let ecn = chain_length.field_by_name("ECN")?;
-                ui.label(ecn.str_value(row)?);
+                let ecn_series = self.data_frame[CHAIN_LENGTH]
+                    .struct_()?
+                    .field_by_name(EQUIVALENT_CARBON_NUMBER)?;
+                let text = ecn_series.str_value(row)?;
+                ui.label(text);
             }
             (row, top::MASS) => {
-                let mass = self.data_frame["Mass"].struct_()?;
+                let mass = self.data_frame[MASS].struct_()?;
                 let rcooch3 = mass.field_by_name("RCOOCH3")?;
-                ui.add(
-                    FloatValue::new(rcooch3.f64()?.get(row))
-                        .precision(Some(self.state.settings.precision)),
-                )
-                .on_hover_ui(|ui| {
-                    Grid::new(ui.next_auto_id()).show(ui, |ui| {
-                        (|| -> PolarsResult<()> {
+                ui.label(rcooch3.str_f64(row)?).try_on_hover_ui(|ui| {
+                    Grid::new(ui.next_auto_id())
+                        .show(ui, |ui| -> PolarsResult<()> {
                             ui.label("[RCO]+");
-                            let rcoo = mass.field_by_name("RCO")?;
-                            ui.label(rcoo.str_value(row)?);
+                            ui.label(mass.field_by_name("RCO")?.str_f64(row)?);
                             ui.end_row();
 
                             ui.label("[RCOO]-");
-                            let rcoo = mass.field_by_name("RCOO")?;
-                            ui.label(rcoo.str_value(row)?);
+                            ui.label(mass.field_by_name("RCOO")?.str_f64(row)?);
                             ui.end_row();
 
                             ui.label("RCOOH");
-                            let rcooh = mass.field_by_name("RCOOH")?;
-                            ui.label(rcooh.str_value(row)?);
+                            ui.label(mass.field_by_name("RCOOH")?.str_f64(row)?);
                             ui.end_row();
 
                             ui.label("RCOOCH3");
-                            ui.label(rcooch3.str_value(row)?);
-
+                            ui.label(rcooch3.str_f64(row)?);
+                            ui.end_row();
                             Ok(())
-                        })()
-                        .unwrap()
-                    });
-                });
+                        })
+                        .inner
+                })?;
             }
             (row, bottom::SLOPE) => {
-                let derivative = self.data_frame["Derivative"].struct_()?;
-                let slope = derivative.field_by_name("Slope")?;
-                ui.add(
-                    FloatValue::new(slope.f64()?.get(row))
-                        .precision(Some(self.state.settings.precision))
-                        .hover(),
+                ui.label(
+                    self.data_frame[DERIVATIVE]
+                        .struct_()?
+                        .field_by_name(SLOPE)?
+                        .str_f64(row)?,
                 );
             }
             (row, bottom::ANGLE) => {
-                let derivative = self.data_frame["Derivative"].struct_()?;
-                let angle = derivative.field_by_name("Angle")?;
-                ui.add(
-                    FloatValue::new(angle.f64()?.get(row))
-                        .precision(Some(self.state.settings.precision))
-                        .hover(),
+                ui.label(
+                    self.data_frame[DERIVATIVE]
+                        .struct_()?
+                        .field_by_name(ANGLE)?
+                        .str_f64(row)?,
                 );
             }
             _ => unreachable!(),

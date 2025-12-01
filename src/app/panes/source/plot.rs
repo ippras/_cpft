@@ -1,14 +1,12 @@
-use super::Settings;
-use crate::app::computers::{SourcePlotValue, plot::IndexKey};
+use crate::app::{
+    computers::{plot::IndexKey, source::plot::Value},
+    states::source::Settings,
+};
 use egui::Ui;
 use egui_ext::color;
-use egui_l20n::UiExt;
+use egui_l20n::UiExt as _;
 use egui_plot::{Legend, Line, LineStyle, MarkerShape, Plot, PlotPoint, PlotPoints, Points};
 use itertools::Itertools;
-use lipid::fatty_acid::{
-    FattyAcidExt as _,
-    display::{COMMON, DisplayWithOptions as _},
-};
 use polars::prelude::*;
 use std::fmt::Write;
 use tracing::error;
@@ -16,12 +14,12 @@ use tracing::error;
 /// Plot view
 #[derive(Clone)]
 pub(crate) struct PlotView<'a> {
-    pub(crate) data: SourcePlotValue,
+    pub(crate) data: Value,
     pub(crate) settings: &'a Settings,
 }
 
 impl<'a> PlotView<'a> {
-    pub(crate) fn new(data: SourcePlotValue, settings: &'a Settings) -> Self {
+    pub(crate) fn new(data: Value, settings: &'a Settings) -> Self {
         Self { data, settings }
     }
 }
@@ -34,11 +32,10 @@ impl PlotView<'_> {
     }
 
     fn try_show(self, ui: &mut Ui) -> PolarsResult<()> {
-        let mut plot = Plot::new("plot")
-            // .allow_drag(context.settings.visualization.drag)
-            // .allow_scroll(context.settings.visualization.scroll)
-            ;
-        if self.settings.legend {
+        let mut plot = Plot::new("Plot")
+            .allow_drag(self.settings.plot.drag)
+            .allow_scroll(self.settings.plot.scroll);
+        if self.settings.plot.legend {
             plot = plot.legend(Legend::default().follow_insertion_order(true));
         }
         // let scale = plot.transform.dvalue_dpos();
@@ -85,20 +82,18 @@ impl PlotView<'_> {
         plot.show(ui, |ui| -> PolarsResult<()> {
             for data in &self.data.lines.temperature_step {
                 // Line
-                let name = format!("{:#}", (&data.fatty_acid).display(COMMON));
-                let mut line = Line::new(PlotPoints::Borrowed(&data.points))
-                    .name(&name)
+                let name = &format!("{:#}", data.fatty_acid.delta());
+                let mut line = Line::new(name, PlotPoints::Borrowed(&data.points))
                     .color(color(data.onset_temperature as _));
-                if data.fatty_acid.is_unsaturated() {
+                if !data.fatty_acid.unsaturated.is_empty() {
                     line = line.style(LineStyle::Dashed { length: 16.0 });
                 }
                 ui.line(line);
                 // Points
-                let mut points = Points::new(PlotPoints::Borrowed(&data.points))
-                    .name(name)
+                let mut points = Points::new(name, PlotPoints::Borrowed(&data.points))
                     .color(color(data.onset_temperature as _))
-                    .radius(self.settings.radius_of_points);
-                if data.fatty_acid.is_saturated() {
+                    .radius(self.settings.plot.radius_of_points);
+                if data.fatty_acid.unsaturated.is_empty() {
                     points = points.shape(MarkerShape::Square);
                 }
                 ui.points(points);

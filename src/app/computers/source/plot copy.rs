@@ -15,6 +15,8 @@ use std::{
     hash::{Hash, Hasher},
 };
 
+pub(crate) const POINTS: &str = "Points";
+
 /// Source plot computed
 pub(crate) type Computed = FrameCache<Value, Computer>;
 
@@ -107,19 +109,19 @@ impl<'a> Key<'a> {
 // }
 
 /// Source plot value
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub(crate) struct Value {
     pub(crate) lines: Lines,
     pub(crate) index: HashMap<IndexKey, HashSet<PointValue>>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub(crate) struct Lines {
     pub(crate) temperature_step: Vec<TemperatureStepLine>,
     // pub(crate) onset_temperature: Vec<OnsetTemperatureLine>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub(crate) struct TemperatureStepLine {
     pub(crate) fatty_acid: FattyAcid,
     pub(crate) onset_temperature: f64,
@@ -163,6 +165,7 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     //         .select([col(CHAIN_LENGTH).struct_().field_by_name("*")])
     //         .collect()?
     // );
+
     lazy_frame = lazy_frame.select([
         col(MODE).struct_().field_by_name(ONSET_TEMPERATURE),
         col(MODE).struct_().field_by_name(TEMPERATURE_STEP),
@@ -184,13 +187,13 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
         col(FATTY_ACID),
         concat_arr(vec![col(RETENTION_TIME), col(EQUIVALENT_CHAIN_LENGTH)])?.alias(POINTS),
     ]);
-    lazy_frame = lazy_frame
+    let lazy_frame1 = lazy_frame
         .group_by([col(FATTY_ACID), col(ONSET_TEMPERATURE)])
         .agg([col(TEMPERATURE_STEP), col(POINTS)]);
     Ok(lazy_frame)
 }
 
-fn pack(data_frame: DataFrame, key: Key) -> PolarsResult<Value> {
+fn pack(mut data_frame: DataFrame, key: Key) -> PolarsResult<Value> {
     let mut value = Value::default();
     for (((fatty_acid, onset_temperature), temperature_steps), points) in data_frame[FATTY_ACID]
         .fatty_acid()
@@ -200,10 +203,7 @@ fn pack(data_frame: DataFrame, key: Key) -> PolarsResult<Value> {
         .zip(data_frame[TEMPERATURE_STEP].list()?.into_no_null_iter())
         .zip(data_frame[POINTS].list()?.into_no_null_iter())
     {
-        let Some(fatty_acid) = fatty_acid? else {
-            continue;
-        };
-        // let fatty_acid = fatty_acid?;
+        let fatty_acid = fatty_acid.unwrap(); // TODO
         let mut line_points = Vec::new();
         for (temperature_step, points) in temperature_steps
             .f64()?

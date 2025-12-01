@@ -1,19 +1,16 @@
 use crate::{
-    app::states::source::{Filter, Order, Settings, Sort},
+    app::states::source::Settings,
+    r#const::{
+        ABSOLUTE, CHAIN_LENGTH, DELTA, EQUIVALENT_CARBON_NUMBER, EQUIVALENT_CHAIN_LENGTH,
+        FRACTIONAL_CHAIN_LENGTH, MEAN, RELATIVE, RETENTION_TIME, SAMPLE, STANDARD_DEVIATION,
+        TEMPERATURE, *,
+    },
     utils::hash::HashedDataFrame,
 };
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;
 use polars_ext::expr::ExprExt;
-
-const RETENTION_TIME: &str = "RetentionTime";
-const ABSOLUTE: &str = "Absolute";
-const RELATIVE: &str = "Relative";
-const DELTA: &str = "Delta";
-const MEAN: &str = "Mean";
-const STANDARD_DEVIATION: &str = "StandardDeviation";
-const SAMPLE: &str = "Sample";
 
 /// Source display computed
 pub(crate) type Computed = FrameCache<Value, Computer>;
@@ -32,7 +29,7 @@ impl Computer {
 
 impl ComputerMut<Key<'_>, Value> for Computer {
     fn compute(&mut self, key: Key) -> Value {
-        self.try_compute(key).expect("compute source")
+        self.try_compute(key).expect("compute source display")
     }
 }
 
@@ -59,13 +56,16 @@ impl<'a> Key<'a> {
 type Value = DataFrame;
 
 fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
-    println!(
-        "lazy_frame: {}",
-        lazy_frame
-            .clone()
-            // .select([col(RETENTION_TIME).struct_().field_by_name("*")])
-            .collect()?
-    );
+    // println!(
+    //     "lazy_frame: {}",
+    //     lazy_frame
+    //         .clone()
+    //         .select([col(CHAIN_LENGTH).struct_().field_by_name("*")])
+    //         .collect()?
+    // );
+    // Filter
+    lazy_frame = lazy_frame.filter(col(FILTER));
+    // Compute
     lazy_frame = lazy_frame.with_columns([
         col(FATTY_ACID).fatty_acid().format(),
         as_struct(vec![
@@ -102,6 +102,52 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
                 .precision(key.precision, key.significant),
         ])
         .alias(RETENTION_TIME),
+        col(TEMPERATURE).precision(key.precision, key.significant),
+        as_struct(vec![
+            col(CHAIN_LENGTH)
+                .struct_()
+                .field_by_name(EQUIVALENT_CHAIN_LENGTH)
+                .precision(key.precision, key.significant),
+            col(CHAIN_LENGTH)
+                .struct_()
+                .field_by_name(FRACTIONAL_CHAIN_LENGTH)
+                .precision(key.precision, key.significant),
+            col(CHAIN_LENGTH)
+                .struct_()
+                .field_by_name(EQUIVALENT_CARBON_NUMBER)
+                .precision(key.precision, key.significant),
+        ])
+        .alias(CHAIN_LENGTH),
+        as_struct(vec![
+            col(MASS)
+                .struct_()
+                .field_by_name("RCO")
+                .precision(key.precision, key.significant),
+            col(MASS)
+                .struct_()
+                .field_by_name("RCOO")
+                .precision(key.precision, key.significant),
+            col(MASS)
+                .struct_()
+                .field_by_name("RCOOH")
+                .precision(key.precision, key.significant),
+            col(MASS)
+                .struct_()
+                .field_by_name("RCOOCH3")
+                .precision(key.precision, key.significant),
+        ])
+        .alias(MASS),
+        as_struct(vec![
+            col(DERIVATIVE)
+                .struct_()
+                .field_by_name(ANGLE)
+                .precision(key.precision, key.significant),
+            col(DERIVATIVE)
+                .struct_()
+                .field_by_name(SLOPE)
+                .precision(key.precision, key.significant),
+        ])
+        .alias(DERIVATIVE),
     ]);
     Ok(lazy_frame)
 }

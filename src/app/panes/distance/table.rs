@@ -1,8 +1,13 @@
-use crate::app::{
-    panes::{MARGIN, distance::ID_SOURCE, widgets::float::FloatValue},
-    states::distance::State,
+use crate::{
+    app::{
+        panes::{MARGIN, distance::ID_SOURCE},
+        states::distance::Settings,
+    },
+    r#const::*,
+    utils::polars::SeriesExt,
 };
 use egui::{Frame, Id, Margin, TextStyle, TextWrapMode, Ui};
+use egui_ext::ResponseExt;
 use egui_l20n::{ResponseExt as _, UiExt as _};
 use egui_phosphor::regular::HASH;
 use egui_table::{
@@ -11,30 +16,35 @@ use egui_table::{
 use lipid::prelude::*;
 use polars::prelude::*;
 use std::ops::Range;
+use tracing::instrument;
 
-const NUM_COLUMNS: usize = top::DISTANCE.end;
+pub(crate) const NUM_COLUMNS: usize = top::DISTANCE.end;
+
 const TOP: &[Range<usize>] = &[top::INDEX, top::MODE, top::FATTY_ACID, top::DISTANCE];
 
 /// Table view
 #[derive(Debug)]
 pub(crate) struct TableView<'a> {
     data_frame: &'a DataFrame,
-    state: &'a mut State,
+    settings: &'a mut Settings,
 }
 
 impl<'a> TableView<'a> {
-    pub(crate) const fn new(data_frame: &'a DataFrame, state: &'a mut State) -> Self {
-        Self { data_frame, state }
+    pub(crate) const fn new(data_frame: &'a DataFrame, settings: &'a mut Settings) -> Self {
+        Self {
+            data_frame,
+            settings,
+        }
     }
 }
 
 impl TableView<'_> {
     pub(super) fn show(&mut self, ui: &mut Ui) {
         let id_salt = Id::new(ID_SOURCE).with("Table");
-        if self.state.reset_table_state {
+        if self.settings.reset_table {
             let id = TableState::id(ui, Id::new(id_salt));
             TableState::reset(ui.ctx(), id);
-            self.state.reset_table_state = false;
+            self.settings.reset_table = false;
         }
         let height = ui.text_style_height(&TextStyle::Heading) + 2.0 * MARGIN.y;
         let num_rows = self.data_frame.height() as _;
@@ -43,11 +53,10 @@ impl TableView<'_> {
             .id_salt(id_salt)
             .num_rows(num_rows)
             .columns(vec![
-                Column::default()
-                    .resizable(self.state.settings.resizable);
+                Column::default().resizable(self.settings.resizable);
                 num_columns
             ])
-            .num_sticky_cols(self.state.settings.sticky)
+            .num_sticky_cols(self.settings.sticky)
             .headers([
                 HeaderRow {
                     height,
@@ -60,7 +69,7 @@ impl TableView<'_> {
     }
 
     fn header_cell_content_ui(&mut self, ui: &mut Ui, row: usize, column: Range<usize>) {
-        if self.state.settings.truncate {
+        if self.settings.truncate {
             ui.style_mut().wrap_mode = Some(TextWrapMode::Truncate);
         }
         match (row, column) {
@@ -69,7 +78,7 @@ impl TableView<'_> {
                 ui.heading(HASH).on_hover_localized("index");
             }
             (0, top::MODE) => {
-                ui.heading(ui.localize("mode"))
+                ui.heading(ui.localize("Mode"))
                     .on_hover_localized("mode.hover");
             }
             (0, top::FATTY_ACID) => {
@@ -100,7 +109,7 @@ impl TableView<'_> {
                     .on_hover_localized("retention-time-distance")
                     .on_hover_localized("retention-time-distance.hover");
             }
-            (1, bottom::ECL) => {
+            (1, bottom::EQUIVALENT_CHAIN_LENGTH) => {
                 ui.heading(ui.localize("equivalent-chain-length-distance.abbreviation"))
                     .on_hover_localized("equivalent-chain-length-distance")
                     .on_hover_localized("equivalent-chain-length-distance.hover");
@@ -119,6 +128,7 @@ impl TableView<'_> {
         }
     }
 
+    #[instrument(skip(self, ui), err)]
     fn body_cell_content_ui(
         &mut self,
         ui: &mut Ui,
@@ -127,118 +137,99 @@ impl TableView<'_> {
     ) -> PolarsResult<()> {
         match (row, column) {
             (row, top::INDEX) => {
-                ui.label(row.to_string());
+                ui.label(row.to_string())
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        ui.heading(ui.localize("DeadTime"));
+                        ui.label(self.data_frame[DEAD_TIME].get(row)?.str_value());
+                        Ok(())
+                    })?;
             }
             (row, bottom::ONSET) => {
-                let mode = self.data_frame["Mode"].struct_()?;
-                let onset_temperature = mode.field_by_name("OnsetTemperature")?;
-                ui.label(onset_temperature.str_value(row)?);
+                ui.label(
+                    self.data_frame[MODE]
+                        .struct_()?
+                        .field_by_name(ONSET_TEMPERATURE)?
+                        .str_value(row)?,
+                );
             }
             (row, bottom::STEP) => {
-                let mode = self.data_frame["Mode"].struct_()?;
-                let temperature_step = mode.field_by_name("TemperatureStep")?;
-                ui.label(temperature_step.str_value(row)?);
+                ui.label(
+                    self.data_frame[MODE]
+                        .struct_()?
+                        .field_by_name(TEMPERATURE_STEP)?
+                        .str_value(row)?,
+                );
             }
             (row, bottom::FROM) => {
-                let fatty_acid = self.data_frame["FattyAcid"]
-                    .struct_()?
-                    .field_by_name("From")?
-                    .fatty_acid()
-                    .get(row)?;
-                let Some(from) = fatty_acid else {
-                    polars_bail!(NoData: "FattyAcid/From[{row}]");
-                };
-                let text = format!("{:#}", from.delta());
-                ui.label(&text).on_hover_text(text);
+                ui.label(
+                    self.data_frame[FATTY_ACID]
+                        .struct_()?
+                        .field_by_name(FROM)?
+                        .str()?
+                        .get(row)
+                        .ok_or(polars_err!(NoData: "FattyAcid.From[{row}]"))?,
+                );
             }
             (row, bottom::TO) => {
-                let fatty_acid = self.data_frame["FattyAcid"]
-                    .struct_()?
-                    .field_by_name("To")?
-                    .fatty_acid()
-                    .get(row)?;
-                let Some(to) = fatty_acid else {
-                    polars_bail!(NoData: "FattyAcid/To[{row}]");
-                };
-                let text = format!("{:#}", to.delta());
-                ui.label(&text).on_hover_text(text);
+                ui.label(
+                    self.data_frame[FATTY_ACID]
+                        .struct_()?
+                        .field_by_name(TO)?
+                        .str()?
+                        .get(row)
+                        .ok_or(polars_err!(NoData: "FattyAcid.To[{row}]"))?,
+                );
             }
             (row, bottom::RETENTION_TIME) => {
-                let retention_time = self.data_frame["RetentionTime"].struct_()?;
-                let delta = retention_time.field_by_name("Delta")?;
-                ui.add(
-                    FloatValue::new(delta.f64()?.get(row))
-                        .precision(Some(self.state.settings.precision))
-                        .hover(),
-                )
-                .on_hover_ui(|ui| {
-                    let from = retention_time.field_by_name("From").unwrap();
-                    let to = retention_time.field_by_name("To").unwrap();
-                    ui.horizontal(|ui| {
-                        ui.label(to.str_value(row).unwrap());
-                        ui.label("-");
-                        ui.label(from.str_value(row).unwrap());
-                    });
-                });
+                let retention_time = self.data_frame[RETENTION_TIME].struct_()?;
+                ui.label(retention_time.field_by_name(DELTA)?.str_f64(row)?)
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+                        ui.label(format!(
+                            "{}-{}",
+                            retention_time.field_by_name(TO)?.str_f64(row)?,
+                            retention_time.field_by_name(FROM)?.str_f64(row)?
+                        ));
+                        Ok(())
+                    })?;
             }
-            (row, bottom::ECL) => {
-                let ecl = self.data_frame["EquivalentChainLength"].struct_()?;
-                let delta = ecl.field_by_name("Delta")?;
-                ui.add(
-                    FloatValue::new(delta.f64()?.get(row))
-                        .precision(Some(self.state.settings.precision))
-                        .hover(),
-                )
-                .on_hover_ui(|ui| {
-                    let from = ecl.field_by_name("From").unwrap();
-                    let to = ecl.field_by_name("To").unwrap();
-                    ui.horizontal(|ui| {
-                        ui.label(to.str_value(row).unwrap());
-                        ui.label("-");
-                        ui.label(from.str_value(row).unwrap());
-                    });
-                });
+            (row, bottom::EQUIVALENT_CHAIN_LENGTH) => {
+                let ecl = self.data_frame[EQUIVALENT_CHAIN_LENGTH].struct_()?;
+                ui.label(ecl.field_by_name(DELTA)?.str_f64(row)?)
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+                        ui.label(format!(
+                            "{}-{}",
+                            ecl.field_by_name(TO)?.str_f64(row)?,
+                            ecl.field_by_name(FROM)?.str_f64(row)?
+                        ));
+                        Ok(())
+                    })?;
             }
             (row, bottom::EUCLIDEAN) => {
-                let distance = self.data_frame["EuclideanDistance"].f64()?;
-                ui.add(
-                    FloatValue::new(distance.get(row))
-                        .precision(Some(self.state.settings.precision))
-                        .hover(),
+                ui.label(
+                    self.data_frame[EUCLIDEAN_DISTANCE]
+                        .as_materialized_series()
+                        .str_f64(row)?,
                 );
             }
             (row, bottom::ALPHA) => {
-                let alpha = self.data_frame["Alpha"].f64()?;
-                let response = ui.add(
-                    FloatValue::new(alpha.get(row))
-                        .precision(Some(self.state.settings.precision))
-                        .hover(),
-                );
-                response.on_hover_ui(|ui| {
-                    (|| -> PolarsResult<()> {
-                        // ui.spacing_mut().item_spacing.x = 0.0;
-                        let retention_time = self.data_frame["RetentionTime"].struct_()?;
-                        let dead_time = self.data_frame["DeadTime"].get(row)?.str_value();
-                        let from = retention_time.field_by_name("From")?;
-                        let to = retention_time.field_by_name("To")?;
-                        let from = from.str_value(row)?;
-                        let to = to.str_value(row)?;
-                        ui.horizontal(|ui| {
-                            let math =
-                                format!(r#"$\frac{{{to}-{dead_time}}}{{{from}-{dead_time}}}$"#);
-                            ui.label(math);
-                            // ui.label(to);
-                            // ui.label("-");
-                            // ui.label(&*dead_time);
-                            // ui.label("/");
-                            // ui.label(from);
-                            // ui.label("-");
-                            // ui.label(dead_time);
-                        });
-                        Ok(())
-                    })()
-                    .unwrap()
-                });
+                ui.label(
+                    self.data_frame[ALPHA]
+                        .as_materialized_series()
+                        .str_f64(row)?,
+                )
+                .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                    let retention_time = self.data_frame[RETENTION_TIME].struct_()?;
+                    let dead_time = self.data_frame[DEAD_TIME].get(row)?.str_value();
+                    let math = format!(
+                        r#"$\frac{{{}-{dead_time}}}{{{}-{dead_time}}}$"#,
+                        retention_time.field_by_name(TO)?.str_f64(row)?,
+                        retention_time.field_by_name(FROM)?.str_f64(row)?
+                    );
+                    ui.label(math);
+                    Ok(())
+                })?;
             }
             _ => {}
         }
@@ -263,8 +254,7 @@ impl TableDelegate for TableView<'_> {
         Frame::new()
             .inner_margin(Margin::from(MARGIN))
             .show(ui, |ui| {
-                self.body_cell_content_ui(ui, cell.row_nr as _, cell.col_nr..cell.col_nr + 1)
-                    .unwrap()
+                _ = self.body_cell_content_ui(ui, cell.row_nr as _, cell.col_nr..cell.col_nr + 1);
             });
     }
 }
@@ -281,14 +271,17 @@ mod top {
 mod bottom {
     use super::*;
 
+    // MODE
     pub(super) const ONSET: Range<usize> = top::MODE.start..top::MODE.start + 1;
     pub(super) const STEP: Range<usize> = ONSET.end..ONSET.end + 1;
-
-    pub(super) const FROM: Range<usize> = top::FATTY_ACID.start..top::FATTY_ACID.start + 1;
+    // FATTY_ACID
+    pub(super) const FROM: Range<usize> = STEP.end..STEP.end + 1;
     pub(super) const TO: Range<usize> = FROM.end..FROM.end + 1;
-
-    pub(super) const RETENTION_TIME: Range<usize> = top::DISTANCE.start..top::DISTANCE.start + 1;
-    pub(super) const ECL: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
-    pub(super) const EUCLIDEAN: Range<usize> = ECL.end..ECL.end + 1;
+    // DISTANCE
+    pub(super) const RETENTION_TIME: Range<usize> = TO.end..TO.end + 1;
+    pub(super) const EQUIVALENT_CHAIN_LENGTH: Range<usize> =
+        RETENTION_TIME.end..RETENTION_TIME.end + 1;
+    pub(super) const EUCLIDEAN: Range<usize> =
+        EQUIVALENT_CHAIN_LENGTH.end..EQUIVALENT_CHAIN_LENGTH.end + 1;
     pub(super) const ALPHA: Range<usize> = EUCLIDEAN.end..EUCLIDEAN.end + 1;
 }
