@@ -30,28 +30,28 @@ impl ModeSeries {
     }
 
     pub fn onset_temperature_range(&self) -> RangeInclusive<f64> {
-        if let Ok(onset_temperatures) = self.onset_temperature.f64() {
-            if let Some((min, max)) = onset_temperatures.min_max() {
-                return min..=max;
-            }
+        if let Ok(onset_temperatures) = self.onset_temperature.f64()
+            && let Some((min, max)) = onset_temperatures.min_max()
+        {
+            return min..=max;
         }
         0.0..=0.0
     }
 
     pub fn temperature_step_range(&self) -> RangeInclusive<f64> {
-        if let Ok(temperature_steps) = self.temperature_step.f64() {
-            if let Some((min, max)) = temperature_steps.min_max() {
-                return min..=max;
-            }
+        if let Ok(temperature_steps) = self.temperature_step.f64()
+            && let Some((min, max)) = temperature_steps.min_max()
+        {
+            return min..=max;
         }
         0.0..=0.0
     }
 
-    pub fn onset_temperature(&self) -> PolarsResult<OnsetTemperature> {
+    pub fn onset_temperature(&self) -> PolarsResult<OnsetTemperature<'_>> {
         OnsetTemperature::new(&self.onset_temperature)
     }
 
-    pub fn temperature_step(&self) -> PolarsResult<TemperatureStep> {
+    pub fn temperature_step(&self) -> PolarsResult<TemperatureStep<'_>> {
         TemperatureStep::new(&self.temperature_step)
     }
 }

@@ -94,7 +94,7 @@ impl Pane {
             })
             .inner;
         CentralPanel::default()
-            .frame(Frame::central_panel(&ui.style()))
+            .frame(Frame::central_panel(ui.style()))
             .show_inside(ui, |ui| {
                 self.central(ui, &mut state);
                 self.windows(ui, &mut state);
@@ -206,7 +206,7 @@ impl Pane {
                 })
                 .clicked()
             {
-                let _ = self.save_ron(&name, &meta);
+                let _ = self.save_ron(&name, meta);
             }
         });
     }

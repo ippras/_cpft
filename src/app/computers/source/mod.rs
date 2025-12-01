@@ -169,7 +169,7 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
             .alias("Derivative"),
         ]);
     // Filter
-    if let Some(predicate) = filter(&key.filter)? {
+    if let Some(predicate) = filter(key.filter)? {
         lazy_frame = lazy_frame.filter(predicate);
     }
     // Interpolate

@@ -36,7 +36,6 @@ polars = { git = "https://github.com/pola-rs/polars", rev = "fea5335", default-f
     "dtype-u8",
     "fmt_no_tty",
     "iejoin",
-    "ipc",
     "is_between",
     "lazy",
     "list_eval",
@@ -48,6 +47,7 @@ polars = { git = "https://github.com/pola-rs/polars", rev = "fea5335", default-f
     "sign",
     "trigonometry",
     #
+    # "ipc",
     # "parquet",
     # "interpolate",
     # "interpolate_by",

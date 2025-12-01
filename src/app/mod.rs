@@ -284,12 +284,10 @@ impl App {
                 ui.label(ui.localize("Vertical"));
             })
             .clicked()
+            && let Some(id) = self.tree.root
+            && let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id)
         {
-            if let Some(id) = self.tree.root {
-                if let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id) {
-                    container.set_kind(ContainerKind::Vertical);
-                }
-            }
+            container.set_kind(ContainerKind::Vertical);
         }
     }
 
@@ -301,12 +299,10 @@ impl App {
                 ui.label(ui.localize("Horizontal"));
             })
             .clicked()
+            && let Some(id) = self.tree.root
+            && let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id)
         {
-            if let Some(id) = self.tree.root {
-                if let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id) {
-                    container.set_kind(ContainerKind::Horizontal);
-                }
-            }
+            container.set_kind(ContainerKind::Horizontal);
         }
     }
 
@@ -318,12 +314,10 @@ impl App {
                 ui.label(ui.localize("Grid"));
             })
             .clicked()
+            && let Some(id) = self.tree.root
+            && let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id)
         {
-            if let Some(id) = self.tree.root {
-                if let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id) {
-                    container.set_kind(ContainerKind::Grid);
-                }
-            }
+            container.set_kind(ContainerKind::Grid);
         }
     }
 
@@ -335,12 +329,10 @@ impl App {
                 ui.label(ui.localize("Tabs"));
             })
             .clicked()
+            && let Some(id) = self.tree.root
+            && let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id)
         {
-            if let Some(id) = self.tree.root {
-                if let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id) {
-                    container.set_kind(ContainerKind::Tabs);
-                }
-            }
+            container.set_kind(ContainerKind::Tabs);
         }
     }
 
