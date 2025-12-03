@@ -81,34 +81,18 @@ impl Settings {
                 ui.end_row();
 
                 self.relative(ui);
-
-                // DDOF
-                // https://numpy.org/devdocs/reference/generated/numpy.std.html
-                ui.label(ui.localize("DeltaDegreesOfFreedom.abbreviation"))
-                    .on_hover_localized("DeltaDegreesOfFreedom")
-                    .on_hover_ui(|ui| {
-                        ui.hyperlink(
-                            "https://numpy.org/devdocs/reference/generated/numpy.std.html",
-                        );
-                    });
-                Slider::new(&mut self.ddof, 0..=2).ui(ui);
-                ui.end_row();
-
-                // Logarithmic
-                ui.label(ui.localize("LogarithmOfTheRetentionTime"))
-                    .on_hover_localized("LogarithmOfTheRetentionTime.hover");
-                ui.checkbox(&mut self.logarithmic, "");
-                ui.end_row();
+                self.ddof(ui);
+                self.logarithmic(ui);
 
                 // Filter
-                ui.heading("Filter");
+                ui.heading(ui.localize("Filter"));
                 ui.separator();
                 ui.end_row();
 
                 self.filter(ui);
 
                 // Sort, order
-                ui.heading("SortBy");
+                ui.heading(ui.localize("Sort"));
                 ui.separator();
                 ui.end_row();
 
@@ -116,7 +100,7 @@ impl Settings {
                 self.order(ui);
                 if let View::Plot = self.view {
                     // Plot
-                    ui.heading("Plot");
+                    ui.heading(ui.localize("Plot"));
                     ui.separator();
                     ui.end_row();
 
@@ -176,7 +160,7 @@ impl Settings {
         ui.end_row();
     }
 
-    // Sticky columns
+    /// Sticky columns
     fn sticky(&mut self, ui: &mut Ui) {
         ui.label(ui.localize("StickyColumns"))
             .on_hover_localized("StickyColumns.hover");
@@ -184,7 +168,7 @@ impl Settings {
         ui.end_row();
     }
 
-    // Truncate headers
+    /// Truncate headers
     fn truncate(&mut self, ui: &mut Ui) {
         ui.label(ui.localize("TruncateHeaders"))
             .on_hover_localized("TruncateHeaders.hover");
@@ -228,6 +212,26 @@ impl Settings {
                 self.relative = Some(MARGARIC);
             };
         });
+        ui.end_row();
+    }
+
+    /// DDOF
+    /// https://numpy.org/devdocs/reference/generated/numpy.std.html
+    fn ddof(&mut self, ui: &mut Ui) {
+        ui.label(ui.localize("DeltaDegreesOfFreedom.abbreviation"))
+            .on_hover_localized("DeltaDegreesOfFreedom")
+            .on_hover_ui(|ui| {
+                ui.hyperlink("https://numpy.org/devdocs/reference/generated/numpy.std.html");
+            });
+        Slider::new(&mut self.ddof, 0..=2).ui(ui);
+        ui.end_row();
+    }
+
+    /// Logarithmic
+    fn logarithmic(&mut self, ui: &mut Ui) {
+        ui.label(ui.localize("LogarithmOfTheRetentionTime"))
+            .on_hover_localized("LogarithmOfTheRetentionTime.hover");
+        ui.checkbox(&mut self.logarithmic, "");
         ui.end_row();
     }
 
@@ -322,7 +326,7 @@ impl Settings {
             .selected_text(text)
             .show_ui(ui, |ui| {
                 for fatty_acid in &self.cache.fatty_acids {
-                    let mut checked = !self.filter.fatty_acids.contains(&fatty_acid);
+                    let mut checked = !self.filter.fatty_acids.contains(fatty_acid);
                     if ui
                         .checkbox(&mut checked, fatty_acid.delta().to_string())
                         .changed()
@@ -359,8 +363,8 @@ impl Settings {
 
     /// Sort
     fn sort(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("SortBy"))
-            .on_hover_localized("SortBy.hover");
+        ui.label(ui.localize("Sort"))
+            .on_hover_localized("Sort.hover");
         ComboBox::from_id_salt(ui.next_auto_id())
             .selected_text(ui.localize(self.sort.text()))
             .show_ui(ui, |ui| {

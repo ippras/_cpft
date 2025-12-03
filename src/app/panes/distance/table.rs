@@ -115,15 +115,15 @@ impl TableView<'_> {
                     .on_hover_localized("EquivalentChainLengthDistance")
                     .on_hover_localized("EquivalentChainLengthDistance.hover");
             }
-            (1, bottom::EUCLIDEAN) => {
-                ui.heading(ui.localize("EuclideanDistance.abbreviation"))
-                    .on_hover_localized("EuclideanDistance")
-                    .on_hover_localized("EuclideanDistance.hover");
-            }
             (1, bottom::ALPHA) => {
                 ui.heading(ui.localize("Alpha.abbreviation"))
                     .on_hover_localized("Alpha")
                     .on_hover_localized("Alpha.hover");
+            }
+            (1, bottom::EUCLIDEAN) => {
+                ui.heading(ui.localize("EuclideanDistance.abbreviation"))
+                    .on_hover_localized("EuclideanDistance")
+                    .on_hover_localized("EuclideanDistance.hover");
             }
             _ => {}
         }
@@ -187,7 +187,7 @@ impl TableView<'_> {
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
                         ui.label(format!(
-                            "{}-{}",
+                            "{} - {}",
                             retention_time.field_by_name(TO)?.str_f64(row)?,
                             retention_time.field_by_name(FROM)?.str_f64(row)?
                         ));
@@ -200,19 +200,12 @@ impl TableView<'_> {
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
                         ui.label(format!(
-                            "{}-{}",
+                            "{} - {}",
                             ecl.field_by_name(TO)?.str_f64(row)?,
                             ecl.field_by_name(FROM)?.str_f64(row)?
                         ));
                         Ok(())
                     })?;
-            }
-            (row, bottom::EUCLIDEAN) => {
-                ui.label(
-                    self.data_frame[EUCLIDEAN_DISTANCE]
-                        .as_materialized_series()
-                        .str_f64(row)?,
-                );
             }
             (row, bottom::ALPHA) => {
                 ui.label(
@@ -223,12 +216,30 @@ impl TableView<'_> {
                 .try_on_hover_ui(|ui| -> PolarsResult<()> {
                     let retention_time = self.data_frame[RETENTION_TIME].struct_()?;
                     let dead_time = self.data_frame[DEAD_TIME].get(row)?.str_value();
-                    let math = format!(
-                        r#"$\frac{{{}-{dead_time}}}{{{}-{dead_time}}}$"#,
+                    ui.label(format!(
+                        "({} - {dead_time}) / ({} - {dead_time})",
                         retention_time.field_by_name(TO)?.str_f64(row)?,
                         retention_time.field_by_name(FROM)?.str_f64(row)?
-                    );
-                    ui.label(math);
+                    ));
+                    Ok(())
+                })?;
+            }
+            (row, bottom::EUCLIDEAN) => {
+                ui.label(
+                    self.data_frame[EUCLIDEAN]
+                        .as_materialized_series()
+                        .str_f64(row)?,
+                )
+                .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                    let retention_time = self.data_frame[RETENTION_TIME].struct_()?;
+                    let ecl = self.data_frame[EQUIVALENT_CHAIN_LENGTH].struct_()?;
+                    ui.label(format!(
+                        "√({} - {})^2 + ({} - {})^2",
+                        retention_time.field_by_name(TO)?.str_f64(row)?,
+                        retention_time.field_by_name(FROM)?.str_f64(row)?,
+                        ecl.field_by_name(TO)?.str_f64(row)?,
+                        ecl.field_by_name(FROM)?.str_f64(row)?
+                    ));
                     Ok(())
                 })?;
             }
@@ -282,7 +293,7 @@ mod bottom {
     pub(super) const RETENTION_TIME: Range<usize> = TO.end..TO.end + 1;
     pub(super) const EQUIVALENT_CHAIN_LENGTH: Range<usize> =
         RETENTION_TIME.end..RETENTION_TIME.end + 1;
-    pub(super) const EUCLIDEAN: Range<usize> =
+    pub(super) const ALPHA: Range<usize> =
         EQUIVALENT_CHAIN_LENGTH.end..EQUIVALENT_CHAIN_LENGTH.end + 1;
-    pub(super) const ALPHA: Range<usize> = EUCLIDEAN.end..EUCLIDEAN.end + 1;
+    pub(super) const EUCLIDEAN: Range<usize> = ALPHA.end..ALPHA.end + 1;
 }

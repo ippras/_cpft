@@ -1,5 +1,5 @@
 use crate::{
-    app::states::distance::{Filter, Order, Priority, Settings, Sort},
+    app::states::distance::{Aggregation, Filter, Order, Priority, Settings, Sort},
     r#const::*,
     utils::hash::HashedDataFrame,
 };
@@ -161,16 +161,16 @@ fn sort(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
 
 /// Extension methods for [`Expr`]
 trait ExprExt {
-    fn aggregate(self, aggregation: Priority) -> Expr;
+    fn aggregate(self, priority: Priority) -> Expr;
 }
 
 impl ExprExt for Expr {
-    fn aggregate(self, aggregation: Priority) -> Expr {
-        match aggregation {
-            Priority::Maximum => self.abs().max(),
-            Priority::Mean => self.abs().mean(),
-            Priority::Median => self.abs().median(),
-            Priority::Minimum => self.abs().min(),
+    fn aggregate(self, priority: Priority) -> Expr {
+        match priority.aggregation {
+            Aggregation::Maximum => self.abs().max(),
+            Aggregation::Mean => self.abs().mean(),
+            Aggregation::Median => self.abs().median(),
+            Aggregation::Minimum => self.abs().min(),
         }
         .over([col(MODE)])
     }

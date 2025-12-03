@@ -4,19 +4,27 @@ use crate::{
         panes::distance::table::NUM_COLUMNS,
         states::source::{Axis, Filter, Order, PlotSettings, View},
     },
+    r#const::{ALPHA, EQUIVALENT_CHAIN_LENGTH, EUCLIDEAN},
     localization::Text,
 };
+use const_format::formatcp;
 use egui::{ComboBox, Grid, Slider, Ui, Widget as _};
 use egui_l20n::prelude::*;
 use egui_phosphor::regular::BOOKMARK;
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};
 
-const PRIORITIES: [Priority; 4] = [
-    Priority::Maximum,
-    Priority::Mean,
-    Priority::Median,
-    Priority::Minimum,
+const AGGREGATIONS: [Aggregation; 4] = [
+    Aggregation::Maximum,
+    Aggregation::Mean,
+    Aggregation::Median,
+    Aggregation::Minimum,
+];
+
+const DISTANCES: [Distance; 3] = [
+    Distance::Alpha,
+    Distance::EquivalentChainLength,
+    Distance::Euclidean,
 ];
 
 /// Settings
@@ -50,7 +58,7 @@ impl Settings {
             filter: Filter::new(),
             sort: Sort::Value,
             order: Order::Descending,
-            priority: Priority::Median,
+            priority: Priority::new(),
 
             view: View::Table,
             plot: PlotSettings::new(),
@@ -81,7 +89,13 @@ impl Settings {
 
             self.sort(ui);
             self.order(ui);
-            self.priority(ui);
+
+            ui.label(ui.localize("Priority"));
+            ui.separator();
+            ui.end_row();
+
+            self.distance(ui);
+            self.aggregation(ui);
 
             if let View::Plot = self.view {
                 // Plot
@@ -206,26 +220,52 @@ impl Settings {
         ui.end_row();
     }
 
-    /// Priority
-    fn priority(&mut self, ui: &mut Ui) {
+    /// Distance
+    fn distance(&mut self, ui: &mut Ui) {
+        ui.label(ui.localize("SortByDistance"))
+            .on_hover_localized("SortByDistance.hover");
+        let enabled = self.sort == Sort::Value;
+        ui.add_enabled_ui(enabled, |ui| {
+            ComboBox::from_id_salt(ui.next_auto_id())
+                .selected_text(ui.localize(self.priority.distance.text()))
+                .show_ui(ui, |ui| {
+                    for distance in DISTANCES {
+                        ui.selectable_value(
+                            &mut self.priority.distance,
+                            distance,
+                            ui.localize(distance.text()),
+                        )
+                        .on_hover_localized(distance.hover_text());
+                    }
+                })
+                .response
+                .on_hover_localized(self.priority.distance.hover_text());
+        })
+        .response
+        .on_disabled_hover_text("Used only for sort by value");
+        ui.end_row();
+    }
+
+    /// Aggregation
+    fn aggregation(&mut self, ui: &mut Ui) {
         ui.label(ui.localize("SortByAggregation"))
             .on_hover_localized("SortByAggregation.hover");
         let enabled = self.sort == Sort::Value;
         ui.add_enabled_ui(enabled, |ui| {
             ComboBox::from_id_salt(ui.next_auto_id())
-                .selected_text(ui.localize(self.priority.text()))
+                .selected_text(ui.localize(self.priority.aggregation.text()))
                 .show_ui(ui, |ui| {
-                    for priority in PRIORITIES {
+                    for aggregation in AGGREGATIONS {
                         ui.selectable_value(
-                            &mut self.priority,
-                            priority,
-                            ui.localize(priority.text()),
+                            &mut self.priority.aggregation,
+                            aggregation,
+                            ui.localize(aggregation.text()),
                         )
-                        .on_hover_localized(priority.hover_text());
+                        .on_hover_localized(aggregation.hover_text());
                     }
                 })
                 .response
-                .on_hover_localized(self.priority.hover_text());
+                .on_hover_localized(self.priority.aggregation.hover_text());
         })
         .response
         .on_disabled_hover_text("Used only for sort by value");
@@ -264,14 +304,99 @@ impl Text for Sort {
 
 /// Priority
 #[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
-pub(crate) enum Priority {
+pub(crate) struct Priority {
+    pub(crate) aggregation: Aggregation,
+    pub(crate) distance: Distance,
+}
+
+impl Priority {
+    fn new() -> Self {
+        Self {
+            aggregation: Aggregation::Median,
+            distance: Distance::Alpha,
+        }
+    }
+
+    pub(crate) const fn id(&self) -> &'static str {
+        match self {
+            Priority {
+                aggregation: Aggregation::Maximum,
+                distance: Distance::Alpha,
+            } => formatcp!("{ALPHA}.Max"),
+            Priority {
+                aggregation: Aggregation::Mean,
+                distance: Distance::Alpha,
+            } => formatcp!("{ALPHA}.Mean"),
+            Priority {
+                aggregation: Aggregation::Median,
+                distance: Distance::Alpha,
+            } => formatcp!("{ALPHA}.Median"),
+            Priority {
+                aggregation: Aggregation::Minimum,
+                distance: Distance::Alpha,
+            } => formatcp!("{ALPHA}.Min"),
+            Priority {
+                aggregation: Aggregation::Maximum,
+                distance: Distance::EquivalentChainLength,
+            } => formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Max"),
+            Priority {
+                aggregation: Aggregation::Mean,
+                distance: Distance::EquivalentChainLength,
+            } => formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Mean"),
+            Priority {
+                aggregation: Aggregation::Median,
+                distance: Distance::EquivalentChainLength,
+            } => formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Median"),
+            Priority {
+                aggregation: Aggregation::Minimum,
+                distance: Distance::EquivalentChainLength,
+            } => formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Min"),
+            Priority {
+                aggregation: Aggregation::Maximum,
+                distance: Distance::Euclidean,
+            } => formatcp!("{EUCLIDEAN}.Max"),
+            Priority {
+                aggregation: Aggregation::Mean,
+                distance: Distance::Euclidean,
+            } => formatcp!("{EUCLIDEAN}.Mean"),
+            Priority {
+                aggregation: Aggregation::Median,
+                distance: Distance::Euclidean,
+            } => formatcp!("{EUCLIDEAN}.Median"),
+            Priority {
+                aggregation: Aggregation::Minimum,
+                distance: Distance::Euclidean,
+            } => formatcp!("{EUCLIDEAN}.Min"),
+        }
+    }
+
+    // pub(crate) const fn aggregation(&self) -> &'static str {
+    //     match self.aggregation {
+    //         Aggregation::Maximum => "Max",
+    //         Aggregation::Mean => "Mean",
+    //         Aggregation::Median => "Median",
+    //         Aggregation::Minimum => "Min",
+    //     }
+    // }
+
+    // pub(crate) const fn distance(&self) -> &'static str {
+    //     match self.distance {
+    //         Distance::Alpha => "Alpha",
+    //         Distance::Euclidean => "Euclidean",
+    //     }
+    // }
+}
+
+/// Aggregation
+#[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
+pub(crate) enum Aggregation {
     Maximum,
     Mean,
     Median,
     Minimum,
 }
 
-impl Text for Priority {
+impl Text for Aggregation {
     fn text(&self) -> &'static str {
         match self {
             Self::Maximum => "SortByMaximum",
@@ -287,6 +412,32 @@ impl Text for Priority {
             Self::Mean => "SortByMean.hover",
             Self::Median => "SortByMedian.hover",
             Self::Minimum => "SortByMinimum.hover",
+        }
+    }
+}
+
+/// Distance
+#[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
+pub(crate) enum Distance {
+    Alpha,
+    EquivalentChainLength,
+    Euclidean,
+}
+
+impl Text for Distance {
+    fn text(&self) -> &'static str {
+        match self {
+            Self::Alpha => "Alpha",
+            Self::EquivalentChainLength => "EquivalentChainLength",
+            Self::Euclidean => "Euclidean",
+        }
+    }
+
+    fn hover_text(&self) -> &'static str {
+        match self {
+            Self::Alpha => "Alpha.hover",
+            Self::EquivalentChainLength => "EquivalentChainLength.hover",
+            Self::Euclidean => "Euclidean.hover",
         }
     }
 }

@@ -1,3 +1,5 @@
+Все комбинации жирных кислот (старыйй вариант)
+
 use crate::{app::states::distance::Settings, r#const::*, utils::hash::HashedDataFrame};
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::FATTY_ACID;
@@ -43,87 +45,56 @@ impl<'a> Key<'a> {
 type Value = HashedDataFrame;
 
 fn join(mut lazy_frame: LazyFrame, key: Key) -> LazyFrame {
-    // lazy_frame = lazy_frame
-    //     .clone()
-    //     .select([
-    //         col(MODE).alias("LeftKey"),
-    //         as_struct(vec![
-    //             col(FATTY_ACID),
-    //             col(RETENTION_TIME)
-    //                 .struct_()
-    //                 .field_by_name(ABSOLUTE)
-    //                 .struct_()
-    //                 .field_by_name(MEAN)
-    //                 .name()
-    //                 .keep(),
-    //             col(CHAIN_LENGTH)
-    //                 .struct_()
-    //                 .field_by_name(EQUIVALENT_CHAIN_LENGTH),
-    //         ])
-    //         .alias(FROM),
-    //         col(MODE),
-    //         col(DEAD_TIME),
-    //     ])
-    //     .with_row_index("LeftIndex", None)
-    //     .join_builder()
-    //     .with(
-    //         lazy_frame
-    //             .select([
-    //                 col(MODE).alias("RightKey"),
-    //                 as_struct(vec![
-    //                     col(FATTY_ACID),
-    //                     col(RETENTION_TIME)
-    //                         .struct_()
-    //                         .field_by_name(ABSOLUTE)
-    //                         .struct_()
-    //                         .field_by_name(MEAN)
-    //                         .name()
-    //                         .keep(),
-    //                     col(CHAIN_LENGTH)
-    //                         .struct_()
-    //                         .field_by_name(EQUIVALENT_CHAIN_LENGTH),
-    //                 ])
-    //                 .alias(TO),
-    //             ])
-    //             .with_row_index("RightIndex", None),
-    //     )
-    //     .join_where(vec![
-    //         // Same modes
-    //         col("LeftKey").eq(col("RightKey")),
-    //         // Fatty asids not equals combination
-    //         col("LeftIndex").lt(col("RightIndex")),
-    //     ]);
-    let retention_time = col(RETENTION_TIME)
-        .struct_()
-        .field_by_name(ABSOLUTE)
-        .struct_()
-        .field_by_name(MEAN);
-    let fatty_acid = as_struct(vec![
-        col(FATTY_ACID),
-        retention_time.clone().name().keep(),
-        col(CHAIN_LENGTH)
-            .struct_()
-            .field_by_name(EQUIVALENT_CHAIN_LENGTH),
-    ]);
-    // ВАЖНО: Сортируем данные, чтобы гарантировать последовательность по времени удерживания
-    lazy_frame = lazy_frame.sort_by_exprs(
-        vec![col(MODE), retention_time],
-        SortMultipleOptions::default(),
-    );
-    lazy_frame = lazy_frame.select([
-        col(MODE),
-        col(DEAD_TIME),
-        // Колонка FROM: Текущая строка
-        fatty_acid.clone().alias(FROM),
-        // Колонка TO: Следующая строка (сдвиг на -1)
-        fatty_acid
-            .shift(lit(-1)) // Сдвигаем "вверх", чтобы получить следующую строку в текущую
-            .over([col(MODE)]) // Группируем по MODE, чтобы конец одной группы не соединился с началом другой
-            .alias(TO),
-    ]);
-    // Убираем последние строки в каждой группе, у которых нет пары (TO is null)
-    lazy_frame = lazy_frame.filter(col(TO).is_not_null());
-    println!("!!!!!!!!!1: {}", lazy_frame.clone().collect().unwrap());
+    lazy_frame = lazy_frame
+        .clone()
+        .select([
+            col(MODE).alias("LeftKey"),
+            as_struct(vec![
+                col(FATTY_ACID),
+                col(RETENTION_TIME)
+                    .struct_()
+                    .field_by_name(ABSOLUTE)
+                    .struct_()
+                    .field_by_name(MEAN)
+                    .name()
+                    .keep(),
+                col(CHAIN_LENGTH)
+                    .struct_()
+                    .field_by_name(EQUIVALENT_CHAIN_LENGTH),
+            ])
+            .alias(FROM),
+            col(MODE),
+            col(DEAD_TIME),
+        ])
+        .with_row_index("LeftIndex", None)
+        .join_builder()
+        .with(
+            lazy_frame
+                .select([
+                    col(MODE).alias("RightKey"),
+                    as_struct(vec![
+                        col(FATTY_ACID),
+                        col(RETENTION_TIME)
+                            .struct_()
+                            .field_by_name(ABSOLUTE)
+                            .struct_()
+                            .field_by_name(MEAN)
+                            .name()
+                            .keep(),
+                        col(CHAIN_LENGTH)
+                            .struct_()
+                            .field_by_name(EQUIVALENT_CHAIN_LENGTH),
+                    ])
+                    .alias(TO),
+                ])
+                .with_row_index("RightIndex", None),
+        )
+        .join_where(vec![
+            // Same modes
+            col("LeftKey").eq(col("RightKey")),
+            // Fatty asids not equals combination
+            col("LeftIndex").lt(col("RightIndex")),
+        ]);
     // Restructure
     lazy_frame
         .select([

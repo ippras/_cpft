@@ -22,7 +22,7 @@ pub(crate) struct Computer;
 impl Computer {
     fn try_compute(&mut self, key: Key) -> PolarsResult<Value> {
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
-        lazy_frame = compute(lazy_frame, key)?;
+        lazy_frame = format(lazy_frame, key)?;
         lazy_frame.collect()
     }
 }
@@ -55,7 +55,7 @@ impl<'a> Key<'a> {
 /// Distance display value
 type Value = DataFrame;
 
-fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
+fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     println!("lazy_frame DD: {}", lazy_frame.clone().collect()?);
     // Filter
     // lazy_frame = lazy_frame.filter(col(FILTER));
@@ -105,7 +105,7 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
         ])
         .alias(EQUIVALENT_CHAIN_LENGTH),
         col(ALPHA).precision(key.precision, key.significant),
-        col(EUCLIDEAN_DISTANCE).precision(key.precision, key.significant),
+        col(EUCLIDEAN).precision(key.precision, key.significant),
         // col(TEMPERATURE).precision(key.precision, key.significant),
         // as_struct(vec![
         //     col(CHAIN_LENGTH)

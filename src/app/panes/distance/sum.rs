@@ -3,8 +3,11 @@ use crate::{
         panes::{MARGIN, distance::ID_SOURCE},
         states::distance::Settings,
     },
-    r#const::{MODE, ONSET_TEMPERATURE, TEMPERATURE_STEP},
+    r#const::{
+        ALPHA, EQUIVALENT_CHAIN_LENGTH, EUCLIDEAN, MODE, ONSET_TEMPERATURE, TEMPERATURE_STEP,
+    },
 };
+use const_format::formatcp;
 use egui::{Frame, Id, Margin, Response, TextStyle, TextWrapMode, Ui, Widget};
 use egui_l20n::prelude::*;
 use egui_table::{
@@ -14,13 +17,13 @@ use polars::prelude::*;
 use std::ops::Range;
 use tracing::instrument;
 
-const NUM_COLUMNS: usize = top::EUCLIDEAN_DISTANCE.end;
+const NUM_COLUMNS: usize = top::EUCLIDEAN.end;
 
 const TOP: &[Range<usize>] = &[
     top::MODE,
     top::ALPHA,
     top::EQUIVALENT_CHAIN_LENGTH,
-    top::EUCLIDEAN_DISTANCE,
+    top::EUCLIDEAN,
 ];
 
 /// Sum widget
@@ -88,48 +91,61 @@ impl<'a> Sum<'a> {
                         ui.localize("EquivalentChainLength.hover");
                     });
             }
-            (0, top::EUCLIDEAN_DISTANCE) => {
+            (0, top::EUCLIDEAN) => {
                 ui.heading(ui.localize("EuclideanDistance"))
                     .on_hover_ui(|ui| {
                         ui.localize("EuclideanDistance.hover");
                     });
             }
             // Bottom
-            (1, bottom::ONSET) => {
+            (1, bottom::mode::ONSET) => {
                 ui.heading(ui.localize("OnsetTemperature.abbreviation"))
                     .on_hover_ui(|ui| {
                         ui.localize("OnsetTemperature.hover");
                     });
             }
-            (1, bottom::STEP) => {
+            (1, bottom::mode::STEP) => {
                 ui.heading(ui.localize("TemperatureStep.abbreviation"))
                     .on_hover_ui(|ui| {
                         ui.localize("TemperatureStep.hover");
                     });
             }
-            (1, column) => match column.start.saturating_sub(2).rem_euclid(4) {
-                0 => {
-                    ui.heading(ui.localize("Maximum")).on_hover_ui(|ui| {
-                        ui.localize("Maximum.hover");
-                    });
-                }
-                1 => {
-                    ui.heading(ui.localize("Mean")).on_hover_ui(|ui| {
-                        ui.localize("Mean.hover");
-                    });
-                }
-                2 => {
-                    ui.heading(ui.localize("Median")).on_hover_ui(|ui| {
-                        ui.localize("Median.hover");
-                    });
-                }
-                3 => {
-                    ui.heading(ui.localize("Minimum")).on_hover_ui(|ui| {
-                        ui.localize("Minimum.hover");
-                    });
-                }
-                _ => unreachable!(),
-            },
+            (
+                1,
+                bottom::alpha::MAX | bottom::equivalent_chain_length::MAX | bottom::euclidean::MAX,
+            ) => {
+                ui.heading(ui.localize("Maximum")).on_hover_ui(|ui| {
+                    ui.localize("Maximum.hover");
+                });
+            }
+            (
+                1,
+                bottom::alpha::MEAN
+                | bottom::equivalent_chain_length::MEAN
+                | bottom::euclidean::MEAN,
+            ) => {
+                ui.heading(ui.localize("Mean")).on_hover_ui(|ui| {
+                    ui.localize("Mean.hover");
+                });
+            }
+            (
+                1,
+                bottom::alpha::MEDIAN
+                | bottom::equivalent_chain_length::MEDIAN
+                | bottom::euclidean::MEDIAN,
+            ) => {
+                ui.heading(ui.localize("Median")).on_hover_ui(|ui| {
+                    ui.localize("Median.hover");
+                });
+            }
+            (
+                1,
+                bottom::alpha::MIN | bottom::equivalent_chain_length::MIN | bottom::euclidean::MIN,
+            ) => {
+                ui.heading(ui.localize("Minimum")).on_hover_ui(|ui| {
+                    ui.localize("Minimum.hover");
+                });
+            }
             _ => {}
         }
     }
@@ -142,7 +158,7 @@ impl<'a> Sum<'a> {
         column: Range<usize>,
     ) -> PolarsResult<()> {
         match (row, column) {
-            (row, bottom::ONSET) => {
+            (row, bottom::mode::ONSET) => {
                 ui.label(
                     self.data_frame[MODE]
                         .struct_()?
@@ -151,7 +167,7 @@ impl<'a> Sum<'a> {
                         .str_value(),
                 );
             }
-            (row, bottom::STEP) => {
+            (row, bottom::mode::STEP) => {
                 ui.label(
                     self.data_frame[MODE]
                         .struct_()?
@@ -160,61 +176,94 @@ impl<'a> Sum<'a> {
                         .str_value(),
                 );
             }
+            (row, bottom::alpha::MAX) => {
+                ui.label(
+                    self.data_frame[formatcp!("{ALPHA}.Max")]
+                        .get(row)?
+                        .str_value(),
+                );
+            }
+            (row, bottom::alpha::MEAN) => {
+                ui.label(
+                    self.data_frame[formatcp!("{ALPHA}.Mean")]
+                        .get(row)?
+                        .str_value(),
+                );
+            }
+            (row, bottom::alpha::MEDIAN) => {
+                ui.label(
+                    self.data_frame[formatcp!("{ALPHA}.Median")]
+                        .get(row)?
+                        .str_value(),
+                );
+            }
+            (row, bottom::alpha::MIN) => {
+                ui.label(
+                    self.data_frame[formatcp!("{ALPHA}.Min")]
+                        .get(row)?
+                        .str_value(),
+                );
+            }
+            (row, bottom::equivalent_chain_length::MAX) => {
+                ui.label(
+                    self.data_frame[formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Max")]
+                        .get(row)?
+                        .str_value(),
+                );
+            }
+            (row, bottom::equivalent_chain_length::MEAN) => {
+                ui.label(
+                    self.data_frame[formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Mean")]
+                        .get(row)?
+                        .str_value(),
+                );
+            }
+            (row, bottom::equivalent_chain_length::MEDIAN) => {
+                ui.label(
+                    self.data_frame[formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Median")]
+                        .get(row)?
+                        .str_value(),
+                );
+            }
+            (row, bottom::equivalent_chain_length::MIN) => {
+                ui.label(
+                    self.data_frame[formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Min")]
+                        .get(row)?
+                        .str_value(),
+                );
+            }
+            (row, bottom::euclidean::MAX) => {
+                ui.label(
+                    self.data_frame[formatcp!("{EUCLIDEAN}.Max")]
+                        .get(row)?
+                        .str_value(),
+                );
+            }
+            (row, bottom::euclidean::MEAN) => {
+                ui.label(
+                    self.data_frame[formatcp!("{EUCLIDEAN}.Mean")]
+                        .get(row)?
+                        .str_value(),
+                );
+            }
+            (row, bottom::euclidean::MEDIAN) => {
+                ui.label(
+                    self.data_frame[formatcp!("{EUCLIDEAN}.Median")]
+                        .get(row)?
+                        .str_value(),
+                );
+            }
+            (row, bottom::euclidean::MIN) => {
+                ui.label(
+                    self.data_frame[formatcp!("{EUCLIDEAN}.Min")]
+                        .get(row)?
+                        .str_value(),
+                );
+            }
             _ => {}
         }
         Ok(())
     }
-
-    // pub(crate) fn _show(self, ui: &mut Ui) -> Response {
-    //     let mut response = ui.response();
-    //     let height = ui.text_style_height(&TextStyle::Body);
-    //     let width = ui.spacing().combo_width;
-    //     ui.style_mut().wrap_mode = Some(TextWrapMode::Truncate);
-    //     response.rect = TableBuilder::new(ui)
-    //         .resizable(true)
-    //         .striped(true)
-    //         .column(Column::auto().resizable(true))
-    //         .columns(
-    //             Column::remainder().at_least(width / 2.0),
-    //             // .auto_size_this_frame(self.auto_size),
-    //             self.data_frame.width(),
-    //         )
-    //         .header(height, |mut row| {
-    //             for name in self.data_frame.get_column_names_str() {
-    //                 row.col(|ui| {
-    //                     ui.heading(name);
-    //                 });
-    //             }
-    //         })
-    //         .body(|body| {
-    //             body.rows(height, self.data_frame.height(), |mut row| {
-    //                 let index = row.index();
-    //                 let mut iter = self.data_frame.iter();
-    //                 if let Some(series) = iter.next() {
-    //                     row.col(|ui| {
-    //                         let text = series.get(index).unwrap().str_value();
-    //                         ui.label(text);
-    //                     });
-    //                 }
-    //                 for series in iter {
-    //                     row.col(|ui| {
-    //                         // let value = series.f64().unwrap().get(index).unwrap();
-    //                         // let sign = Sign::from(value);
-    //                         // let mut color = ui.style().visuals.text_color();
-    //                         // if self.chaddock {
-    //                         //     color = sign.chaddock().color(color);
-    //                         // } else {
-    //                         //     color = sign.color(color);
-    //                         // }
-    //                         let text = series.str_f64(index).unwrap();
-    //                         ui.label(text);
-    //                     });
-    //                 }
-    //             });
-    //         })
-    //         .inner_rect;
-    //     response
-    // }
 }
 
 impl TableDelegate for Sum<'_> {
@@ -251,21 +300,56 @@ mod top {
     pub(super) const MODE: Range<usize> = 0..2;
     pub(super) const ALPHA: Range<usize> = MODE.end..MODE.end + 4;
     pub(super) const EQUIVALENT_CHAIN_LENGTH: Range<usize> = ALPHA.end..ALPHA.end + 4;
-    pub(super) const EUCLIDEAN_DISTANCE: Range<usize> =
+    pub(super) const EUCLIDEAN: Range<usize> =
         EQUIVALENT_CHAIN_LENGTH.end..EQUIVALENT_CHAIN_LENGTH.end + 4;
 }
 
 mod bottom {
     use super::*;
 
-    pub(super) const ONSET: Range<usize> = top::MODE.start..top::MODE.start + 1;
-    pub(super) const STEP: Range<usize> = ONSET.end..ONSET.end + 1;
+    // MODE
+    pub(super) mod mode {
+        use super::*;
 
-    // pub(super) const FROM: Range<usize> = top::FATTY_ACID.start..top::FATTY_ACID.start + 1;
-    // pub(super) const TO: Range<usize> = FROM.end..FROM.end + 1;
+        const TOP: Range<usize> = top::MODE;
 
-    // pub(super) const RETENTION_TIME: Range<usize> = top::DISTANCE.start..top::DISTANCE.start + 1;
-    // pub(super) const ECL: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
-    // pub(super) const EUCLIDEAN: Range<usize> = ECL.end..ECL.end + 1;
-    // pub(super) const ALPHA: Range<usize> = EUCLIDEAN.end..EUCLIDEAN.end + 1;
+        pub(in super::super) const ONSET: Range<usize> = TOP.start..TOP.start + 1;
+        pub(in super::super) const STEP: Range<usize> = ONSET.end..ONSET.end + 1;
+    }
+
+    // ALPHA
+    pub(super) mod alpha {
+        use super::*;
+
+        const TOP: Range<usize> = top::ALPHA;
+
+        pub(in super::super) const MAX: Range<usize> = TOP.start..TOP.start + 1;
+        pub(in super::super) const MEAN: Range<usize> = MAX.end..MAX.end + 1;
+        pub(in super::super) const MEDIAN: Range<usize> = MEAN.end..MEAN.end + 1;
+        pub(in super::super) const MIN: Range<usize> = MEDIAN.end..MEDIAN.end + 1;
+    }
+
+    // EQUIVALENT_CHAIN_LENGTH
+    pub(super) mod equivalent_chain_length {
+        use super::*;
+
+        const TOP: Range<usize> = top::EQUIVALENT_CHAIN_LENGTH;
+
+        pub(in super::super) const MAX: Range<usize> = TOP.start..TOP.start + 1;
+        pub(in super::super) const MEAN: Range<usize> = MAX.end..MAX.end + 1;
+        pub(in super::super) const MEDIAN: Range<usize> = MEAN.end..MEAN.end + 1;
+        pub(in super::super) const MIN: Range<usize> = MEDIAN.end..MEDIAN.end + 1;
+    }
+
+    // EUCLIDEAN_DISTANCE
+    pub(super) mod euclidean {
+        use super::*;
+
+        const TOP: Range<usize> = top::EUCLIDEAN;
+
+        pub(in super::super) const MAX: Range<usize> = TOP.start..TOP.start + 1;
+        pub(in super::super) const MEAN: Range<usize> = MAX.end..MAX.end + 1;
+        pub(in super::super) const MEDIAN: Range<usize> = MEAN.end..MEAN.end + 1;
+        pub(in super::super) const MIN: Range<usize> = MEDIAN.end..MEDIAN.end + 1;
+    }
 }

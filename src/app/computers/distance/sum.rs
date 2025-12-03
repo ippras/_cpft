@@ -1,5 +1,5 @@
 use crate::{
-    app::states::distance::{Filter, Order, Priority, Settings, Sort},
+    app::states::distance::{Aggregation, Distance, Filter, Order, Priority, Settings, Sort},
     r#const::*,
     utils::hash::HashedDataFrame,
 };
@@ -118,14 +118,10 @@ fn group(lazy_frame: LazyFrame) -> LazyFrame {
             .keep()
             .name()
             .suffix(".Min"),
-        col(EUCLIDEAN_DISTANCE).abs().max().name().suffix(".Max"),
-        col(EUCLIDEAN_DISTANCE).abs().mean().name().suffix(".Mean"),
-        col(EUCLIDEAN_DISTANCE)
-            .abs()
-            .median()
-            .name()
-            .suffix(".Median"),
-        col(EUCLIDEAN_DISTANCE).abs().min().name().suffix(".Min"),
+        col(EUCLIDEAN).abs().max().name().suffix(".Max"),
+        col(EUCLIDEAN).abs().mean().name().suffix(".Mean"),
+        col(EUCLIDEAN).abs().median().name().suffix(".Median"),
+        col(EUCLIDEAN).abs().min().name().suffix(".Min"),
     ])
 }
 
@@ -138,12 +134,7 @@ fn sort(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
     lazy_frame.sort_by_exprs(
         match key.sort {
             Sort::Key => vec![col(MODE)],
-            Sort::Value => match key.priority {
-                Priority::Maximum => vec![col(formatcp!("{ALPHA}.Max"))],
-                Priority::Mean => vec![col(formatcp!("{ALPHA}.Mean"))],
-                Priority::Median => vec![col(formatcp!("{ALPHA}.Median"))],
-                Priority::Minimum => vec![col(formatcp!("{ALPHA}.Min"))],
-            },
+            Sort::Value => vec![col(key.priority.id())],
         },
         sort_options,
     )

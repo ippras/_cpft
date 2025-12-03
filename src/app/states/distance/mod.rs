@@ -1,5 +1,5 @@
 pub(crate) use self::{
-    settings::{Priority, Settings, Sort},
+    settings::{Aggregation, Distance, Priority, Settings, Sort},
     windows::Windows,
 };
 pub(crate) use crate::app::states::source::{Filter, Order, View};

@@ -17,6 +17,7 @@ use lipid::prelude::*;
 use polars::prelude::*;
 use polars_utils::format_list;
 use std::{borrow::Cow, ops::Range};
+use tracing::instrument;
 
 pub(crate) const NUM_COLUMNS: usize = top::DERIVATIVE.end;
 
@@ -160,6 +161,7 @@ impl TableView<'_> {
         }
     }
 
+    #[instrument(skip(self, ui), err)]
     fn body_cell_content_ui(
         &mut self,
         ui: &mut Ui,
@@ -216,7 +218,6 @@ impl TableView<'_> {
                 ui.label(text)
                     .try_on_hover_ui(|ui| {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
-                        ui.heading(ui.localize("StandardDeviation"));
                         let Some(mean) = mean_series.f64()?.get(row) else {
                             polars_bail!(NoData: "Mean[{row}]");
                         };
@@ -224,12 +225,12 @@ impl TableView<'_> {
                         else {
                             polars_bail!(NoData: "StandardDeviation[{row}]");
                         };
+                        ui.heading(ui.localize("StandardDeviation"));
                         ui.label(format!("{mean} ±{standard_deviation}"));
                         Ok(())
                     })?
                     .try_on_hover_ui(|ui| {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
-                        ui.heading(ui.localize("Sample"));
                         let Some(sample) = absolute_series
                             .struct_()?
                             .field_by_name("Sample")?
@@ -238,6 +239,7 @@ impl TableView<'_> {
                         else {
                             polars_bail!(NoData: "Sample[{row}]");
                         };
+                        ui.heading(ui.localize("Sample"));
                         ui.label(format_list!(sample.iter()));
                         Ok(())
                     })?;
@@ -353,8 +355,7 @@ impl TableDelegate for TableView<'_> {
         Frame::new()
             .inner_margin(Margin::from(MARGIN))
             .show(ui, |ui| {
-                self.body_cell_content_ui(ui, cell.row_nr as _, cell.col_nr..cell.col_nr + 1)
-                    .unwrap()
+                _ = self.body_cell_content_ui(ui, cell.row_nr as _, cell.col_nr..cell.col_nr + 1);
             });
     }
 }
