@@ -15,10 +15,7 @@
 pub(crate) mod plot {
     use egui::emath::Float as _;
     use egui_plot::PlotPoint;
-    use std::{
-        cmp::Ordering,
-        hash::{Hash, Hasher},
-    };
+    use std::hash::{Hash, Hasher};
 
     /// Index key
     #[derive(Clone, Copy, Debug)]

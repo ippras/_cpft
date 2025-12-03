@@ -20,7 +20,13 @@ pub(crate) struct Computer;
 impl Computer {
     fn try_compute(&mut self, key: Key) -> PolarsResult<Value> {
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
+        // Compute
         lazy_frame = compute(lazy_frame, key)?;
+        // Filter
+        lazy_frame = filter(lazy_frame, key)?;
+        // Interpolate
+        // Sort
+        lazy_frame = sort(lazy_frame, key);
         HashedDataFrame::new(lazy_frame.collect()?)
     }
 }
@@ -167,11 +173,6 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
             as_struct(vec![col(SLOPE), col(SLOPE).arctan().degrees().alias(ANGLE)])
                 .alias(DERIVATIVE),
         ]);
-    // Filter
-    lazy_frame = filter(lazy_frame, key)?;
-    // Interpolate
-    // Sort
-    lazy_frame = sort(lazy_frame, key);
     Ok(lazy_frame)
 }
 
@@ -222,13 +223,20 @@ fn filter(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
 }
 
 fn sort(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
-    let mut sort_options = SortMultipleOptions::new().with_nulls_last(true);
-    if key.order == Order::Descending {
-        sort_options = sort_options.with_order_descending(true);
-    };
+    let sort_options = SortMultipleOptions::new()
+        .with_nulls_last(true)
+        .with_order_descending(key.order == Order::Descending);
     match key.sort {
-        Sort::FattyAcid => lazy_frame.sort_by_exprs([col(MODE), col(FATTY_ACID)], sort_options),
-        Sort::Time => lazy_frame.sort([MODE], sort_options.clone()).select([all()
+        Sort::FattyAcid => lazy_frame.sort_by_exprs(
+            [
+                col(MODE),
+                col(FATTY_ACID).fatty_acid().carbon(),
+                col(FATTY_ACID).fatty_acid().unsaturation(),
+                col(FATTY_ACID).fatty_acid().indices(),
+            ],
+            sort_options,
+        ),
+        Sort::RetentionTime => lazy_frame.sort([MODE], sort_options.clone()).select([all()
             .as_expr()
             .sort_by(
                 &[

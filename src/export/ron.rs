@@ -48,7 +48,7 @@ mod web {
         let frame = MetaDataFrame::new(frame.meta.borrow(), frame.data.borrow());
         let serialized = to_string_pretty(&frame, CONFIG.clone())?;
         if let Err(error) = download(serialized.as_bytes(), NONE, name) {
-            bail!("save: {error:?}");
+            bail!("save ron: {error:?}");
         }
         Ok(())
     }

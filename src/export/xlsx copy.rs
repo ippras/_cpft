@@ -1,7 +1,7 @@
 use anyhow::Result;
 use polars::prelude::*;
-use polars_excel_writer::PolarsExcelWriter;
 use polars_ext::prelude::*;
+use rust_xlsxwriter::{Format, Table, TableColumn, Workbook, worksheet::Worksheet};
 use tracing::instrument;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -16,9 +16,9 @@ mod native {
     #[cfg(not(target_arch = "wasm32"))]
     #[instrument(err)]
     pub fn save(data_frame: &DataFrame, name: &str) -> Result<()> {
-        let mut writer = PolarsExcelWriter::new();
-        writer.write_dataframe(data_frame)?;
-        writer.save(name)?;
+        let mut workbook = Workbook::new();
+        write(data_frame, workbook.add_worksheet())?;
+        workbook.save(name)?;
         Ok(())
     }
 }

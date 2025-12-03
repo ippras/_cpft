@@ -1,8 +1,21 @@
 use crate::utils::hash::{HashedDataFrame, HashedMetaDataFrame};
 use anyhow::Result;
 use metadata::polars::MetaDataFrame;
-use polars::prelude::*;
-use std::{io::Cursor, sync::LazyLock};
+use std::sync::LazyLock;
+
+macro ron($name:literal) {
+    LazyLock::new(|| parse(include_bytes!($name)).expect(concat!("ron asset ", $name)))
+}
+
+fn parse(bytes: &[u8]) -> Result<HashedMetaDataFrame> {
+    let frame = ron::de::from_bytes::<MetaDataFrame>(bytes)?;
+    Ok(MetaDataFrame {
+        meta: frame.meta,
+        data: HashedDataFrame::new(frame.data).unwrap(),
+    })
+}
+
+pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[0.2.0].2025-12-01.ron");
 
 // macro ipc($name:literal) {
 //     LazyLock::new(|| parse(include_bytes!($name)).expect(concat!("ipc asset ", $name)))
@@ -27,28 +40,4 @@ use std::{io::Cursor, sync::LazyLock};
 
 // pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ipc!("Agilent.ipc");
 
-macro ron($name:literal) {
-    LazyLock::new(|| parse(include_bytes!($name)).expect(concat!("ron asset ", $name)))
-}
-
-fn parse(bytes: &[u8]) -> Result<HashedMetaDataFrame> {
-    let frame = ron::de::from_bytes::<MetaDataFrame>(bytes)?;
-    Ok(MetaDataFrame {
-        meta: frame.meta,
-        data: HashedDataFrame::new(frame.data).unwrap(),
-    })
-}
-
-pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[0.2.0].2025-12-01.ron");
-
 // pub(crate) static DEAD_TIME: LazyLock<HashedMetaDataFrame> = ipc!("DeadTime.ipc");
-
-// pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = LazyLock::new(|| {
-//     let bytes = include_bytes!("Agilent.ipc");
-//     HashedMetaDataFrame::read(Cursor::new(bytes)).expect("read metadata Agilent.ipc")
-// });
-
-// pub(crate) static DEAD_TIME: LazyLock<HashedMetaDataFrame> = LazyLock::new(|| {
-//     let bytes = include_bytes!("DeadTime.ipc");
-//     HashedMetaDataFrame::read(Cursor::new(bytes)).expect("read metadata DeadTime.ipc")
-// });

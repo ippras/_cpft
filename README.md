@@ -12,6 +12,21 @@ temperature
 * ConstantFlow(1mL÷min,150C,9C) - сделана четвертая повторность
 * ConstantFlow(1mL÷min,150C,10C) - сделана четвертая повторность
 
+## Format
+
+### 0.1.0
+
+### 0.2.0
+
+```
+Schema:
+name: Index, field: UInt32
+name: Mode, field: Struct({'OnsetTemperature': Float64, 'TemperatureStep': Float64})
+name: FattyAcid, field: Struct({'Carbon': UInt8, 'Indices': List(Struct({'Index': UInt8, 'Triple': Boolean, 'Parity': Boolean}))})
+name: RetentionTime, field: List(Float64)
+name: DeadTime, field: Float64
+```
+
 ## Свидетельство о государственной регистрации базы данных 2025625135
 
 Хроматографические параметры метиловых эфиров жирных кислот в газожидкостной

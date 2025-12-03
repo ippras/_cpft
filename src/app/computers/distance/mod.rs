@@ -185,6 +185,6 @@ fn join(mut lazy_frame: LazyFrame, key: Key) -> LazyFrame {
 }
 
 pub(crate) mod display;
-pub(crate) mod filtered;
+// pub(crate) mod filtered;
 pub(crate) mod plot;
 pub(crate) mod sum;

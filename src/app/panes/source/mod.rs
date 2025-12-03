@@ -9,7 +9,11 @@ use crate::{
         panes::{Behavior, MARGIN, widgets::ViewWidget},
         states::source::{ID_SOURCE, State, View},
     },
-    r#const::{MODE, ONSET_TEMPERATURE, TEMPERATURE_STEP},
+    r#const::{
+        ABSOLUTE, DEAD_TIME, MEAN, MODE, ONSET_TEMPERATURE, RETENTION_TIME, SAMPLE,
+        TEMPERATURE_STEP,
+    },
+    export,
     utils::hash::{HashedDataFrame, HashedMetaDataFrame},
 };
 use anyhow::Result;
@@ -23,11 +27,8 @@ use egui_phosphor::regular::{
 };
 use egui_tiles::{TileId, UiResponse};
 use lipid::prelude::*;
-use metadata::Metadata;
-use polars::{
-    error::PolarsResult,
-    prelude::{ChunkSort, ChunkUnique as _},
-};
+use metadata::{egui::MetadataWidget, polars::MetaDataFrame};
+use polars::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display, from_fn};
 use tracing::instrument;
@@ -147,10 +148,11 @@ impl Pane {
     }
 
     fn top(&mut self, ui: &mut Ui, state: &mut State) -> Response {
-        let mut response = ui.heading(TABLE).on_hover_text(ui.localize("source"));
+        let mut response = ui.heading(TABLE).on_hover_text(ui.localize("Source"));
         response |= ui.heading(self.title());
         response = response
             .on_hover_text(format!("{}/{:x}", self.id(), self.calculated.hash))
+            .on_hover_ui(|ui| MetadataWidget::new(&self.frame.meta).show(ui))
             .on_hover_cursor(CursorIcon::Grab);
         ui.separator();
         self.reset_button(ui, state);
@@ -161,7 +163,7 @@ impl Pane {
         ui.separator();
         ui.add(ViewWidget::new(&mut state.settings.view));
         ui.separator();
-        self.save_button(ui);
+        self.save_button(ui, state);
         ui.separator();
         self.distance_button(ui, state);
         ui.separator();
@@ -174,7 +176,7 @@ impl Pane {
             &mut state.reset_table_state,
             RichText::new(ARROWS_CLOCKWISE).heading(),
         )
-        .on_hover_localized("ResetTable");
+        .on_hover_localized("ResetApplicatioinState");
     }
 
     /// Resize button
@@ -183,7 +185,7 @@ impl Pane {
             &mut state.settings.resizable,
             RichText::new(ARROWS_HORIZONTAL).heading(),
         )
-        .on_hover_localized("ResizeTable");
+        .on_hover_localized("ResizeTableColumns");
     }
 
     /// Settings button
@@ -192,14 +194,13 @@ impl Pane {
             &mut state.windows.open_settings,
             RichText::new(SLIDERS_HORIZONTAL).heading(),
         )
-        .on_hover_localized("Settings");
+        .on_hover_localized("SourceSettings");
     }
 
     /// Save button
-    fn save_button(&self, ui: &mut Ui) {
+    fn save_button(&self, ui: &mut Ui, state: &State) {
         ui.menu_button(RichText::new(FLOPPY_DISK).heading(), |ui| {
-            let meta = &self.frame.meta;
-            let name = meta.format(".");
+            let name = self.frame.meta.format(".");
             if ui
                 .button((FLOPPY_DISK, "RON"))
                 .on_hover_ui(|ui| {
@@ -210,28 +211,135 @@ impl Pane {
                 })
                 .clicked()
             {
-                let _ = self.save_ron(&name, meta);
+                let _ = self.save_ron(ui, state, &name);
+            }
+            if ui
+                .button((FLOPPY_DISK, "CSV"))
+                .on_hover_ui(|ui| {
+                    ui.label(ui.localize("Save"));
+                })
+                .on_hover_ui(|ui| {
+                    ui.label(format!("{name}.cpft.csv"));
+                })
+                .clicked()
+            {
+                let _ = self.save_csv(ui, state, &name);
+            }
+            if ui
+                .button((FLOPPY_DISK, "XLSX"))
+                .on_hover_ui(|ui| {
+                    ui.label(ui.localize("Save"));
+                })
+                .on_hover_ui(|ui| {
+                    ui.label(format!("{name}.cpft.xlsx"));
+                })
+                .clicked()
+            {
+                let _ = self.save_xlsx(ui, state, &name);
             }
         });
     }
 
-    #[instrument(skip(self), err)]
-    fn save_ron(&self, name: impl Debug + Display, meta: &Metadata) -> Result<()> {
+    #[instrument(skip(self, ui, state), err)]
+    fn save_ron(&self, ui: &mut Ui, state: &State, name: impl Debug + Display) -> Result<()> {
+        // let data_frame = ui.memory_mut(|memory| {
+        //     memory
+        //         .caches
+        //         .cache::<DisplayComputed>()
+        //         .get(DisplayKey::new(&self.calculated, &state.settings))
+        // });
         // let data = self
-        //     .target
+        //     .frame
+        //     .data
         //     .data_frame
         //     .clone()
         //     .lazy()
         //     .select([
-        //         col(LABEL),
+        //         col(MODE),
         //         col(FATTY_ACID),
-        //         col(STEREOSPECIFIC_NUMBERS123),
-        //         col(STEREOSPECIFIC_NUMBERS13),
-        //         col(STEREOSPECIFIC_NUMBERS2),
+        //         col(RETENTION_TIME)
+        //             .struct_()
+        //             .field_by_name(ABSOLUTE)
+        //             .struct_()
+        //             .field_by_name(SAMPLE)
+        //             .name()
+        //             .keep(),
+        //         col(DEAD_TIME),
         //     ])
+        //     .with_row_index("Index", None)
         //     .collect()?;
-        // let frame = MetaDataFrame::new(meta, data);
-        // ron::save(&frame, &format!("{name}.fa.utca.ron"))?;
+        let data = self
+            .frame
+            .data
+            .data_frame
+            .clone()
+            .lazy()
+            .select([
+                col(MODE),
+                col(FATTY_ACID),
+                col(RETENTION_TIME),
+                col(DEAD_TIME),
+            ])
+            .with_row_index("Index", None)
+            .collect()?;
+        let frame = MetaDataFrame::new(&self.frame.meta, data);
+        export::ron::save(&frame, &format!("{name}.cpft.ron"))?;
+        Ok(())
+    }
+
+    #[instrument(skip(self, ui, state), err)]
+    fn save_csv(&self, ui: &mut Ui, state: &State, name: impl Debug + Display) -> Result<()> {
+        let data_frame = ui.memory_mut(|memory| {
+            memory
+                .caches
+                .cache::<DisplayComputed>()
+                .get(DisplayKey::new(&self.calculated, &state.settings))
+        });
+        let mut data = data_frame
+            .lazy()
+            .select([
+                col(MODE).struct_().field_by_name("*"),
+                col(FATTY_ACID),
+                col(RETENTION_TIME)
+                    .struct_()
+                    .field_by_name(ABSOLUTE)
+                    .struct_()
+                    .field_by_name(MEAN)
+                    .name()
+                    .keep(),
+                col(DEAD_TIME),
+            ])
+            .with_row_index("Index", None)
+            .collect()?;
+        export::csv::save(&mut data, &format!("{name}.cpft.csv"))?;
+        Ok(())
+    }
+
+    #[instrument(skip(self, ui, state), err)]
+    fn save_xlsx(&self, ui: &mut Ui, state: &State, name: impl Debug + Display) -> Result<()> {
+        let data_frame = ui.memory_mut(|memory| {
+            memory
+                .caches
+                .cache::<DisplayComputed>()
+                .get(DisplayKey::new(&self.calculated, &state.settings))
+        });
+        let mut data = data_frame
+            .lazy()
+            .select([
+                col(MODE).struct_().field_by_name("*"),
+                col(FATTY_ACID),
+                col(RETENTION_TIME)
+                    .struct_()
+                    .field_by_name(ABSOLUTE)
+                    .struct_()
+                    .field_by_name(MEAN)
+                    .name()
+                    .keep(),
+                col(DEAD_TIME),
+            ])
+            .with_row_index("Index", None)
+            .collect()?;
+        // export::xlsx::save(&mut data, &format!("{name}.cpft.xlsx"))?;
         Ok(())
     }
 

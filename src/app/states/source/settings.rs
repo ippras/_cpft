@@ -55,8 +55,9 @@ impl Settings {
             ddof: 1,
             logarithmic: false,
             relative: None,
+
             filter: Filter::new(),
-            sort: Sort::Time,
+            sort: Sort::RetentionTime,
             order: Order::Ascending,
 
             plot: Plot::new(),
@@ -80,8 +81,8 @@ impl Settings {
                 ui.separator();
                 ui.end_row();
 
-                self.relative(ui);
                 self.ddof(ui);
+                self.relative(ui);
                 self.logarithmic(ui);
 
                 // Filter
@@ -176,6 +177,18 @@ impl Settings {
         ui.end_row();
     }
 
+    /// DDOF
+    /// https://numpy.org/devdocs/reference/generated/numpy.std.html
+    fn ddof(&mut self, ui: &mut Ui) {
+        ui.label(ui.localize("DeltaDegreesOfFreedom.abbreviation"))
+            .on_hover_localized("DeltaDegreesOfFreedom")
+            .on_hover_ui(|ui| {
+                ui.hyperlink("https://numpy.org/devdocs/reference/generated/numpy.std.html");
+            });
+        Slider::new(&mut self.ddof, 0..=2).ui(ui);
+        ui.end_row();
+    }
+
     /// Relative
     fn relative(&mut self, ui: &mut Ui) {
         ui.label(ui.localize("RelativeFattyAcid"))
@@ -212,18 +225,6 @@ impl Settings {
                 self.relative = Some(MARGARIC);
             };
         });
-        ui.end_row();
-    }
-
-    /// DDOF
-    /// https://numpy.org/devdocs/reference/generated/numpy.std.html
-    fn ddof(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("DeltaDegreesOfFreedom.abbreviation"))
-            .on_hover_localized("DeltaDegreesOfFreedom")
-            .on_hover_ui(|ui| {
-                ui.hyperlink("https://numpy.org/devdocs/reference/generated/numpy.std.html");
-            });
-        Slider::new(&mut self.ddof, 0..=2).ui(ui);
         ui.end_row();
     }
 
@@ -374,8 +375,12 @@ impl Settings {
                     ui.localize(Sort::FattyAcid.text()),
                 )
                 .on_hover_localized(Sort::FattyAcid.hover_text());
-                ui.selectable_value(&mut self.sort, Sort::Time, ui.localize(Sort::Time.text()))
-                    .on_hover_localized(Sort::Time.hover_text());
+                ui.selectable_value(
+                    &mut self.sort,
+                    Sort::RetentionTime,
+                    ui.localize(Sort::RetentionTime.text()),
+                )
+                .on_hover_localized(Sort::RetentionTime.hover_text());
             })
             .response
             .on_hover_localized(self.sort.hover_text());
@@ -502,21 +507,21 @@ impl Hash for Plot {
 #[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
 pub(crate) enum Sort {
     FattyAcid,
-    Time,
+    RetentionTime,
 }
 
 impl Text for Sort {
     fn text(&self) -> &'static str {
         match self {
             Self::FattyAcid => "SortByFattyAcids",
-            Self::Time => "SortByRetentionTime",
+            Self::RetentionTime => "SortByRetentionTime",
         }
     }
 
     fn hover_text(&self) -> &'static str {
         match self {
             Self::FattyAcid => "SortByFattyAcids.hover",
-            Self::Time => "SortByRetentionTime.hover",
+            Self::RetentionTime => "SortByRetentionTime.hover",
         }
     }
 }
