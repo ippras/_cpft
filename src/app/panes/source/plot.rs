@@ -4,7 +4,7 @@ use crate::app::{
 };
 use egui::Ui;
 use egui_ext::color;
-use egui_l20n::UiExt as _;
+use egui_l20n::prelude::*;
 use egui_plot::{Legend, Line, LineStyle, MarkerShape, Plot, PlotPoint, PlotPoints, Points};
 use itertools::Itertools;
 use polars::prelude::*;
@@ -41,10 +41,10 @@ impl PlotView<'_> {
         // let scale = plot.transform.dvalue_dpos();
         // let x_decimals = ((-scale[0].abs().log10()).ceil().at_least(0.0) as usize).clamp(1, 6);
         // let y_decimals = ((-scale[1].abs().log10()).ceil().at_least(0.0) as usize).clamp(1, 6);
-        let onset_temperature = ui.localize("onset-temperature");
-        let temperature_step = ui.localize("temperature-step");
-        let retention_time = ui.localize("retention-time");
-        let equivalent_chain_length = ui.localize("equivalent-chain-length");
+        let onset_temperature = ui.localize("OnsetTemperature");
+        let temperature_step = ui.localize("TemperatureStep");
+        let retention_time = ui.localize("RetentionTime");
+        let equivalent_chain_length = ui.localize("EquivalentChainLength");
         let points = self.data.index.clone();
         plot = plot
             .x_axis_label(&retention_time)

@@ -1,5 +1,5 @@
 use egui::Context;
-use egui_l20n::{ContextExt as _, Localization};
+use egui_l20n::prelude::*;
 
 /// Text
 pub trait Text {

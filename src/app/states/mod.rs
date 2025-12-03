@@ -1,6 +1,6 @@
 use self::windows::Windows;
 use egui::{ComboBox, Context, Grid, Id, Sense, Ui};
-use egui_l20n::UiExt as _;
+use egui_l20n::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// State

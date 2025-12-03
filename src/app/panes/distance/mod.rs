@@ -19,7 +19,7 @@ use egui::{
     CentralPanel, CursorIcon, Frame, Id, MenuBar, Response, RichText, ScrollArea, Sense, TextStyle,
     TopBottomPanel, Ui, UiKind, Window, util::hash,
 };
-use egui_l20n::UiExt as _;
+use egui_l20n::prelude::*;
 use egui_phosphor::regular::{
     ARROWS_CLOCKWISE, ARROWS_HORIZONTAL, CHART_BAR, EXCLUDE, FLOPPY_DISK, SIGMA,
     SLIDERS_HORIZONTAL, TABLE, X,
@@ -125,9 +125,7 @@ impl Pane {
 
     fn top(&mut self, ui: &mut Ui, state: &mut State) -> Response {
         ui.visuals_mut().button_frame = false;
-        let mut response = ui.heading(EXCLUDE).on_hover_ui(|ui| {
-            ui.label(ui.localize("Distance"));
-        });
+        let mut response = ui.heading(EXCLUDE).on_hover_localized("Distance");
         response |= ui.heading(self.title());
         response = response
             .on_hover_text(format!("{}/{:x}", self.id(), self.calculated.hash))
@@ -154,9 +152,7 @@ impl Pane {
             &mut state.settings.reset_table,
             RichText::new(ARROWS_CLOCKWISE).heading(),
         )
-        .on_hover_ui(|ui| {
-            ui.label(ui.localize("ResetTable"));
-        });
+        .on_hover_localized("ResetTable");
     }
 
     /// Resize button
@@ -165,9 +161,7 @@ impl Pane {
             &mut state.settings.resizable,
             RichText::new(ARROWS_HORIZONTAL).heading(),
         )
-        .on_hover_ui(|ui| {
-            ui.label(ui.localize("ResizeTable"));
-        });
+        .on_hover_localized("ResizeTable");
     }
 
     /// Settings button
@@ -176,9 +170,7 @@ impl Pane {
             &mut state.windows.open_settings,
             RichText::new(SLIDERS_HORIZONTAL).heading(),
         )
-        .on_hover_ui(|ui| {
-            ui.label(ui.localize("Settings"));
-        });
+        .on_hover_localized("Settings");
     }
 
     /// View button
@@ -194,18 +186,14 @@ impl Pane {
                     View::Table,
                     ui.localize(View::Table.text()),
                 )
-                .on_hover_ui(|ui| {
-                    ui.label(ui.localize(View::Table.hover_text()));
-                });
+                .on_hover_localized(View::Table.hover_text());
             response |= ui
                 .selectable_value(
                     &mut state.settings.view,
                     View::Plot,
                     ui.localize(View::Plot.text()),
                 )
-                .on_hover_ui(|ui| {
-                    ui.label(ui.localize(View::Plot.hover_text()));
-                });
+                .on_hover_localized(View::Plot.hover_text());
             if response.changed() {
                 ui.close_kind(UiKind::Menu);
             }
@@ -255,9 +243,7 @@ impl Pane {
                     RichText::new(ui.localize("Sum")).heading(),
                 ),
             )
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize("Sum.hover"));
-            });
+            .on_hover_localized("Sum.hover");
         });
     }
 

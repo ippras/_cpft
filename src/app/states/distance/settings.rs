@@ -7,7 +7,7 @@ use crate::{
     localization::Text,
 };
 use egui::{ComboBox, Grid, Slider, Ui, Widget as _};
-use egui_l20n::UiExt as _;
+use egui_l20n::prelude::*;
 use egui_phosphor::regular::BOOKMARK;
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -90,56 +90,45 @@ impl Settings {
                 ui.end_row();
 
                 // Legend
-                ui.label(ui.localize("legend"));
+                ui.label(ui.localize("Legend"));
                 ui.checkbox(&mut self.plot.legend, "");
                 ui.end_row();
 
                 // Radius of points
-                ui.label(ui.localize("radius-of-points")).on_hover_ui(|ui| {
-                    ui.label(ui.localize("radius-of-points.hover"));
-                });
+                ui.label(ui.localize("RadiusOfPoints"))
+                    .on_hover_localized("RadiusOfPoints.hover");
                 ui.add(Slider::new(&mut self.plot.radius_of_points, 0..=u8::MAX).logarithmic(true));
                 ui.end_row();
 
                 // Plot axes
                 for axis in [&mut self.plot.axes.x, &mut self.plot.axes.y] {
-                    ui.label(ui.localize("plot-axes"));
+                    ui.label(ui.localize("PlotAxes"));
                     ComboBox::from_id_salt(ui.next_auto_id())
                         .selected_text(ui.localize(axis.text()))
                         .show_ui(ui, |ui| {
                             ui.selectable_value(axis, Axis::Alpha, ui.localize(Axis::Alpha.text()))
-                                .on_hover_ui(|ui| {
-                                    ui.label(ui.localize(Axis::Alpha.hover_text()));
-                                });
+                                .on_hover_localized(Axis::Alpha.hover_text());
                             ui.selectable_value(
                                 axis,
                                 Axis::EquivalentChainLength,
                                 ui.localize(Axis::EquivalentChainLength.text()),
                             )
-                            .on_hover_ui(|ui| {
-                                ui.label(ui.localize(Axis::EquivalentChainLength.hover_text()));
-                            });
+                            .on_hover_localized(Axis::EquivalentChainLength.hover_text());
                             ui.selectable_value(
                                 axis,
                                 Axis::OnsetTemperature,
                                 ui.localize(Axis::OnsetTemperature.text()),
                             )
-                            .on_hover_ui(|ui| {
-                                ui.label(ui.localize(Axis::OnsetTemperature.hover_text()));
-                            });
+                            .on_hover_localized(Axis::OnsetTemperature.hover_text());
                             ui.selectable_value(
                                 axis,
                                 Axis::TemperatureStep,
                                 ui.localize(Axis::TemperatureStep.text()),
                             )
-                            .on_hover_ui(|ui| {
-                                ui.label(ui.localize(Axis::TemperatureStep.hover_text()));
-                            });
+                            .on_hover_localized(Axis::TemperatureStep.hover_text());
                         })
                         .response
-                        .on_hover_ui(|ui| {
-                            ui.label(ui.localize(axis.hover_text()));
-                        });
+                        .on_hover_localized(axis.hover_text());
                     ui.end_row();
                 }
             }
@@ -149,9 +138,8 @@ impl Settings {
 
     /// Precision
     fn precision(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("Precision")).on_hover_ui(|ui| {
-            ui.label(ui.localize("Precision.hover"));
-        });
+        ui.label(ui.localize("Precision"))
+            .on_hover_localized("Precision.hover");
         ui.horizontal(|ui| {
             Slider::new(&mut self.precision, 1..=MAX_PRECISION).ui(ui);
             if ui.button((BOOKMARK, "3")).clicked() {
@@ -163,49 +151,40 @@ impl Settings {
 
     // Sticky columns
     fn sticky(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("StickyColumns")).on_hover_ui(|ui| {
-            ui.label(ui.localize("StickyColumns.hover"));
-        });
+        ui.label(ui.localize("StickyColumns"))
+            .on_hover_localized("StickyColumns.hover");
         Slider::new(&mut self.sticky, 0..=NUM_COLUMNS).ui(ui);
         ui.end_row();
     }
 
     // Truncate headers
     fn truncate(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("TruncateHeaders")).on_hover_ui(|ui| {
-            ui.label(ui.localize("TruncateHeaders.hover"));
-        });
+        ui.label(ui.localize("TruncateHeaders"))
+            .on_hover_localized("TruncateHeaders.hover");
         ui.checkbox(&mut self.truncate, "");
         ui.end_row();
     }
 
     /// Sort
     fn sort(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("sort-by-distance")).on_hover_ui(|ui| {
-            ui.label(ui.localize("sort-by-distance.hover"));
-        });
+        ui.label(ui.localize("SortByDistance"))
+            .on_hover_localized("SortByDistance.hover");
         ComboBox::from_id_salt(ui.next_auto_id())
             .selected_text(ui.localize(self.sort.text()))
             .show_ui(ui, |ui| {
                 ui.selectable_value(&mut self.sort, Sort::Key, ui.localize(Sort::Key.text()))
-                    .on_hover_ui(|ui| {
-                        ui.label(ui.localize(Sort::Key.hover_text()));
-                    });
+                    .on_hover_localized(Sort::Key.hover_text());
                 ui.selectable_value(&mut self.sort, Sort::Value, ui.localize(Sort::Value.text()))
-                    .on_hover_ui(|ui| {
-                        ui.label(ui.localize(Sort::Value.hover_text()));
-                    });
+                    .on_hover_localized(Sort::Value.hover_text());
             })
             .response
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize(self.sort.hover_text()));
-            });
+            .on_hover_localized(self.sort.hover_text());
         ui.end_row();
     }
 
     /// Order
     fn order(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("order"));
+        ui.label(ui.localize("Order"));
         ComboBox::from_id_salt(ui.next_auto_id())
             .selected_text(ui.localize(self.order.text()))
             .show_ui(ui, |ui| {
@@ -214,31 +193,23 @@ impl Settings {
                     Order::Ascending,
                     ui.localize(Order::Ascending.text()),
                 )
-                .on_hover_ui(|ui| {
-                    ui.label(ui.localize(Order::Ascending.hover_text()));
-                });
+                .on_hover_localized(Order::Ascending.hover_text());
                 ui.selectable_value(
                     &mut self.order,
                     Order::Descending,
                     ui.localize(Order::Descending.text()),
                 )
-                .on_hover_ui(|ui| {
-                    ui.label(ui.localize(Order::Descending.hover_text()));
-                });
+                .on_hover_localized(Order::Descending.hover_text());
             })
             .response
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize(self.order.hover_text()));
-            });
+            .on_hover_localized(self.order.hover_text());
         ui.end_row();
     }
 
     /// Priority
     fn priority(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("sort-by-aggregation"))
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize("sort-by-aggregation.hover"));
-            });
+        ui.label(ui.localize("SortByAggregation"))
+            .on_hover_localized("SortByAggregation.hover");
         let enabled = self.sort == Sort::Value;
         ui.add_enabled_ui(enabled, |ui| {
             ComboBox::from_id_salt(ui.next_auto_id())
@@ -250,15 +221,11 @@ impl Settings {
                             priority,
                             ui.localize(priority.text()),
                         )
-                        .on_hover_ui(|ui| {
-                            ui.label(ui.localize(priority.hover_text()));
-                        });
+                        .on_hover_localized(priority.hover_text());
                     }
                 })
                 .response
-                .on_hover_ui(|ui| {
-                    ui.label(ui.localize(self.priority.hover_text()));
-                });
+                .on_hover_localized(self.priority.hover_text());
         })
         .response
         .on_disabled_hover_text("Used only for sort by value");
@@ -282,15 +249,15 @@ pub(crate) enum Sort {
 impl Text for Sort {
     fn text(&self) -> &'static str {
         match self {
-            Self::Key => "sort-by-key",
-            Self::Value => "sort-by-value",
+            Self::Key => "SortByKey",
+            Self::Value => "SortByValue",
         }
     }
 
     fn hover_text(&self) -> &'static str {
         match self {
-            Self::Key => "sort-by-key.hover",
-            Self::Value => "sort-by-value.hover",
+            Self::Key => "SortByKey.hover",
+            Self::Value => "SortByValue.hover",
         }
     }
 }
@@ -307,19 +274,19 @@ pub(crate) enum Priority {
 impl Text for Priority {
     fn text(&self) -> &'static str {
         match self {
-            Self::Maximum => "sort-by-maximum",
-            Self::Mean => "sort-by-mean",
-            Self::Median => "sort-by-median",
-            Self::Minimum => "sort-by-minimum",
+            Self::Maximum => "SortByMaximum",
+            Self::Mean => "SortByMean",
+            Self::Median => "SortByMedian",
+            Self::Minimum => "SortByMinimum",
         }
     }
 
     fn hover_text(&self) -> &'static str {
         match self {
-            Self::Maximum => "sort-by-maximum.hover",
-            Self::Mean => "sort-by-mean.hover",
-            Self::Median => "sort-by-median.hover",
-            Self::Minimum => "sort-by-minimum.hover",
+            Self::Maximum => "SortByMaximum.hover",
+            Self::Mean => "SortByMean.hover",
+            Self::Median => "SortByMedian.hover",
+            Self::Minimum => "SortByMinimum.hover",
         }
     }
 }

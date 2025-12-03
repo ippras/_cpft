@@ -3,7 +3,7 @@ use crate::app::{
     states::distance::Settings,
 };
 use egui::{Frame, Id, Margin, Response, TextStyle, TextWrapMode, Ui, Widget};
-use egui_l20n::UiExt as _;
+use egui_l20n::prelude::*;
 use egui_table::{
     AutoSizeMode, CellInfo, Column, HeaderCellInfo, HeaderRow, Table, TableDelegate, TableState,
 };

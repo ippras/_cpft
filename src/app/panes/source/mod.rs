@@ -17,7 +17,7 @@ use egui::{
     Button, CentralPanel, CursorIcon, Frame, Id, MenuBar, Response, RichText, ScrollArea,
     TextStyle, TopBottomPanel, Ui, Window, util::hash,
 };
-use egui_l20n::UiExt as _;
+use egui_l20n::prelude::*;
 use egui_phosphor::regular::{
     ARROWS_CLOCKWISE, ARROWS_HORIZONTAL, EXCLUDE, FLOPPY_DISK, SLIDERS_HORIZONTAL, TABLE, X,
 };
@@ -174,9 +174,7 @@ impl Pane {
             &mut state.reset_table_state,
             RichText::new(ARROWS_CLOCKWISE).heading(),
         )
-        .on_hover_ui(|ui| {
-            ui.label(ui.localize("ResetTable"));
-        });
+        .on_hover_localized("ResetTable");
     }
 
     /// Resize button
@@ -185,9 +183,7 @@ impl Pane {
             &mut state.settings.resizable,
             RichText::new(ARROWS_HORIZONTAL).heading(),
         )
-        .on_hover_ui(|ui| {
-            ui.label(ui.localize("ResizeTable"));
-        });
+        .on_hover_localized("ResizeTable");
     }
 
     /// Settings button
@@ -196,9 +192,7 @@ impl Pane {
             &mut state.windows.open_settings,
             RichText::new(SLIDERS_HORIZONTAL).heading(),
         )
-        .on_hover_ui(|ui| {
-            ui.label(ui.localize("Settings"));
-        });
+        .on_hover_localized("Settings");
     }
 
     /// Save button

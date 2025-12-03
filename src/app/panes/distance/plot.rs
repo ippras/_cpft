@@ -4,7 +4,7 @@ use crate::app::{
 };
 use egui::Ui;
 use egui_ext::color;
-use egui_l20n::UiExt;
+use egui_l20n::prelude::*;
 use egui_plot::{AxisHints, Legend, Line, Plot, PlotPoint, PlotPoints, Points, VPlacement};
 use itertools::Itertools;
 use lipid::fatty_acid::display::{COMMON, DisplayWithOptions as _};

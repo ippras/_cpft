@@ -4,7 +4,7 @@ use crate::{
 };
 use egui::{ComboBox, Grid, PopupCloseBehavior, RichText, Slider, TextWrapMode, Ui, emath::Float};
 use egui_ext::LabeledSeparator;
-use egui_l20n::{ResponseExt, UiExt as _};
+use egui_l20n::prelude::*;
 use egui_phosphor::regular::{FUNNEL, FUNNEL_X};
 use lipid::{
     fatty_acid::display::{COMMON, DisplayWithOptions as _},

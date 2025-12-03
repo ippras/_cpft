@@ -12,7 +12,7 @@ use egui::{
     Window, warn_if_debug_build,
 };
 use egui_ext::{DroppedFileExt, HoveredFileExt, LightDarkButton};
-use egui_l20n::{ResponseExt as _, UiExt as _, ui::locale_button::LocaleButton};
+use egui_l20n::prelude::*;
 use egui_phosphor::{
     Variant, add_to_fonts,
     regular::{

@@ -8,7 +8,7 @@ use crate::{
 };
 use egui::{Color32, Frame, Grid, Id, Margin, TextStyle, TextWrapMode, Ui};
 use egui_ext::ResponseExt;
-use egui_l20n::{ResponseExt as _, UiExt};
+use egui_l20n::prelude::*;
 use egui_phosphor::regular::HASH;
 use egui_table::{
     AutoSizeMode, CellInfo, Column, HeaderCellInfo, HeaderRow, Table, TableDelegate, TableState,
@@ -82,77 +82,79 @@ impl TableView<'_> {
         match (row, column) {
             // Top
             (0, top::INDEX) => {
-                ui.heading(HASH).on_hover_localized("index");
+                ui.heading(HASH).on_hover_localized("Index");
             }
             (0, top::MODE) => {
-                ui.heading(ui.localize("mode"))
-                    .on_hover_localized("mode.hover");
+                ui.heading(ui.localize("Mode"))
+                    .on_hover_localized("Mode.hover");
             }
             (0, top::FATTY_ACID) => {
-                ui.heading(ui.localize("fatty-acid"))
-                    .on_hover_localized("fatty-acid.abbreviation");
+                ui.heading(ui.localize("FattyAcid"))
+                    .on_hover_localized("FattyAcid.abbreviation");
             }
             (0, top::RETENTION_TIME) => {
-                ui.heading(ui.localize("retention-time"))
-                    .on_hover_localized("retention-time.abbreviation")
-                    .on_hover_localized("retention-time.hover");
+                ui.heading(ui.localize("RetentionTime"))
+                    .on_hover_localized("RetentionTime.abbreviation")
+                    .on_hover_localized("RetentionTime.hover");
             }
             (0, top::TEMPERATURE) => {
-                ui.heading(ui.localize("temperature"))
-                    .on_hover_localized("temperature.abbreviation")
-                    .on_hover_localized("temperature.hover");
+                ui.heading(ui.localize("Temperature"))
+                    .on_hover_localized("Temperature.abbreviation")
+                    .on_hover_localized("Temperature.hover");
             }
             (0, top::CHAIN_LENGTH) => {
-                ui.heading(ui.localize("chain-length"))
-                    .on_hover_localized("chain-length.hover");
+                ui.heading(ui.localize("ChainLength"))
+                    .on_hover_localized("ChainLength.hover");
             }
             (0, top::MASS) => {
-                ui.heading(ui.localize("mass"))
-                    .on_hover_localized("mass.hover");
+                ui.heading(ui.localize("Mass"))
+                    .on_hover_localized("Mass.hover");
             }
             (0, top::DERIVATIVE) => {
-                ui.heading(ui.localize("derivative"))
-                    .on_hover_localized("derivative.hover");
+                ui.heading(ui.localize("Derivative"))
+                    .on_hover_localized("Derivative.hover");
             }
             // Bottom
             (1, bottom::ONSET) => {
-                ui.heading(ui.localize("onset-temperature.abbreviation"))
-                    .on_hover_localized("onset-temperature");
+                ui.heading(ui.localize("OnsetTemperature.abbreviation"))
+                    .on_hover_localized("OnsetTemperature");
             }
             (1, bottom::STEP) => {
-                ui.heading(ui.localize("temperature-step.abbreviation"))
-                    .on_hover_localized("temperature-step")
-                    .on_hover_localized("temperature-step.hover");
+                ui.heading(ui.localize("TemperatureStep.abbreviation"))
+                    .on_hover_localized("TemperatureStep")
+                    .on_hover_localized("TemperatureStep.hover");
             }
             (1, bottom::ABSOLUTE) => {
-                ui.heading(ui.localize("absolute-retention-time"))
-                    .on_hover_localized("absolute-retention-time.hover");
+                ui.heading(ui.localize("AbsoluteRetentionTime"))
+                    .on_hover_localized("AbsoluteRetentionTime.hover");
             }
             (1, bottom::RELATIVE) => {
-                ui.heading(ui.localize("relative-retention-time"))
-                    .on_hover_localized("relative-retention-time.hover");
+                ui.heading(ui.localize("RelativeRetentionTime"))
+                    .on_hover_localized("RelativeRetentionTime.hover");
             }
             (1, bottom::DELTA) => {
-                ui.heading(ui.localize("delta-retention-time"))
-                    .on_hover_localized("delta-retention-time.hover");
+                ui.heading(ui.localize("DeltaRetentionTime"))
+                    .on_hover_localized("DeltaRetentionTime.hover");
             }
             (1, bottom::ECL) => {
-                ui.heading(ui.localize("equivalent-chain-length.abbreviation"))
-                    .on_hover_localized("equivalent-chain-length");
+                ui.heading(ui.localize("EquivalentChainLength.abbreviation"))
+                    .on_hover_localized("EquivalentChainLength");
             }
             (1, bottom::FCL) => {
-                ui.heading(ui.localize("fractional-chain-length.abbreviation"))
-                    .on_hover_localized("fractional-chain-length");
+                ui.heading(ui.localize("FractionalChainLength.abbreviation"))
+                    .on_hover_localized("FractionalChainLength");
             }
             (1, bottom::ECN) => {
-                ui.heading(ui.localize("equivalent-carbon-number.abbreviation"))
-                    .on_hover_localized("equivalent-carbon-number");
+                ui.heading(ui.localize("EquivalentCarbonNumber.abbreviation"))
+                    .on_hover_localized("EquivalentCarbonNumber");
             }
             (1, bottom::SLOPE) => {
-                ui.heading(ui.localize("slope"));
+                ui.heading(ui.localize("Slope"))
+                    .on_hover_localized("Slope.hover");
             }
             (1, bottom::ANGLE) => {
-                ui.heading(ui.localize("angle"));
+                ui.heading(ui.localize("Angle"))
+                    .on_hover_localized("Slope.hover");
             }
             _ => {}
         }

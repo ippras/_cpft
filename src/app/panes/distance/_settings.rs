@@ -8,7 +8,7 @@ use crate::{
 };
 use egui::{ComboBox, Grid, RichText, Slider, Ui};
 use egui_ext::LabeledSeparator;
-use egui_l20n::{ResponseExt, UiExt as _};
+use egui_l20n::prelude::*;
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};
 

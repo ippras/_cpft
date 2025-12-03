@@ -6,7 +6,7 @@ use crate::{
     r#const::{MODE, ONSET_TEMPERATURE, TEMPERATURE_STEP},
 };
 use egui::{Frame, Id, Margin, Response, TextStyle, TextWrapMode, Ui, Widget};
-use egui_l20n::UiExt as _;
+use egui_l20n::prelude::*;
 use egui_table::{
     AutoSizeMode, CellInfo, Column, HeaderCellInfo, HeaderRow, Table, TableDelegate, TableState,
 };
@@ -54,7 +54,7 @@ impl<'a> Sum<'a> {
                 Column::default().resizable(self.settings.resizable);
                 num_columns
             ])
-            .num_sticky_cols(self.settings.sticky)
+            .num_sticky_cols(2)
             .headers([
                 HeaderRow {
                     height,

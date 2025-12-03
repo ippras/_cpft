@@ -8,7 +8,7 @@ use crate::{
 };
 use egui::{Frame, Id, Margin, TextStyle, TextWrapMode, Ui};
 use egui_ext::ResponseExt;
-use egui_l20n::{ResponseExt as _, UiExt as _};
+use egui_l20n::prelude::*;
 use egui_phosphor::regular::HASH;
 use egui_table::{
     AutoSizeMode, CellInfo, Column, HeaderCellInfo, HeaderRow, Table, TableDelegate, TableState,
@@ -75,18 +75,18 @@ impl TableView<'_> {
         match (row, column) {
             // Top
             (0, top::INDEX) => {
-                ui.heading(HASH).on_hover_localized("index");
+                ui.heading(HASH).on_hover_localized("Index");
             }
             (0, top::MODE) => {
                 ui.heading(ui.localize("Mode"))
-                    .on_hover_localized("mode.hover");
+                    .on_hover_localized("Mode.hover");
             }
             (0, top::FATTY_ACID) => {
-                ui.heading(ui.localize("fatty-acid"))
-                    .on_hover_localized("fatty-acid.abbreviation");
+                ui.heading(ui.localize("FattyAcid"))
+                    .on_hover_localized("FattyAcid.abbreviation");
             }
             (0, top::DISTANCE) => {
-                ui.heading(ui.localize("distance"));
+                ui.heading(ui.localize("Distance"));
             }
             // Bottom
             (1, bottom::ONSET) => {
@@ -99,30 +99,31 @@ impl TableView<'_> {
                     .on_hover_localized("TemperatureStep.hover");
             }
             (1, bottom::FROM) => {
-                ui.heading(ui.localize("from"));
+                ui.heading(ui.localize("From"))
+                    .on_hover_localized("From.hover");
             }
             (1, bottom::TO) => {
-                ui.heading(ui.localize("to"));
+                ui.heading(ui.localize("To")).on_hover_localized("To.hover");
             }
             (1, bottom::RETENTION_TIME) => {
-                ui.heading(ui.localize("retention-time-distance.abbreviation"))
-                    .on_hover_localized("retention-time-distance")
-                    .on_hover_localized("retention-time-distance.hover");
+                ui.heading(ui.localize("RetentionTimeDistance.abbreviation"))
+                    .on_hover_localized("RetentionTimeDistance")
+                    .on_hover_localized("RetentionTimeDistance.hover");
             }
             (1, bottom::EQUIVALENT_CHAIN_LENGTH) => {
-                ui.heading(ui.localize("equivalent-chain-length-distance.abbreviation"))
-                    .on_hover_localized("equivalent-chain-length-distance")
-                    .on_hover_localized("equivalent-chain-length-distance.hover");
+                ui.heading(ui.localize("EquivalentChainLengthDistance.abbreviation"))
+                    .on_hover_localized("EquivalentChainLengthDistance")
+                    .on_hover_localized("EquivalentChainLengthDistance.hover");
             }
             (1, bottom::EUCLIDEAN) => {
-                ui.heading(ui.localize("euclidean-distance.abbreviation"))
-                    .on_hover_localized("euclidean-distance")
-                    .on_hover_localized("euclidean-distance.hover");
+                ui.heading(ui.localize("EuclideanDistance.abbreviation"))
+                    .on_hover_localized("EuclideanDistance")
+                    .on_hover_localized("EuclideanDistance.hover");
             }
             (1, bottom::ALPHA) => {
-                ui.heading(ui.localize("alpha.abbreviation"))
-                    .on_hover_localized("alpha")
-                    .on_hover_localized("alpha.hover");
+                ui.heading(ui.localize("Alpha.abbreviation"))
+                    .on_hover_localized("Alpha")
+                    .on_hover_localized("Alpha.hover");
             }
             _ => {}
         }

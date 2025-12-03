@@ -7,7 +7,7 @@ use egui::{
     ComboBox, Grid, Popup, PopupCloseBehavior, Slider, TextWrapMode, Ui, Vec2b, Widget,
     emath::Float as _,
 };
-use egui_l20n::UiExt as _;
+use egui_l20n::prelude::*;
 use egui_phosphor::regular::{BOOKMARK, FUNNEL, FUNNEL_X};
 use lipid::prelude::FattyAcid;
 use polars::prelude::*;
@@ -76,7 +76,7 @@ impl Settings {
                 self.truncate(ui);
 
                 // Calculate
-                ui.heading("calculate");
+                ui.heading("Calculate");
                 ui.separator();
                 ui.end_row();
 
@@ -84,10 +84,8 @@ impl Settings {
 
                 // DDOF
                 // https://numpy.org/devdocs/reference/generated/numpy.std.html
-                ui.label(ui.localize("delta-degrees-of-freedom.abbreviation"))
-                    .on_hover_ui(|ui| {
-                        ui.label(ui.localize("delta-degrees-of-freedom"));
-                    })
+                ui.label(ui.localize("DeltaDegreesOfFreedom.abbreviation"))
+                    .on_hover_localized("DeltaDegreesOfFreedom")
                     .on_hover_ui(|ui| {
                         ui.hyperlink(
                             "https://numpy.org/devdocs/reference/generated/numpy.std.html",
@@ -97,22 +95,20 @@ impl Settings {
                 ui.end_row();
 
                 // Logarithmic
-                ui.label(ui.localize("logarithm-of-the-retention-time"))
-                    .on_hover_ui(|ui| {
-                        ui.label(ui.localize("logarithm-of-the-retention-time.hover"));
-                    });
+                ui.label(ui.localize("LogarithmOfTheRetentionTime"))
+                    .on_hover_localized("LogarithmOfTheRetentionTime.hover");
                 ui.checkbox(&mut self.logarithmic, "");
                 ui.end_row();
 
                 // Filter
-                ui.heading("filter");
+                ui.heading("Filter");
                 ui.separator();
                 ui.end_row();
 
                 self.filter(ui);
 
                 // Sort, order
-                ui.heading("sort-by");
+                ui.heading("SortBy");
                 ui.separator();
                 ui.end_row();
 
@@ -161,9 +157,8 @@ impl Settings {
 
     /// Precision
     fn precision(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("Precision")).on_hover_ui(|ui| {
-            ui.label(ui.localize("Precision.hover"));
-        });
+        ui.label(ui.localize("Precision"))
+            .on_hover_localized("Precision.hover");
         ui.horizontal(|ui| {
             Slider::new(&mut self.precision, 1..=MAX_PRECISION).ui(ui);
             if ui.button((BOOKMARK, "3")).clicked() {
@@ -175,37 +170,32 @@ impl Settings {
 
     /// Significant
     fn significant(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("Significant")).on_hover_ui(|ui| {
-            ui.label(ui.localize("Significant.hover"));
-        });
+        ui.label(ui.localize("Significant"))
+            .on_hover_localized("Significant.hover");
         ui.checkbox(&mut self.significant, ());
         ui.end_row();
     }
 
     // Sticky columns
     fn sticky(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("StickyColumns")).on_hover_ui(|ui| {
-            ui.label(ui.localize("StickyColumns.hover"));
-        });
+        ui.label(ui.localize("StickyColumns"))
+            .on_hover_localized("StickyColumns.hover");
         Slider::new(&mut self.sticky, 0..=NUM_COLUMNS).ui(ui);
         ui.end_row();
     }
 
     // Truncate headers
     fn truncate(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("TruncateHeaders")).on_hover_ui(|ui| {
-            ui.label(ui.localize("TruncateHeaders.hover"));
-        });
+        ui.label(ui.localize("TruncateHeaders"))
+            .on_hover_localized("TruncateHeaders.hover");
         ui.checkbox(&mut self.truncate, "");
         ui.end_row();
     }
 
     /// Relative
     fn relative(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("relative-fatty-acid"))
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize("relative-fatty-acid.hover"));
-            });
+        ui.label(ui.localize("RelativeFattyAcid"))
+            .on_hover_localized("RelativeFattyAcid.hover");
         ui.horizontal(|ui| {
             let selected_text = self
                 .relative
@@ -244,10 +234,8 @@ impl Settings {
     /// Filter
     fn filter(&mut self, ui: &mut Ui) {
         // Onset temperature filter
-        ui.label(ui.localize("filter-by-onset-temperature"))
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize("filter-by-onset-temperature.hover"));
-            });
+        ui.label(ui.localize("FilterByOnsetTemperature"))
+            .on_hover_localized("FilterByOnsetTemperature.hover");
         let text = format_list_truncated!(&self.filter.onset_temperatures, 1);
         let response = ComboBox::from_id_salt("OnsetTemperatureFilter")
             .close_behavior(PopupCloseBehavior::CloseOnClickOutside)
@@ -273,20 +261,18 @@ impl Settings {
         Popup::context_menu(&response)
             .id(ui.next_auto_id().with("ContextMenu"))
             .show(|ui| {
-                if ui.button(format!("{FUNNEL} Check all")).clicked() {
+                if ui.button((FUNNEL, ui.localize("CheckAll"))).clicked() {
                     self.filter.onset_temperatures = Vec::new();
                 }
-                if ui.button(format!("{FUNNEL_X} Uncheck all")).clicked() {
+                if ui.button((FUNNEL_X, ui.localize("UncheckAll"))).clicked() {
                     self.filter.onset_temperatures = self.cache.onset_temperatures.clone();
                 }
             });
         ui.end_row();
 
         // Temperature step filter
-        ui.label(ui.localize("filter-by-temperature-step"))
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize("filter-by-temperature-step.hover"));
-            });
+        ui.label(ui.localize("FilterByTemperatureStep"))
+            .on_hover_localized("FilterByTemperatureStep.hover");
         let text = format_list_truncated!(&self.filter.temperature_steps, 1);
         let response = ComboBox::from_id_salt("TemperatureStepFilter")
             .close_behavior(PopupCloseBehavior::CloseOnClickOutside)
@@ -312,20 +298,18 @@ impl Settings {
         Popup::context_menu(&response)
             .id(ui.next_auto_id().with("ContextMenu"))
             .show(|ui| {
-                if ui.button(format!("{FUNNEL} Check all")).clicked() {
+                if ui.button((FUNNEL, ui.localize("CheckAll"))).clicked() {
                     self.filter.temperature_steps = Vec::new();
                 }
-                if ui.button(format!("{FUNNEL_X} Uncheck all")).clicked() {
+                if ui.button((FUNNEL_X, ui.localize("UncheckAll"))).clicked() {
                     self.filter.temperature_steps = self.cache.temperature_steps.clone();
                 }
             });
         ui.end_row();
 
         // Fatty acids filter
-        ui.label(ui.localize("filter-by-fatty-acids"))
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize("filter-by-fatty-acids.hover"));
-            });
+        ui.label(ui.localize("FilterByFattyAcids"))
+            .on_hover_localized("FilterByFattyAcids.hover");
         let text = format_list_truncated!(
             self.filter
                 .fatty_acids
@@ -350,31 +334,6 @@ impl Settings {
                         }
                     }
                 }
-                // for index in 0..fatty_acids.len() {
-                //     let Some(fatty_acid) = fatty_acids.get(index)? else {
-                //         continue;
-                //     };
-                //     let checked = self.fatty_acids.contains(&fatty_acid);
-                //     let response =
-                //         ui.selectable_label(checked, format!("{:#}", (&fatty_acid).delta()));
-                //     if response.clicked() {
-                //         if checked {
-                //             self.fatty_acids.remove_by_value(&fatty_acid);
-                //         } else {
-                //             self.fatty_acids.push(fatty_acid);
-                //         }
-                //     }
-                //     response.context_menu(|ui| {
-                //         if ui.button(format!("{FUNNEL} Select all")).clicked() {
-                //             // self.fatty_acids = fatty_acids.clone().into_iter().flatten().collect();
-                //             ui.close_kind(UiKind::Menu);
-                //         }
-                //         if ui.button(format!("{FUNNEL_X} Unselect all")).clicked() {
-                //             self.fatty_acids = Vec::new();
-                //             ui.close_kind(UiKind::Menu);
-                //         }
-                //     });
-                // }
             })
             .response;
         response = response.on_hover_ui(|ui| {
@@ -388,10 +347,10 @@ impl Settings {
         Popup::context_menu(&response)
             .id(ui.next_auto_id().with("ContextMenu"))
             .show(|ui| {
-                if ui.button(format!("{FUNNEL} Check all")).clicked() {
+                if ui.button((FUNNEL, ui.localize("CheckAll"))).clicked() {
                     self.filter.fatty_acids = Vec::new();
                 }
-                if ui.button(format!("{FUNNEL_X} Uncheck all")).clicked() {
+                if ui.button((FUNNEL_X, ui.localize("UncheckAll"))).clicked() {
                     self.filter.fatty_acids = self.cache.fatty_acids.clone();
                 }
             });
@@ -400,9 +359,8 @@ impl Settings {
 
     /// Sort
     fn sort(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("sort-by")).on_hover_ui(|ui| {
-            ui.label(ui.localize("sort-by.hover"));
-        });
+        ui.label(ui.localize("SortBy"))
+            .on_hover_localized("SortBy.hover");
         ComboBox::from_id_salt(ui.next_auto_id())
             .selected_text(ui.localize(self.sort.text()))
             .show_ui(ui, |ui| {
@@ -411,26 +369,19 @@ impl Settings {
                     Sort::FattyAcid,
                     ui.localize(Sort::FattyAcid.text()),
                 )
-                .on_hover_ui(|ui| {
-                    ui.label(ui.localize(Sort::FattyAcid.hover_text()));
-                });
+                .on_hover_localized(Sort::FattyAcid.hover_text());
                 ui.selectable_value(&mut self.sort, Sort::Time, ui.localize(Sort::Time.text()))
-                    .on_hover_ui(|ui| {
-                        ui.label(ui.localize(Sort::Time.hover_text()));
-                    });
+                    .on_hover_localized(Sort::Time.hover_text());
             })
             .response
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize(self.sort.hover_text()));
-            });
+            .on_hover_localized(self.sort.hover_text());
         ui.end_row();
     }
 
     /// Order
     fn order(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("order")).on_hover_ui(|ui| {
-            ui.label(ui.localize("order.hover"));
-        });
+        ui.label(ui.localize("Order"))
+            .on_hover_localized("Order.hover");
         ComboBox::from_id_salt(ui.next_auto_id())
             .selected_text(ui.localize(self.order.text()))
             .show_ui(ui, |ui| {
@@ -439,28 +390,22 @@ impl Settings {
                     Order::Ascending,
                     ui.localize(Order::Ascending.text()),
                 )
-                .on_hover_ui(|ui| {
-                    ui.label(ui.localize(Order::Ascending.hover_text()));
-                });
+                .on_hover_localized(Order::Ascending.hover_text());
                 ui.selectable_value(
                     &mut self.order,
                     Order::Descending,
                     ui.localize(Order::Descending.text()),
                 )
-                .on_hover_ui(|ui| {
-                    ui.label(ui.localize(Order::Descending.hover_text()));
-                });
+                .on_hover_localized(Order::Descending.hover_text());
             })
             .response
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize(self.order.hover_text()));
-            });
+            .on_hover_localized(self.order.hover_text());
         ui.end_row();
     }
 
     /// Legend
     fn legend(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("legend"));
+        ui.label(ui.localize("Legend"));
         ui.checkbox(&mut self.plot.legend, "");
         ui.end_row();
     }
@@ -468,9 +413,8 @@ impl Settings {
     /// Radius of points
     fn radius_of_points(&mut self, ui: &mut Ui) {
         // Radius of points
-        ui.label(ui.localize("radius-of-points")).on_hover_ui(|ui| {
-            ui.label(ui.localize("radius-of-points.hover"));
-        });
+        ui.label(ui.localize("RadiusOfPoints"))
+            .on_hover_localized("RadiusOfPoints.hover");
         ui.horizontal(|ui| {
             Slider::new(&mut self.plot.radius_of_points, 0..=u8::MAX)
                 .logarithmic(true)
@@ -560,15 +504,15 @@ pub(crate) enum Sort {
 impl Text for Sort {
     fn text(&self) -> &'static str {
         match self {
-            Self::FattyAcid => "sort-by-fatty-acids",
-            Self::Time => "sort-by-retention-time",
+            Self::FattyAcid => "SortByFattyAcids",
+            Self::Time => "SortByRetentionTime",
         }
     }
 
     fn hover_text(&self) -> &'static str {
         match self {
-            Self::FattyAcid => "sort-by-fatty-acids.hover",
-            Self::Time => "sort-by-retention-time.hover",
+            Self::FattyAcid => "SortByFattyAcids.hover",
+            Self::Time => "SortByRetentionTime.hover",
         }
     }
 }
@@ -613,19 +557,19 @@ pub(crate) enum Axis {
 impl Text for Axis {
     fn text(&self) -> &'static str {
         match self {
-            Self::Alpha => "alpha",
-            Self::EquivalentChainLength => "equivalent-chain-length",
-            Self::OnsetTemperature => "onset-temperature",
-            Self::TemperatureStep => "temperature-step",
+            Self::Alpha => "Alpha",
+            Self::EquivalentChainLength => "EquivalentChainLength",
+            Self::OnsetTemperature => "OnsetTemperature",
+            Self::TemperatureStep => "TemperatureStep",
         }
     }
 
     fn hover_text(&self) -> &'static str {
         match self {
-            Self::Alpha => "alpha.hover",
-            Self::EquivalentChainLength => "equivalent-chain-length.hover",
-            Self::OnsetTemperature => "onset-temperature.hover",
-            Self::TemperatureStep => "temperature-step.hover",
+            Self::Alpha => "Alpha.hover",
+            Self::EquivalentChainLength => "EquivalentChainLength.hover",
+            Self::OnsetTemperature => "OnsetTemperature.hover",
+            Self::TemperatureStep => "TemperatureStep.hover",
         }
     }
 }
@@ -664,9 +608,7 @@ impl Hash for Filter {
 //     pub(crate) fn show(&mut self, ui: &mut Ui, data_frame: &DataFrame) -> PolarsResult<()> {
 //         // Onset temperature filter
 //         ui.label(ui.localize("filter-by-onset-temperature"))
-//             .on_hover_ui(|ui| {
-//                 ui.label(ui.localize("filter-by-onset-temperature.hover"));
-//             });
+//             .on_hover_localized("filter-by-onset-temperature.hover");
 //         let text = format_list_truncated!(&self.onset_temperatures, 2);
 //         ComboBox::from_id_salt("OnsetTemperatureFilter")
 //             .close_behavior(PopupCloseBehavior::CloseOnClickOutside)
@@ -703,9 +645,7 @@ impl Hash for Filter {
 
 //         // Temperature step filter
 //         ui.label(ui.localize("filter-by-temperature-step"))
-//             .on_hover_ui(|ui| {
-//                 ui.label(ui.localize("filter-by-temperature-step.hover"));
-//             });
+//             .on_hover_localized("filter-by-temperature-step.hover");
 //         let text = format_list_truncated!(&self.temperature_steps, 2);
 //         ComboBox::from_id_salt("TemperatureStepFilter")
 //             .close_behavior(PopupCloseBehavior::CloseOnClickOutside)
@@ -742,9 +682,7 @@ impl Hash for Filter {
 
 //         // Fatty acids filter
 //         ui.label(ui.localize("filter-by-fatty-acids"))
-//             .on_hover_ui(|ui| {
-//                 ui.label(ui.localize("filter-by-fatty-acids.hover"));
-//             });
+//             .on_hover_localized("filter-by-fatty-acids.hover");
 //         let text = format_list_truncated!(
 //             self.fatty_acids.iter().map(|fatty_acid| fatty_acid.delta()),
 //             2
@@ -803,15 +741,15 @@ pub(crate) enum Order {
 impl Text for Order {
     fn text(&self) -> &'static str {
         match self {
-            Self::Ascending => "ascending-order",
-            Self::Descending => "descending-order",
+            Self::Ascending => "AscendingOrder",
+            Self::Descending => "DescendingOrder",
         }
     }
 
     fn hover_text(&self) -> &'static str {
         match self {
-            Self::Ascending => "ascending-order.hover",
-            Self::Descending => "descending-order.hover",
+            Self::Ascending => "AscendingOrder.hover",
+            Self::Descending => "DescendingOrder.hover",
         }
     }
 }
@@ -827,15 +765,15 @@ pub(crate) enum View {
 impl Text for View {
     fn text(&self) -> &'static str {
         match self {
-            Self::Plot => "plot-view",
-            Self::Table => "table-view",
+            Self::Plot => "PlotView",
+            Self::Table => "TableView",
         }
     }
 
     fn hover_text(&self) -> &'static str {
         match self {
-            Self::Plot => "table-view.hover",
-            Self::Table => "plot-view.hover",
+            Self::Plot => "TableView.hover",
+            Self::Table => "PlotView.hover",
         }
     }
 }

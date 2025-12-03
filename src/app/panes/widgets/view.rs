@@ -1,6 +1,6 @@
 use crate::{app::states::source::View, localization::Text as _};
 use egui::{Response, RichText, Ui, Widget};
-use egui_l20n::{ResponseExt as _, UiExt as _};
+use egui_l20n::prelude::*;
 use egui_phosphor::regular::{CHART_BAR, TABLE};
 
 /// View widget
