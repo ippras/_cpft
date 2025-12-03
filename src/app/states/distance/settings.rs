@@ -6,8 +6,9 @@ use crate::{
     },
     localization::Text,
 };
-use egui::{ComboBox, Grid, Slider, Ui};
+use egui::{ComboBox, Grid, Slider, Ui, Widget as _};
 use egui_l20n::UiExt as _;
+use egui_phosphor::regular::BOOKMARK;
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -61,20 +62,9 @@ impl Settings {
 
     pub(crate) fn show(&mut self, ui: &mut Ui) {
         Grid::new("Calculation").show(ui, |ui| -> PolarsResult<()> {
-            // Precision
-            ui.label(ui.localize("precision"));
-            ui.add(Slider::new(&mut self.precision, 1..=MAX_PRECISION));
-            ui.end_row();
-
-            // Sticky columns
-            ui.label(ui.localize("sticky"));
-            ui.add(Slider::new(&mut self.sticky, 0..=NUM_COLUMNS));
-            ui.end_row();
-
-            // Truncate titles
-            ui.label(ui.localize("truncate"));
-            ui.checkbox(&mut self.truncate, "");
-            ui.end_row();
+            self.precision(ui);
+            self.sticky(ui);
+            self.truncate(ui);
 
             // Filter
             ui.heading("Filter");
@@ -155,6 +145,38 @@ impl Settings {
             }
             Ok(())
         });
+    }
+
+    /// Precision
+    fn precision(&mut self, ui: &mut Ui) {
+        ui.label(ui.localize("Precision")).on_hover_ui(|ui| {
+            ui.label(ui.localize("Precision.hover"));
+        });
+        ui.horizontal(|ui| {
+            Slider::new(&mut self.precision, 1..=MAX_PRECISION).ui(ui);
+            if ui.button((BOOKMARK, "3")).clicked() {
+                self.precision = 3;
+            };
+        });
+        ui.end_row();
+    }
+
+    // Sticky columns
+    fn sticky(&mut self, ui: &mut Ui) {
+        ui.label(ui.localize("StickyColumns")).on_hover_ui(|ui| {
+            ui.label(ui.localize("StickyColumns.hover"));
+        });
+        Slider::new(&mut self.sticky, 0..=NUM_COLUMNS).ui(ui);
+        ui.end_row();
+    }
+
+    // Truncate headers
+    fn truncate(&mut self, ui: &mut Ui) {
+        ui.label(ui.localize("TruncateHeaders")).on_hover_ui(|ui| {
+            ui.label(ui.localize("TruncateHeaders.hover"));
+        });
+        ui.checkbox(&mut self.truncate, "");
+        ui.end_row();
     }
 
     /// Sort

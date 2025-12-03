@@ -1,9 +1,6 @@
-use crate::{
-    app::{
-        panes::{MARGIN, distance::ID_SOURCE},
-        states::distance::Settings,
-    },
-    r#const::{MODE, ONSET_TEMPERATURE, TEMPERATURE_STEP},
+use crate::app::{
+    panes::{MARGIN, distance::ID_SOURCE},
+    states::distance::Settings,
 };
 use egui::{Frame, Id, Margin, Response, TextStyle, TextWrapMode, Ui, Widget};
 use egui_l20n::UiExt as _;
@@ -39,10 +36,10 @@ impl<'a> Sum<'a> {
 
     pub(super) fn show(&mut self, ui: &mut Ui) -> Response {
         let id_salt = Id::new(ID_SOURCE).with("Sum");
-        if self.settings.reset_table {
+        if self.settings.reset_sum {
             let id = TableState::id(ui, Id::new(id_salt));
             TableState::reset(ui.ctx(), id);
-            self.settings.reset_table = false;
+            self.settings.reset_sum = false;
         }
         let height = ui.text_style_height(&TextStyle::Heading) + 2.0 * MARGIN.y;
         let num_rows = self.data_frame.height() as _;
@@ -73,9 +70,10 @@ impl<'a> Sum<'a> {
         match (row, column) {
             // Top
             (0, top::MODE) => {
-                ui.heading(ui.localize("Mode")).on_hover_ui(|ui| {
-                    ui.localize("Mode.hover");
-                });
+                ui.heading("Index");
+                // ui.heading(ui.localize("Mode")).on_hover_ui(|ui| {
+                //     ui.localize("Mode.hover");
+                // });
             }
             (0, top::ALPHA) => {
                 ui.heading(ui.localize("Alpha")).on_hover_ui(|ui| {
@@ -95,41 +93,48 @@ impl<'a> Sum<'a> {
                     });
             }
             // Bottom
-            (1, bottom::ONSET) => {
+            (1, column) => {
+                // self.data_frame.get_col
                 ui.heading(ui.localize("OnsetTemperature.abbreviation"))
                     .on_hover_ui(|ui| {
                         ui.localize("OnsetTemperature.hover");
                     });
             }
-            (1, bottom::STEP) => {
-                ui.heading(ui.localize("TemperatureStep.abbreviation"))
-                    .on_hover_ui(|ui| {
-                        ui.localize("TemperatureStep.hover");
-                    });
-            }
-            (1, column) => match column.start.saturating_sub(2).rem_euclid(4) {
-                0 => {
-                    ui.heading(ui.localize("Maximum")).on_hover_ui(|ui| {
-                        ui.localize("Maximum.hover");
-                    });
-                }
-                1 => {
-                    ui.heading(ui.localize("Mean")).on_hover_ui(|ui| {
-                        ui.localize("Mean.hover");
-                    });
-                }
-                2 => {
-                    ui.heading(ui.localize("Median")).on_hover_ui(|ui| {
-                        ui.localize("Median.hover");
-                    });
-                }
-                3 => {
-                    ui.heading(ui.localize("Minimum")).on_hover_ui(|ui| {
-                        ui.localize("Minimum.hover");
-                    });
-                }
-                _ => unreachable!(),
-            },
+            // (1, bottom::ONSET) => {
+            //     ui.heading(ui.localize("onset-temperature.abbreviation"))
+            //         .on_hover_localized("onset-temperature");
+            // }
+            // (1, bottom::STEP) => {
+            //     ui.heading(ui.localize("temperature-step.abbreviation"))
+            //         .on_hover_localized("temperature-step")
+            //         .on_hover_localized("temperature-step.hover");
+            // }
+            // (1, bottom::FROM) => {
+            //     ui.heading(ui.localize("from"));
+            // }
+            // (1, bottom::TO) => {
+            //     ui.heading(ui.localize("to"));
+            // }
+            // (1, bottom::RETENTION_TIME) => {
+            //     ui.heading(ui.localize("retention-time-distance.abbreviation"))
+            //         .on_hover_localized("retention-time-distance")
+            //         .on_hover_localized("retention-time-distance.hover");
+            // }
+            // (1, bottom::ECL) => {
+            //     ui.heading(ui.localize("equivalent-chain-length-distance.abbreviation"))
+            //         .on_hover_localized("equivalent-chain-length-distance")
+            //         .on_hover_localized("equivalent-chain-length-distance.hover");
+            // }
+            // (1, bottom::EUCLIDEAN) => {
+            //     ui.heading(ui.localize("euclidean-distance.abbreviation"))
+            //         .on_hover_localized("euclidean-distance")
+            //         .on_hover_localized("euclidean-distance.hover");
+            // }
+            // (1, bottom::ALPHA) => {
+            //     ui.heading(ui.localize("alpha.abbreviation"))
+            //         .on_hover_localized("alpha")
+            //         .on_hover_localized("alpha.hover");
+            // }
             _ => {}
         }
     }
@@ -142,23 +147,13 @@ impl<'a> Sum<'a> {
         column: Range<usize>,
     ) -> PolarsResult<()> {
         match (row, column) {
-            (row, bottom::ONSET) => {
-                ui.label(
-                    self.data_frame[MODE]
-                        .struct_()?
-                        .field_by_name(ONSET_TEMPERATURE)?
-                        .get(row)?
-                        .str_value(),
-                );
-            }
-            (row, bottom::STEP) => {
-                ui.label(
-                    self.data_frame[MODE]
-                        .struct_()?
-                        .field_by_name(TEMPERATURE_STEP)?
-                        .get(row)?
-                        .str_value(),
-                );
+            (row, top::MODE) => {
+                ui.label(row.to_string());
+                // .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                //     ui.heading(ui.localize("DeadTime"));
+                //     ui.label(self.data_frame[DEAD_TIME].get(row)?.str_value());
+                //     Ok(())
+                // })?;
             }
             _ => {}
         }
@@ -248,24 +243,24 @@ impl Widget for Sum<'_> {
 mod top {
     use super::*;
 
-    pub(super) const MODE: Range<usize> = 0..2;
+    pub(super) const MODE: Range<usize> = 0..1;
     pub(super) const ALPHA: Range<usize> = MODE.end..MODE.end + 4;
     pub(super) const EQUIVALENT_CHAIN_LENGTH: Range<usize> = ALPHA.end..ALPHA.end + 4;
     pub(super) const EUCLIDEAN_DISTANCE: Range<usize> =
         EQUIVALENT_CHAIN_LENGTH.end..EQUIVALENT_CHAIN_LENGTH.end + 4;
 }
 
-mod bottom {
-    use super::*;
+// mod bottom {
+//     use super::*;
 
-    pub(super) const ONSET: Range<usize> = top::MODE.start..top::MODE.start + 1;
-    pub(super) const STEP: Range<usize> = ONSET.end..ONSET.end + 1;
+//     pub(super) const ONSET: Range<usize> = top::ALPHA.start..top::ALPHA.start + 1;
+//     pub(super) const STEP: Range<usize> = ONSET.end..ONSET.end + 1;
 
-    // pub(super) const FROM: Range<usize> = top::FATTY_ACID.start..top::FATTY_ACID.start + 1;
-    // pub(super) const TO: Range<usize> = FROM.end..FROM.end + 1;
+//     pub(super) const FROM: Range<usize> = top::FATTY_ACID.start..top::FATTY_ACID.start + 1;
+//     pub(super) const TO: Range<usize> = FROM.end..FROM.end + 1;
 
-    // pub(super) const RETENTION_TIME: Range<usize> = top::DISTANCE.start..top::DISTANCE.start + 1;
-    // pub(super) const ECL: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
-    // pub(super) const EUCLIDEAN: Range<usize> = ECL.end..ECL.end + 1;
-    // pub(super) const ALPHA: Range<usize> = EUCLIDEAN.end..EUCLIDEAN.end + 1;
-}
+//     pub(super) const RETENTION_TIME: Range<usize> = top::DISTANCE.start..top::DISTANCE.start + 1;
+//     pub(super) const ECL: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
+//     pub(super) const EUCLIDEAN: Range<usize> = ECL.end..ECL.end + 1;
+//     pub(super) const ALPHA: Range<usize> = EUCLIDEAN.end..EUCLIDEAN.end + 1;
+// }

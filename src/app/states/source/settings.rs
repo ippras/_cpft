@@ -191,7 +191,7 @@ impl Settings {
         ui.end_row();
     }
 
-    // Truncate titles
+    // Truncate headers
     fn truncate(&mut self, ui: &mut Ui) {
         ui.label(ui.localize("TruncateHeaders")).on_hover_ui(|ui| {
             ui.label(ui.localize("TruncateHeaders.hover"));

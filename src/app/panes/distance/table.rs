@@ -90,13 +90,13 @@ impl TableView<'_> {
             }
             // Bottom
             (1, bottom::ONSET) => {
-                ui.heading(ui.localize("onset-temperature.abbreviation"))
-                    .on_hover_localized("onset-temperature");
+                ui.heading(ui.localize("OnsetTemperature.abbreviation"))
+                    .on_hover_localized("OnsetTemperature");
             }
             (1, bottom::STEP) => {
-                ui.heading(ui.localize("temperature-step.abbreviation"))
-                    .on_hover_localized("temperature-step")
-                    .on_hover_localized("temperature-step.hover");
+                ui.heading(ui.localize("TemperatureStep.abbreviation"))
+                    .on_hover_localized("TemperatureStep")
+                    .on_hover_localized("TemperatureStep.hover");
             }
             (1, bottom::FROM) => {
                 ui.heading(ui.localize("from"));
