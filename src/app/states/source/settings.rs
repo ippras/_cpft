@@ -47,7 +47,7 @@ impl Settings {
         Self {
             precision: 2,
             resizable: false,
-            significant: false,
+            significant: true,
             sticky: 0,
             truncate: false,
 

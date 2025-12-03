@@ -22,7 +22,10 @@ pub(crate) struct Computer;
 impl Computer {
     fn try_compute(&mut self, key: Key) -> PolarsResult<Value> {
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
-        lazy_frame = compute(lazy_frame, key)?;
+        // Filter
+        lazy_frame = lazy_frame.filter(col(FILTER));
+        // Compute
+        lazy_frame = format(lazy_frame, key);
         lazy_frame.collect()
     }
 }
@@ -46,8 +49,7 @@ impl<'a> Key<'a> {
         Self {
             frame,
             precision: settings.precision,
-            // significant: settings.significant,
-            significant: false,
+            significant: settings.significant,
         }
     }
 }
@@ -55,18 +57,8 @@ impl<'a> Key<'a> {
 /// Source display value
 type Value = DataFrame;
 
-fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
-    // println!(
-    //     "lazy_frame: {}",
-    //     lazy_frame
-    //         .clone()
-    //         .select([col(CHAIN_LENGTH).struct_().field_by_name("*")])
-    //         .collect()?
-    // );
-    // Filter
-    lazy_frame = lazy_frame.filter(col(FILTER));
-    // Compute
-    lazy_frame = lazy_frame.with_columns([
+fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
+    lazy_frame.with_columns([
         col(FATTY_ACID).fatty_acid().format(),
         as_struct(vec![
             as_struct(vec![
@@ -148,6 +140,5 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
                 .precision(key.precision, key.significant),
         ])
         .alias(DERIVATIVE),
-    ]);
-    Ok(lazy_frame)
+    ])
 }

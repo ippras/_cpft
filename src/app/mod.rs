@@ -7,25 +7,25 @@ use anyhow::Result;
 use data::Data;
 use eframe::{APP_KEY, get_value, set_value};
 use egui::{
-    Align, Align2, CentralPanel, Color32, Context, FontDefinitions, Frame, Grid, Id, Label,
-    LayerId, Layout, MenuBar, Order, RichText, ScrollArea, Sides, TextStyle, TopBottomPanel, Ui,
-    Window, warn_if_debug_build,
+    Align, Align2, CentralPanel, Color32, Context, FontDefinitions, Frame, Id, LayerId, Layout,
+    MenuBar, Order, RichText, ScrollArea, Sides, TextStyle, TopBottomPanel, Ui, Window,
+    warn_if_debug_build,
 };
-use egui_ext::{DroppedFileExt, HoveredFileExt, LightDarkButton};
+use egui_ext::{HoveredFileExt, LightDarkButton};
 use egui_l20n::prelude::*;
 use egui_phosphor::{
     Variant, add_to_fonts,
     regular::{
-        ARROWS_CLOCKWISE, DATABASE, GRID_FOUR, ROCKET, SIDEBAR_SIMPLE, SLIDERS_HORIZONTAL,
-        SQUARE_SPLIT_HORIZONTAL, SQUARE_SPLIT_VERTICAL, TABS, TRASH,
+        ARROWS_CLOCKWISE, DATABASE, GRID_FOUR, ROCKET, SLIDERS_HORIZONTAL, SQUARE_SPLIT_HORIZONTAL,
+        SQUARE_SPLIT_VERTICAL, TABS, TRASH,
     },
 };
 use egui_tiles::{ContainerKind, Tile, Tree};
 use egui_tiles_ext::{TreeExt as _, VERTICAL};
 use metadata::egui::MetadataWidget;
 use serde::{Deserialize, Serialize};
-use std::{fmt::Write, io::Cursor, str, time::Duration};
-use tracing::{error, info, trace};
+use std::{fmt::Write, str, time::Duration};
+use tracing::{error, info};
 
 /// IEEE 754-2008
 const MAX_PRECISION: usize = 16;
