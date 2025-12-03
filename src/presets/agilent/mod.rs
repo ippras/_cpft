@@ -39,7 +39,7 @@ fn parse(bytes: &[u8]) -> Result<HashedMetaDataFrame> {
     })
 }
 
-pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent.ron");
+pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[0.2.0].2025-12-01.ron");
 
 // pub(crate) static DEAD_TIME: LazyLock<HashedMetaDataFrame> = ipc!("DeadTime.ipc");
 

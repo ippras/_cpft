@@ -37,7 +37,6 @@ const MAX_TEMPERATURE: f64 = 250.0;
 #[derive(Deserialize, Serialize)]
 #[serde(default)]
 pub struct App {
-    left_panel: bool,
     reactive: bool,
     // Data
     data: Data,
@@ -49,7 +48,6 @@ pub struct App {
 impl Default for App {
     fn default() -> Self {
         Self {
-            left_panel: true,
             reactive: true,
             data: Data::default(),
             tree: Tree::empty("Tree"),
@@ -212,8 +210,8 @@ impl App {
         TopBottomPanel::top("TopPanel").show(ctx, |ui| {
             MenuBar::new().ui(ui, |ui| {
                 ScrollArea::horizontal().show(ui, |ui| {
-                    // Left panel
-                    self.left_panel_button(ui);
+                    // Reactive
+                    self.reactive_button(ui);
                     ui.separator();
                     // Light/Dark
                     ui.light_dark_button(ICON_SIZE);
@@ -252,15 +250,12 @@ impl App {
         });
     }
 
-    /// Left panel button
-    fn left_panel_button(&mut self, ui: &mut Ui) {
-        ui.toggle_value(
-            &mut self.left_panel,
-            RichText::new(SIDEBAR_SIMPLE).size(ICON_SIZE),
-        )
-        .on_hover_ui(|ui| {
-            ui.label(ui.localize("LeftPanel"));
-        });
+    /// Reactive button
+    fn reactive_button(&mut self, ui: &mut Ui) {
+        ui.toggle_value(&mut self.reactive, RichText::new(ROCKET).size(ICON_SIZE))
+            .on_hover_localized("reactive")
+            .on_hover_localized("reactive.hover?state=enabled")
+            .on_disabled_hover_localized("reactive.hover?state=disabled");
     }
 
     /// Reset button
