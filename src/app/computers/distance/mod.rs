@@ -117,7 +117,7 @@ fn join(mut lazy_frame: LazyFrame, key: Key) -> LazyFrame {
         fatty_acid.clone().alias(FROM),
         // Колонка TO: Следующая строка (сдвиг на -1)
         fatty_acid
-            .shift(lit(-1)) // Сдвигаем "вверх", чтобы получить следующую строку в текущую
+            .shift(lit(-1)) // Сдвигаем "вверх", чтобы получить следующую строку в текущей позиции
             .over([col(MODE)]) // Группируем по MODE, чтобы конец одной группы не соединился с началом другой
             .alias(TO),
     ]);
@@ -186,5 +186,5 @@ fn join(mut lazy_frame: LazyFrame, key: Key) -> LazyFrame {
 
 pub(crate) mod display;
 pub(crate) mod filtered;
+pub(crate) mod plot;
 pub(crate) mod sum;
-// pub(crate) mod plot;

@@ -66,15 +66,6 @@ impl<'a> Key<'a> {
 /// Distance sum value
 type Value = HashedDataFrame;
 
-// fn aggregate(name: &str, aggregation: Aggregation) -> Expr {
-//     match aggregation {
-//         Aggregation::Maximum => self.abs().max(),
-//         Aggregation::Median => self.abs().median(),
-//         Aggregation::Minimum => self.abs().min(),
-//     }
-//     .over([col(MODE)])
-// }
-
 /// Group
 fn group(lazy_frame: LazyFrame) -> LazyFrame {
     lazy_frame.group_by([col(MODE)]).agg([
@@ -147,18 +138,3 @@ fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
         .as_expr()
         .precision(key.precision, key.significant)])
 }
-
-// /// Extension methods for [`Expr`]
-// trait ExprExt {
-//     fn aggregate(self, aggregation: Aggregation) -> Expr;
-// }
-// impl ExprExt for Expr {
-//     fn aggregate(self, aggregation: Aggregation) -> Expr {
-//         match aggregation {
-//             Aggregation::Maximum => self.abs().max(),
-//             Aggregation::Median => self.abs().median(),
-//             Aggregation::Minimum => self.abs().min(),
-//         }
-//         .over([col(MODE)])
-//     }
-// }

@@ -1,13 +1,11 @@
-// use self::{plot::PlotView, table::TableView};
-use self::{sum::Sum, table::TableView};
+use self::{plot::PlotView, sum::Sum, table::TableView};
 use crate::{
     app::{
         computers::distance::{
-            Computed as DistanceComputed,
-            Key as DistanceKey,
+            Computed as DistanceComputed, Key as DistanceKey,
             display::{Computed as DisplayComputed, Key as DisplayKey},
+            plot::{Computed as PlotComputed, Key as PlotKey},
             sum::{Computed as SumComputed, Key as SumKey},
-            // plot::{Computed as DistancePlotComputed, Key as DistancePlotKey},
         },
         panes::{Behavior, MARGIN},
         states::distance::{Settings, State, View},
@@ -16,7 +14,7 @@ use crate::{
     utils::hash::{HashedDataFrame, HashedMetaDataFrame},
 };
 use egui::{
-    CentralPanel, CursorIcon, Frame, Id, MenuBar, Response, RichText, ScrollArea, Sense, TextStyle,
+    CentralPanel, CursorIcon, Frame, Id, MenuBar, Response, RichText, ScrollArea, TextStyle,
     TopBottomPanel, Ui, UiKind, Window, util::hash,
 };
 use egui_l20n::prelude::*;
@@ -26,7 +24,6 @@ use egui_phosphor::regular::{
 };
 use egui_tiles::{TileId, UiResponse};
 use polars::prelude::*;
-use polars_utils::parma::raw::Key;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, from_fn};
 use tracing::instrument;
@@ -248,27 +245,26 @@ impl Pane {
     }
 
     fn central(&mut self, ui: &mut Ui, state: &mut State) {
-        // Display
-        let data_frame = ui.memory_mut(|memory| {
-            memory
-                .caches
-                .cache::<DisplayComputed>()
-                .get(DisplayKey::new(&self.calculated, &state.settings))
-        });
         match state.settings.view {
             View::Plot => {
-                // let points = ui.memory_mut(|memory| {
-                //     memory
-                //         .caches
-                //         .cache::<DistancePlotComputed>()
-                //         .get(DistancePlotKey {
-                //             data_frame: &data_frame,
-                //             settings: &state.settings,
-                //         })
-                // });
-                // PlotView::new(points, &state.settings.plot).show(ui)
+                let points = ui.memory_mut(|memory| {
+                    memory
+                        .caches
+                        .cache::<PlotComputed>()
+                        .get(PlotKey::new(&self.calculated, &state.settings))
+                });
+                PlotView::new(points, &state.settings).show(ui)
             }
-            View::Table => TableView::new(&data_frame, &mut state.settings).show(ui),
+            View::Table => {
+                // Display
+                let data_frame = ui.memory_mut(|memory| {
+                    memory
+                        .caches
+                        .cache::<DisplayComputed>()
+                        .get(DisplayKey::new(&self.calculated, &state.settings))
+                });
+                TableView::new(&data_frame, &mut state.settings).show(ui)
+            }
         };
     }
 }
@@ -294,7 +290,7 @@ impl Pane {
             .id(ui.auto_id_with(ID_SOURCE).with("Sum"))
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_sum)
-            .show(ui.ctx(), |ui| _ = self.sum_content(ui, &mut state.settings));
+            .show(ui.ctx(), |ui| self.sum_content(ui, &mut state.settings));
     }
 
     #[instrument(skip_all, err)]
@@ -310,6 +306,6 @@ impl Pane {
     }
 }
 
-// pub(crate) mod plot;
+pub(crate) mod plot;
 pub(crate) mod sum;
 pub(crate) mod table;

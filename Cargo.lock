@@ -947,6 +947,7 @@ dependencies = [
  "egui_table",
  "egui_tiles",
  "egui_tiles_ext",
+ "indexmap",
  "itertools",
  "lipid",
  "log",
