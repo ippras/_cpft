@@ -7,11 +7,9 @@ use crate::{
             plot::{Computed as PlotComputed, Key as PlotKey},
             sum::{Computed as SumComputed, Key as SumKey},
         },
-        panes::{
-            Behavior, MARGIN,
-            widgets::{ResetButton, ResizeButton, SettingsButton, ViewButton},
-        },
+        panes::{Behavior, MARGIN},
         states::distance::{Settings, State, View},
+        widgets::{ResetButton, ResizeButton, SettingsButton, ViewButton},
     },
     utils::hash::{HashedDataFrame, HashedMetaDataFrame},
 };

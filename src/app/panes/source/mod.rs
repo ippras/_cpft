@@ -6,11 +6,9 @@ use crate::{
             display::{Computed as DisplayComputed, Key as DisplayKey},
             plot::{Computed as PlotComputed, Key as PlotKey},
         },
-        panes::{
-            Behavior, MARGIN,
-            widgets::{ResetButton, ResizeButton, SettingsButton, ViewButton},
-        },
+        panes::{Behavior, MARGIN},
         states::source::{ID_SOURCE, State, View},
+        widgets::{ResetButton, ResizeButton, SettingsButton, ViewButton},
     },
     r#const::{
         ABSOLUTE, DEAD_TIME, MEAN, MODE, ONSET_TEMPERATURE, RETENTION_TIME, TEMPERATURE_STEP,

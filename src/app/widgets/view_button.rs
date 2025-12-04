@@ -15,8 +15,11 @@ impl<'a> ViewButton<'a> {
         Self { view, size: None }
     }
 
-    pub fn with_size(self, size: Option<f32>) -> Self {
-        Self { size: size, ..self }
+    pub fn with_size(self, size: f32) -> Self {
+        Self {
+            size: Some(size),
+            ..self
+        }
     }
 }
 

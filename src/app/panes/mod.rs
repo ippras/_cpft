@@ -52,4 +52,3 @@ impl egui_tiles::Behavior<Pane> for Behavior {
 
 pub(crate) mod distance;
 pub(crate) mod source;
-pub(crate) mod widgets;

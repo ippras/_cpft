@@ -1,15 +1,15 @@
 use egui::{Response, RichText, Ui, Widget};
 use egui_l20n::prelude::*;
-use egui_phosphor::regular::ARROWS_HORIZONTAL;
+use egui_phosphor::regular::ARROWS_CLOCKWISE;
 
-/// Resize button widget
+/// Reset button widget
 #[derive(Debug)]
-pub struct ResizeButton<'a> {
+pub struct ResetButton<'a> {
     selected: &'a mut bool,
     size: Option<f32>,
 }
 
-impl<'a> ResizeButton<'a> {
+impl<'a> ResetButton<'a> {
     pub fn new(selected: &'a mut bool) -> Self {
         Self {
             selected,
@@ -17,20 +17,23 @@ impl<'a> ResizeButton<'a> {
         }
     }
 
-    pub fn with_size(self, size: Option<f32>) -> Self {
-        Self { size: size, ..self }
+    pub fn with_size(self, size: f32) -> Self {
+        Self {
+            size: Some(size),
+            ..self
+        }
     }
 }
 
-impl Widget for ResizeButton<'_> {
+impl Widget for ResetButton<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
-        let mut atoms = RichText::new(ARROWS_HORIZONTAL);
+        let mut atoms = RichText::new(ARROWS_CLOCKWISE);
         atoms = if let Some(size) = self.size {
             atoms.size(size)
         } else {
             atoms.heading()
         };
         ui.toggle_value(self.selected, atoms)
-            .on_hover_localized("ResizeTableColumns")
+            .on_hover_localized("ResetState")
     }
 }

@@ -2,13 +2,20 @@ use self::{
     panes::{Behavior, Pane},
     states::State,
 };
-use crate::{localization::ContextExt as _, presets::AGILENT};
+use crate::{
+    app::widgets::{
+        GridButton, HorizontalButton, ReactiveButton, ResetButton, SettingsButton, TabsButton,
+        VerticalButton,
+    },
+    localization::ContextExt as _,
+    presets::AGILENT,
+};
 use anyhow::Result;
 use data::Data;
 use eframe::{APP_KEY, get_value, set_value};
 use egui::{
     Align, Align2, CentralPanel, Color32, Context, FontDefinitions, Frame, Id, LayerId, Layout,
-    MenuBar, Order, RichText, ScrollArea, Sides, TextStyle, TopBottomPanel, Ui, Window,
+    MenuBar, Order, RichText, ScrollArea, Sides, TextStyle, TopBottomPanel, Ui, Widget, Window,
     warn_if_debug_build,
 };
 use egui_ext::{HoveredFileExt, LightDarkButton};
@@ -16,8 +23,8 @@ use egui_l20n::prelude::*;
 use egui_phosphor::{
     Variant, add_to_fonts,
     regular::{
-        ARROWS_CLOCKWISE, DATABASE, GRID_FOUR, ROCKET, SLIDERS_HORIZONTAL, SQUARE_SPLIT_HORIZONTAL,
-        SQUARE_SPLIT_VERTICAL, TABS, TRASH,
+        DATABASE, GRID_FOUR, SLIDERS_HORIZONTAL, SQUARE_SPLIT_HORIZONTAL, SQUARE_SPLIT_VERTICAL,
+        TABS,
     },
 };
 use egui_tiles::{ContainerKind, Tile, Tree};
@@ -37,7 +44,6 @@ const MAX_TEMPERATURE: f64 = 250.0;
 #[derive(Deserialize, Serialize)]
 #[serde(default)]
 pub struct App {
-    reactive: bool,
     // Data
     data: Data,
     // Panes
@@ -48,7 +54,6 @@ pub struct App {
 impl Default for App {
     fn default() -> Self {
         Self {
-            reactive: true,
             data: Data::default(),
             tree: Tree::empty("Tree"),
             behavior: Default::default(),
@@ -86,7 +91,7 @@ impl App {
             })
         }) {
             let painter =
-                ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("file_drop_target")));
+                ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("FileDropTarget")));
             let content_rect = ctx.content_rect();
             painter.rect_filled(content_rect, 0.0, Color32::from_black_alpha(192));
             painter.text(
@@ -210,37 +215,22 @@ impl App {
         TopBottomPanel::top("TopPanel").show(ctx, |ui| {
             MenuBar::new().ui(ui, |ui| {
                 ScrollArea::horizontal().show(ui, |ui| {
-                    // Reactive
-                    self.reactive_button(ui);
+                    ReactiveButton::new(&mut state.settings.reactive)
+                        .with_size(ICON_SIZE)
+                        .ui(ui);
                     ui.separator();
                     // Light/Dark
                     ui.light_dark_button(ICON_SIZE);
                     ui.separator();
-                    // Reset app
-                    self.reset_button(ui);
+                    ResetButton::new(&mut state.settings.reset_state)
+                        .with_size(ICON_SIZE)
+                        .ui(ui);
                     ui.separator();
-                    // Reset GUI
-                    if ui
-                        .button(RichText::new(ARROWS_CLOCKWISE).size(ICON_SIZE))
-                        .on_hover_localized("reset-gui")
-                        .clicked()
-                    {
-                        // Cache
-                        let caches = ui.memory_mut(|memory| memory.caches.clone());
-                        ui.memory_mut(|memory| {
-                            memory.caches = caches;
-                        });
-                        ui.ctx().set_localizations();
-                    }
+                    self.layouts(ui, state);
                     ui.separator();
-                    // Layout
-                    self.vertical_button(ui);
-                    self.horizontal_button(ui);
-                    self.grid_button(ui);
-                    self.tabs_button(ui);
-                    ui.separator();
-                    // Settings
-                    self.settings_button(ui, state);
+                    SettingsButton::new(&mut state.windows.open_settings)
+                        .with_size(ICON_SIZE)
+                        .ui(ui);
                     ui.separator();
                     // Database
                     self.database_button(ui);
@@ -250,97 +240,70 @@ impl App {
         });
     }
 
-    /// Reactive button
-    fn reactive_button(&mut self, ui: &mut Ui) {
-        ui.toggle_value(&mut self.reactive, RichText::new(ROCKET).size(ICON_SIZE))
-            .on_hover_localized("reactive")
-            .on_hover_localized("reactive.hover?state=enabled")
-            .on_disabled_hover_localized("reactive.hover?state=disabled");
-    }
-
-    /// Reset button
-    fn reset_button(&mut self, ui: &mut Ui) {
-        if ui
-            .button(RichText::new(TRASH).size(ICON_SIZE))
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize("ResetApplication"));
-            })
-            .clicked()
-        {
-            *self = Default::default();
-        }
+    fn layouts(&mut self, ui: &mut Ui, state: &mut State) {
+        VerticalButton::new(&mut state.settings.layout.container_kind)
+            .with_size(ICON_SIZE)
+            .ui(ui);
+        HorizontalButton::new(&mut state.settings.layout.container_kind)
+            .with_size(ICON_SIZE)
+            .ui(ui);
+        GridButton::new(&mut state.settings.layout.container_kind)
+            .with_size(ICON_SIZE)
+            .ui(ui);
+        TabsButton::new(&mut state.settings.layout.container_kind)
+            .with_size(ICON_SIZE)
+            .ui(ui);
     }
 
     /// Vertical button
-    fn vertical_button(&mut self, ui: &mut Ui) {
+    fn vertical_button(&mut self, ui: &mut Ui, state: &mut State) {
         if ui
             .button(RichText::new(SQUARE_SPLIT_VERTICAL).size(ICON_SIZE))
             .on_hover_ui(|ui| {
                 ui.label(ui.localize("Vertical"));
             })
             .clicked()
-            && let Some(id) = self.tree.root
-            && let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id)
         {
-            container.set_kind(ContainerKind::Vertical);
+            state.settings.layout.container_kind = Some(ContainerKind::Vertical);
         }
     }
 
     /// Horizontal button
-    fn horizontal_button(&mut self, ui: &mut Ui) {
+    fn horizontal_button(&mut self, ui: &mut Ui, state: &mut State) {
         if ui
             .button(RichText::new(SQUARE_SPLIT_HORIZONTAL).size(ICON_SIZE))
             .on_hover_ui(|ui| {
                 ui.label(ui.localize("Horizontal"));
             })
             .clicked()
-            && let Some(id) = self.tree.root
-            && let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id)
         {
-            container.set_kind(ContainerKind::Horizontal);
+            state.settings.layout.container_kind = Some(ContainerKind::Horizontal);
         }
     }
 
     /// Grid button
-    fn grid_button(&mut self, ui: &mut Ui) {
+    fn grid_button(&mut self, ui: &mut Ui, state: &mut State) {
         if ui
             .button(RichText::new(GRID_FOUR).size(ICON_SIZE))
             .on_hover_ui(|ui| {
                 ui.label(ui.localize("Grid"));
             })
             .clicked()
-            && let Some(id) = self.tree.root
-            && let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id)
         {
-            container.set_kind(ContainerKind::Grid);
+            state.settings.layout.container_kind = Some(ContainerKind::Grid);
         }
     }
 
     /// Tabs button
-    fn tabs_button(&mut self, ui: &mut Ui) {
+    fn tabs_button(&mut self, ui: &mut Ui, state: &mut State) {
         if ui
             .button(RichText::new(TABS).size(ICON_SIZE))
             .on_hover_ui(|ui| {
                 ui.label(ui.localize("Tabs"));
             })
             .clicked()
-            && let Some(id) = self.tree.root
-            && let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id)
         {
-            container.set_kind(ContainerKind::Tabs);
-        }
-    }
-
-    /// Settings button
-    fn settings_button(&mut self, ui: &mut Ui, state: &mut State) {
-        if ui
-            .button(RichText::new(SLIDERS_HORIZONTAL).size(ICON_SIZE))
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize("Settings"));
-            })
-            .clicked()
-        {
-            state.windows.open_settings ^= true;
+            state.settings.layout.container_kind = Some(ContainerKind::Tabs);
         }
     }
 
@@ -390,6 +353,28 @@ impl App {
             self.tree.insert_pane::<VERTICAL>(Pane::distance(frame));
         }
     }
+
+    fn state(&mut self, ctx: &Context, state: &mut State) {
+        if state.settings.reset_state {
+            *self = Default::default();
+            // Cache
+            let caches = ctx.memory_mut(|memory| memory.caches.clone());
+            ctx.memory_mut(|memory| {
+                memory.caches = caches;
+            });
+            ctx.set_localizations();
+            state.settings.reset_state = false;
+        }
+        if let Some(container_kind) = state.settings.layout.container_kind.take()
+            && let Some(id) = self.tree.root
+            && let Some(Tile::Container(container)) = self.tree.tiles.get_mut(id)
+        {
+            container.set_kind(container_kind);
+        }
+        if state.settings.reactive {
+            ctx.request_repaint();
+        }
+    }
 }
 
 impl eframe::App for App {
@@ -407,10 +392,8 @@ impl eframe::App for App {
         self.windows(ctx, &mut state);
         // Post update
         self.drag_and_drop(ctx);
+        self.state(ctx, &mut state);
         state.store(ctx, Id::new(ID_SOURCE));
-        if self.reactive {
-            ctx.request_repaint();
-        }
     }
 }
 
@@ -418,3 +401,4 @@ mod computers;
 mod data;
 mod panes;
 mod states;
+mod widgets;
