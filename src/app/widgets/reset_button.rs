@@ -17,7 +17,7 @@ impl<'a> ResetButton<'a> {
         }
     }
 
-    pub fn with_size(self, size: f32) -> Self {
+    pub fn size(self, size: f32) -> Self {
         Self {
             size: Some(size),
             ..self

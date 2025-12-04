@@ -52,31 +52,29 @@ impl PlotView<'_> {
             .label_formatter(move |name, PlotPoint { x, y }| {
                 let mut label = String::new();
                 if !name.is_empty() {
-                    writeln!(&mut label, "{name}").ok();
+                    _ = writeln!(&mut label, "{name}");
                 }
                 if let Some(values) = points.get(&IndexKey(PlotPoint::new(*x, *y))) {
-                    writeln!(
+                    _ = writeln!(
                         &mut label,
                         "{onset_temperature} = {}",
                         values
                             .iter()
                             .map(|value| value.onset_temperature)
                             .format(","),
-                    )
-                    .ok();
-                    writeln!(
+                    );
+                    _ = writeln!(
                         &mut label,
                         "{temperature_step} = {}",
                         values
                             .iter()
                             .map(|value| value.temperature_step)
                             .format(","),
-                    )
-                    .ok();
+                    );
                 }
                 let precision = self.settings.precision;
-                writeln!(&mut label, "{retention_time} = {x:.precision$}").ok();
-                writeln!(&mut label, "{equivalent_chain_length} = {y:.precision$}").ok();
+                _ = writeln!(&mut label, "{retention_time} = {x:.precision$}");
+                _ = write!(&mut label, "{equivalent_chain_length} = {y:.precision$}");
                 label
             });
         plot.show(ui, |ui| -> PolarsResult<()> {

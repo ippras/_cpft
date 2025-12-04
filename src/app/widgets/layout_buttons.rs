@@ -18,7 +18,7 @@ impl<'a> VerticalButton<'a> {
         }
     }
 
-    pub fn with_size(self, size: f32) -> Self {
+    pub fn size(self, size: f32) -> Self {
         Self {
             size: Some(size),
             ..self
@@ -28,18 +28,14 @@ impl<'a> VerticalButton<'a> {
 
 impl Widget for VerticalButton<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
-        let mut atoms = RichText::new(SQUARE_SPLIT_VERTICAL);
-        atoms = if let Some(size) = self.size {
-            atoms.size(size)
+        let mut text = RichText::new(SQUARE_SPLIT_VERTICAL);
+        text = if let Some(size) = self.size {
+            text.size(size)
         } else {
-            atoms.heading()
+            text.heading()
         };
-        ui.selectable_value(
-            self.current_value,
-            Some(ContainerKind::Vertical),
-            ui.localize("Vertical"),
-        )
-        .on_hover_localized("Vertical.hover")
+        ui.selectable_value(self.current_value, Some(ContainerKind::Vertical), text)
+            .on_hover_localized("Vertical")
     }
 }
 
@@ -58,7 +54,7 @@ impl<'a> HorizontalButton<'a> {
         }
     }
 
-    pub fn with_size(self, size: f32) -> Self {
+    pub fn size(self, size: f32) -> Self {
         Self {
             size: Some(size),
             ..self
@@ -68,18 +64,14 @@ impl<'a> HorizontalButton<'a> {
 
 impl Widget for HorizontalButton<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
-        let mut atoms = RichText::new(SQUARE_SPLIT_HORIZONTAL);
-        atoms = if let Some(size) = self.size {
-            atoms.size(size)
+        let mut text = RichText::new(SQUARE_SPLIT_HORIZONTAL);
+        text = if let Some(size) = self.size {
+            text.size(size)
         } else {
-            atoms.heading()
+            text.heading()
         };
-        ui.selectable_value(
-            self.current_value,
-            Some(ContainerKind::Horizontal),
-            ui.localize("Horizontal"),
-        )
-        .on_hover_localized("Horizontal.hover")
+        ui.selectable_value(self.current_value, Some(ContainerKind::Horizontal), text)
+            .on_hover_localized("Horizontal")
     }
 }
 
@@ -98,7 +90,7 @@ impl<'a> GridButton<'a> {
         }
     }
 
-    pub fn with_size(self, size: f32) -> Self {
+    pub fn size(self, size: f32) -> Self {
         Self {
             size: Some(size),
             ..self
@@ -108,18 +100,14 @@ impl<'a> GridButton<'a> {
 
 impl Widget for GridButton<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
-        let mut atoms = RichText::new(GRID_FOUR);
-        atoms = if let Some(size) = self.size {
-            atoms.size(size)
+        let mut text = RichText::new(GRID_FOUR);
+        text = if let Some(size) = self.size {
+            text.size(size)
         } else {
-            atoms.heading()
+            text.heading()
         };
-        ui.selectable_value(
-            self.current_value,
-            Some(ContainerKind::Grid),
-            ui.localize("Grid"),
-        )
-        .on_hover_localized("Grid.hover")
+        ui.selectable_value(self.current_value, Some(ContainerKind::Grid), text)
+            .on_hover_localized("Grid")
     }
 }
 
@@ -138,7 +126,7 @@ impl<'a> TabsButton<'a> {
         }
     }
 
-    pub fn with_size(self, size: f32) -> Self {
+    pub fn size(self, size: f32) -> Self {
         Self {
             size: Some(size),
             ..self
@@ -148,17 +136,13 @@ impl<'a> TabsButton<'a> {
 
 impl Widget for TabsButton<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
-        let mut atoms = RichText::new(TABS);
-        atoms = if let Some(size) = self.size {
-            atoms.size(size)
+        let mut text = RichText::new(TABS);
+        text = if let Some(size) = self.size {
+            text.size(size)
         } else {
-            atoms.heading()
+            text.heading()
         };
-        ui.selectable_value(
-            self.current_value,
-            Some(ContainerKind::Tabs),
-            ui.localize("Tabs"),
-        )
-        .on_hover_localized("Tabs.hover")
+        ui.selectable_value(self.current_value, Some(ContainerKind::Tabs), text)
+            .on_hover_localized("Tabs")
     }
 }

@@ -216,20 +216,20 @@ impl App {
             MenuBar::new().ui(ui, |ui| {
                 ScrollArea::horizontal().show(ui, |ui| {
                     ReactiveButton::new(&mut state.settings.reactive)
-                        .with_size(ICON_SIZE)
+                        .size(ICON_SIZE)
                         .ui(ui);
                     ui.separator();
                     // Light/Dark
                     ui.light_dark_button(ICON_SIZE);
                     ui.separator();
                     ResetButton::new(&mut state.settings.reset_state)
-                        .with_size(ICON_SIZE)
+                        .size(ICON_SIZE)
                         .ui(ui);
                     ui.separator();
                     self.layouts(ui, state);
                     ui.separator();
                     SettingsButton::new(&mut state.windows.open_settings)
-                        .with_size(ICON_SIZE)
+                        .size(ICON_SIZE)
                         .ui(ui);
                     ui.separator();
                     // Database
@@ -242,69 +242,17 @@ impl App {
 
     fn layouts(&mut self, ui: &mut Ui, state: &mut State) {
         VerticalButton::new(&mut state.settings.layout.container_kind)
-            .with_size(ICON_SIZE)
+            .size(ICON_SIZE)
             .ui(ui);
         HorizontalButton::new(&mut state.settings.layout.container_kind)
-            .with_size(ICON_SIZE)
+            .size(ICON_SIZE)
             .ui(ui);
         GridButton::new(&mut state.settings.layout.container_kind)
-            .with_size(ICON_SIZE)
+            .size(ICON_SIZE)
             .ui(ui);
         TabsButton::new(&mut state.settings.layout.container_kind)
-            .with_size(ICON_SIZE)
+            .size(ICON_SIZE)
             .ui(ui);
-    }
-
-    /// Vertical button
-    fn vertical_button(&mut self, ui: &mut Ui, state: &mut State) {
-        if ui
-            .button(RichText::new(SQUARE_SPLIT_VERTICAL).size(ICON_SIZE))
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize("Vertical"));
-            })
-            .clicked()
-        {
-            state.settings.layout.container_kind = Some(ContainerKind::Vertical);
-        }
-    }
-
-    /// Horizontal button
-    fn horizontal_button(&mut self, ui: &mut Ui, state: &mut State) {
-        if ui
-            .button(RichText::new(SQUARE_SPLIT_HORIZONTAL).size(ICON_SIZE))
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize("Horizontal"));
-            })
-            .clicked()
-        {
-            state.settings.layout.container_kind = Some(ContainerKind::Horizontal);
-        }
-    }
-
-    /// Grid button
-    fn grid_button(&mut self, ui: &mut Ui, state: &mut State) {
-        if ui
-            .button(RichText::new(GRID_FOUR).size(ICON_SIZE))
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize("Grid"));
-            })
-            .clicked()
-        {
-            state.settings.layout.container_kind = Some(ContainerKind::Grid);
-        }
-    }
-
-    /// Tabs button
-    fn tabs_button(&mut self, ui: &mut Ui, state: &mut State) {
-        if ui
-            .button(RichText::new(TABS).size(ICON_SIZE))
-            .on_hover_ui(|ui| {
-                ui.label(ui.localize("Tabs"));
-            })
-            .clicked()
-        {
-            state.settings.layout.container_kind = Some(ContainerKind::Tabs);
-        }
     }
 
     /// Database button
