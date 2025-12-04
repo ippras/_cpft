@@ -4,14 +4,13 @@ pub use self::native::save;
 pub use self::web::save;
 
 use anyhow::Result;
-use polars::frame::DataFrame;
+use polars::prelude::*;
 use std::borrow::BorrowMut;
 use tracing::instrument;
 
 #[cfg(not(target_arch = "wasm32"))]
 mod native {
     use super::*;
-    use polars::prelude::*;
     use std::fs::File;
 
     #[instrument(skip(data_frame), err)]
@@ -28,7 +27,7 @@ mod web {
     use anyhow::bail;
     use egui_ext::download::{NONE, download};
 
-    #[instrument(skip(frame), err)]
+    #[instrument(skip(data_frame), err)]
     pub fn save(mut data_frame: impl BorrowMut<DataFrame>, name: &str) -> Result<()> {
         let mut bytes = Vec::new();
         let mut writer = CsvWriter::new(&mut bytes);
