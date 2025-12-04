@@ -6,12 +6,14 @@ use crate::{
             display::{Computed as DisplayComputed, Key as DisplayKey},
             plot::{Computed as PlotComputed, Key as PlotKey},
         },
-        panes::{Behavior, MARGIN, widgets::ViewWidget},
+        panes::{
+            Behavior, MARGIN,
+            widgets::{ResetButton, ResizeButton, SettingsButton, ViewButton},
+        },
         states::source::{ID_SOURCE, State, View},
     },
     r#const::{
-        ABSOLUTE, DEAD_TIME, MEAN, MODE, ONSET_TEMPERATURE, RETENTION_TIME, SAMPLE,
-        TEMPERATURE_STEP,
+        ABSOLUTE, DEAD_TIME, MEAN, MODE, ONSET_TEMPERATURE, RETENTION_TIME, TEMPERATURE_STEP,
     },
     export,
     utils::hash::{HashedDataFrame, HashedMetaDataFrame},
@@ -19,12 +21,10 @@ use crate::{
 use anyhow::Result;
 use egui::{
     Button, CentralPanel, CursorIcon, Frame, Id, MenuBar, Response, RichText, ScrollArea,
-    TextStyle, TopBottomPanel, Ui, Window, util::hash,
+    TextStyle, TopBottomPanel, Ui, Widget as _, Window, util::hash,
 };
 use egui_l20n::prelude::*;
-use egui_phosphor::regular::{
-    ARROWS_CLOCKWISE, ARROWS_HORIZONTAL, EXCLUDE, FLOPPY_DISK, SLIDERS_HORIZONTAL, TABLE, X,
-};
+use egui_phosphor::regular::{EXCLUDE, FLOPPY_DISK, SLIDERS_HORIZONTAL, TABLE, X};
 use egui_tiles::{TileId, UiResponse};
 use lipid::prelude::*;
 use metadata::{egui::MetadataWidget, polars::MetaDataFrame};
@@ -155,46 +155,19 @@ impl Pane {
             .on_hover_ui(|ui| MetadataWidget::new(&self.frame.meta).show(ui))
             .on_hover_cursor(CursorIcon::Grab);
         ui.separator();
-        self.reset_button(ui, state);
+        ResetButton::new(&mut state.reset_table_state).ui(ui);
         ui.separator();
-        self.resize_button(ui, state);
+        ResizeButton::new(&mut state.settings.resizable).ui(ui);
         ui.separator();
-        self.settings_button(ui, state);
+        SettingsButton::new(&mut state.windows.open_settings).ui(ui);
         ui.separator();
-        ui.add(ViewWidget::new(&mut state.settings.view));
+        ViewButton::new(&mut state.settings.view).ui(ui);
         ui.separator();
         self.save_button(ui, state);
         ui.separator();
         self.distance_button(ui, state);
         ui.separator();
         response
-    }
-
-    /// Reset button
-    fn reset_button(&mut self, ui: &mut Ui, state: &mut State) {
-        ui.toggle_value(
-            &mut state.reset_table_state,
-            RichText::new(ARROWS_CLOCKWISE).heading(),
-        )
-        .on_hover_localized("ResetApplicatioinState");
-    }
-
-    /// Resize button
-    fn resize_button(&mut self, ui: &mut Ui, state: &mut State) {
-        ui.toggle_value(
-            &mut state.settings.resizable,
-            RichText::new(ARROWS_HORIZONTAL).heading(),
-        )
-        .on_hover_localized("ResizeTableColumns");
-    }
-
-    /// Settings button
-    fn settings_button(&mut self, ui: &mut Ui, state: &mut State) {
-        ui.toggle_value(
-            &mut state.windows.open_settings,
-            RichText::new(SLIDERS_HORIZONTAL).heading(),
-        )
-        .on_hover_localized("SourceSettings");
     }
 
     /// Save button

@@ -7,21 +7,20 @@ use crate::{
             plot::{Computed as PlotComputed, Key as PlotKey},
             sum::{Computed as SumComputed, Key as SumKey},
         },
-        panes::{Behavior, MARGIN},
+        panes::{
+            Behavior, MARGIN,
+            widgets::{ResetButton, ResizeButton, SettingsButton, ViewButton},
+        },
         states::distance::{Settings, State, View},
     },
-    localization::Text as _,
     utils::hash::{HashedDataFrame, HashedMetaDataFrame},
 };
 use egui::{
     CentralPanel, CursorIcon, Frame, Id, MenuBar, Response, RichText, ScrollArea, TextStyle,
-    TopBottomPanel, Ui, UiKind, Window, util::hash,
+    TopBottomPanel, Ui, Widget as _, Window, util::hash,
 };
 use egui_l20n::prelude::*;
-use egui_phosphor::regular::{
-    ARROWS_CLOCKWISE, ARROWS_HORIZONTAL, CHART_BAR, EXCLUDE, FLOPPY_DISK, SIGMA,
-    SLIDERS_HORIZONTAL, TABLE, X,
-};
+use egui_phosphor::regular::{EXCLUDE, FLOPPY_DISK, SIGMA, SLIDERS_HORIZONTAL, X};
 use egui_tiles::{TileId, UiResponse};
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -128,73 +127,19 @@ impl Pane {
             .on_hover_text(format!("{}/{:x}", self.id(), self.calculated.hash))
             .on_hover_cursor(CursorIcon::Grab);
         ui.separator();
-        self.reset_button(ui, state);
+        ResetButton::new(&mut state.settings.reset_table).ui(ui);
         ui.separator();
-        self.resize_button(ui, state);
+        ResizeButton::new(&mut state.settings.resizable).ui(ui);
         ui.separator();
-        self.settings_button(ui, state);
+        SettingsButton::new(&mut state.windows.open_settings).ui(ui);
         ui.separator();
-        self.view_button(ui, state);
+        ViewButton::new(&mut state.settings.view).ui(ui);
         ui.separator();
         self.save_button(ui);
         ui.separator();
         self.sum_button(ui, state);
         ui.separator();
         response
-    }
-
-    /// Reset button
-    fn reset_button(&mut self, ui: &mut Ui, state: &mut State) {
-        ui.toggle_value(
-            &mut state.settings.reset_table,
-            RichText::new(ARROWS_CLOCKWISE).heading(),
-        )
-        .on_hover_localized("ResetTable");
-    }
-
-    /// Resize button
-    fn resize_button(&mut self, ui: &mut Ui, state: &mut State) {
-        ui.toggle_value(
-            &mut state.settings.resizable,
-            RichText::new(ARROWS_HORIZONTAL).heading(),
-        )
-        .on_hover_localized("ResizeTable");
-    }
-
-    /// Settings button
-    fn settings_button(&mut self, ui: &mut Ui, state: &mut State) {
-        ui.toggle_value(
-            &mut state.windows.open_settings,
-            RichText::new(SLIDERS_HORIZONTAL).heading(),
-        )
-        .on_hover_localized("Settings");
-    }
-
-    /// View button
-    fn view_button(&mut self, ui: &mut Ui, state: &mut State) {
-        let text = match state.settings.view {
-            View::Plot => CHART_BAR,
-            View::Table => TABLE,
-        };
-        ui.menu_button(RichText::new(text).heading(), |ui| {
-            let mut response = ui
-                .selectable_value(
-                    &mut state.settings.view,
-                    View::Table,
-                    ui.localize(View::Table.text()),
-                )
-                .on_hover_localized(View::Table.hover_text());
-            response |= ui
-                .selectable_value(
-                    &mut state.settings.view,
-                    View::Plot,
-                    ui.localize(View::Plot.text()),
-                )
-                .on_hover_localized(View::Plot.hover_text());
-            if response.changed() {
-                ui.close_kind(UiKind::Menu);
-            }
-        });
     }
 
     /// Save button
