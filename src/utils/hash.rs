@@ -1,4 +1,4 @@
-use metadata::{Metadata, polars::MetaDataFrame};
+use metadata::{polars::MetaDataFrame, Metadata};
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -13,6 +13,7 @@ pub type HashedMetaDataFrame = MetaDataFrame<Metadata, HashedDataFrame>;
 /// Hashed data frame
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct HashedDataFrame {
+    #[serde(rename = "bytes")]
     pub data_frame: DataFrame,
     pub hash: u64,
 }
