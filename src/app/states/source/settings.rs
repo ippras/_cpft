@@ -1,5 +1,6 @@
 use crate::{
     app::{MAX_PRECISION, panes::source::table::NUM_COLUMNS, states::source::ID_SOURCE},
+    r#const::EM_DASH,
     localization::Text,
     utils::VecExt as _,
 };
@@ -215,7 +216,7 @@ impl Settings {
                             selected_value.delta().to_string(),
                         );
                     }
-                    ui.selectable_value(current_value, None, "-");
+                    ui.selectable_value(current_value, None, EM_DASH);
                 });
             if ui
                 .button((BOOKMARK, "17:0"))

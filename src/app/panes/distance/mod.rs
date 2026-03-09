@@ -9,17 +9,18 @@ use crate::{
         },
         panes::{Behavior, MARGIN},
         states::distance::{Settings, State, View},
-        widgets::{ResetButton, ResizeButton, SettingsButton, ViewButton},
+        widgets::buttons::{MetadataButton, ResetButton, ResizeButton, SettingsButton, ViewButton},
     },
     utils::hash::{HashedDataFrame, HashedMetaDataFrame},
 };
 use egui::{
-    CentralPanel, CursorIcon, Frame, Id, MenuBar, Response, RichText, ScrollArea, TextStyle,
+    CentralPanel, CursorIcon, Frame, Id, MenuBar, Panel, Response, RichText, ScrollArea, TextStyle,
     TopBottomPanel, Ui, Widget as _, Window, util::hash,
 };
 use egui_l20n::prelude::*;
-use egui_phosphor::regular::{EXCLUDE, FLOPPY_DISK, SIGMA, SLIDERS_HORIZONTAL, X};
+use egui_phosphor::regular::{EXCLUDE, FLOPPY_DISK, SIGMA, SLIDERS_HORIZONTAL, TAG, X};
 use egui_tiles::{TileId, UiResponse};
+use metadata::egui::MetadataWidget;
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, from_fn};
@@ -68,7 +69,7 @@ impl Pane {
         let id = *self.id.get_or_insert_with(|| ui.next_auto_id());
         let mut state = State::load(ui.ctx(), id);
         self.init(ui, &mut state);
-        let response = TopBottomPanel::top(ui.auto_id_with("Pane"))
+        let response = Panel::top(ui.auto_id_with("Pane"))
             .show_inside(ui, |ui| {
                 MenuBar::new()
                     .ui(ui, |ui| {
@@ -114,6 +115,7 @@ impl Pane {
                 .caches
                 .cache::<DistanceComputed>()
                 .get(DistanceKey::new(&self.frame.data, &state.settings))
+                .clone()
         });
     }
 
@@ -125,7 +127,12 @@ impl Pane {
             .on_hover_text(format!("{}/{:x}", self.id(), self.calculated.hash))
             .on_hover_cursor(CursorIcon::Grab);
         ui.separator();
-        ResetButton::new(&mut state.settings.reset_table).ui(ui);
+        let mut selected = false;
+        ResetButton::new(&mut selected).ui(ui);
+        if selected {
+            state.settings.reset_table = selected;
+            state.settings.reset_sum = selected;
+        }
         ui.separator();
         ResizeButton::new(&mut state.settings.resizable).ui(ui);
         ui.separator();
@@ -133,9 +140,11 @@ impl Pane {
         ui.separator();
         ViewButton::new(&mut state.settings.view).ui(ui);
         ui.separator();
-        self.save_button(ui);
+        MetadataButton::new(&mut state.windows.open_metadata).ui(ui);
         ui.separator();
         self.sum_button(ui, state);
+        ui.separator();
+        self.save_button(ui);
         ui.separator();
         response
     }
@@ -195,6 +204,7 @@ impl Pane {
                         .caches
                         .cache::<PlotComputed>()
                         .get(PlotKey::new(&self.calculated, &state.settings))
+                        .clone()
                 });
                 PlotView::new(points, &state.settings).show(ui)
             }
@@ -205,6 +215,7 @@ impl Pane {
                         .caches
                         .cache::<DisplayComputed>()
                         .get(DisplayKey::new(&self.calculated, &state.settings))
+                        .clone()
                 });
                 TableView::new(&data_frame, &mut state.settings).show(ui)
             }
@@ -214,8 +225,19 @@ impl Pane {
 
 impl Pane {
     fn windows(&mut self, ui: &mut Ui, state: &mut State) {
+        self.metadata_window(ui, state);
         self.settings_window(ui, state);
         self.sum_window(ui, state);
+    }
+
+    fn metadata_window(&mut self, ui: &mut Ui, state: &mut State) {
+        Window::new(format!("{TAG} Distance metadata"))
+            .id(ui.auto_id_with(ID_SOURCE).with("Metadata"))
+            .default_pos(ui.next_widget_position())
+            .open(&mut state.windows.open_metadata)
+            .show(ui.ctx(), |ui| {
+                MetadataWidget::new(&self.frame.meta).show(ui);
+            });
     }
 
     fn settings_window(&mut self, ui: &mut Ui, state: &mut State) {
@@ -229,20 +251,64 @@ impl Pane {
     }
 
     fn sum_window(&mut self, ui: &mut Ui, state: &mut State) {
+        // TopBottomPanel::top(ui.auto_id_with("Pane"))
+        //     .show_inside(ui, |ui| {
+        //         MenuBar::new()
+        //             .ui(ui, |ui| {
+        //                 ScrollArea::horizontal()
+        //                     .show(ui, |ui| {
+        //                         ui.set_height(
+        //                             ui.text_style_height(&TextStyle::Heading) + 4.0 * MARGIN.y,
+        //                         );
+        //                         ui.visuals_mut().button_frame = false;
+        //                         if ui.button(RichText::new(X).heading()).clicked() {
+        //                             behavior.close = Some(tile_id);
+        //                         }
+        //                         ui.separator();
+        //                         self.top(ui, &mut state)
+        //                     })
+        //                     .inner
+        //             })
+        //             .inner
+        //     })
         Window::new(format!("{SIGMA} Distance sum"))
             .id(ui.auto_id_with(ID_SOURCE).with("Sum"))
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_sum)
-            .show(ui.ctx(), |ui| self.sum_content(ui, &mut state.settings));
+            .show(ui.ctx(), |ui| {
+                MenuBar::new()
+                    .ui(ui, |ui| {
+                        ScrollArea::horizontal()
+                            .show(ui, |ui| {
+                                ui.set_height(
+                                    ui.text_style_height(&TextStyle::Heading) + 4.0 * MARGIN.y,
+                                );
+                                ui.visuals_mut().button_frame = false;
+                                ResetButton::new(&mut state.settings.reset_sum).ui(ui);
+                                ui.separator();
+                                ResizeButton::new(&mut state.settings.resizable).ui(ui);
+                                ui.separator();
+                            })
+                            .inner
+                    })
+                    .inner;
+                self.sum_central(ui, &mut state.settings)
+                // TopBottomPanel::top(ui.auto_id_with("Pane")).show_inside(ui, |ui| {
+                // });
+                // CentralPanel::default()
+                //     // .frame(Frame::central_panel(ui.style()))
+                //     .show_inside(ui, |ui| );
+            });
     }
 
     #[instrument(skip_all, err)]
-    fn sum_content(&mut self, ui: &mut Ui, settings: &mut Settings) -> PolarsResult<()> {
+    fn sum_central(&mut self, ui: &mut Ui, settings: &mut Settings) -> PolarsResult<()> {
         let data_frame = ui.memory_mut(|memory| {
             memory
                 .caches
                 .cache::<SumComputed>()
                 .get(SumKey::new(&self.calculated, settings))
+                .clone()
         });
         Sum::new(&data_frame, settings).show(ui);
         Ok(())

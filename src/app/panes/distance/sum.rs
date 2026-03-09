@@ -42,10 +42,10 @@ impl<'a> Sum<'a> {
 
     pub(super) fn show(&mut self, ui: &mut Ui) -> Response {
         let id_salt = Id::new(ID_SOURCE).with("Sum");
-        if self.settings.reset_table {
+        if self.settings.reset_sum {
             let id = TableState::id(ui, Id::new(id_salt));
             TableState::reset(ui.ctx(), id);
-            self.settings.reset_table = false;
+            self.settings.reset_sum = false;
         }
         let height = ui.text_style_height(&TextStyle::Heading) + 2.0 * MARGIN.y;
         let num_rows = self.data_frame.height() as _;
