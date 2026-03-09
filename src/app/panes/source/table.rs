@@ -194,7 +194,12 @@ impl TableView<'_> {
                 );
             }
             (row, top::FATTY_ACID) => {
-                ui.label(self.data_frame[FATTY_ACID].str()?.get(row).unwrap_or("-"));
+                ui.label(
+                    self.data_frame[FATTY_ACID]
+                        .str()?
+                        .get(row)
+                        .unwrap_or(EM_DASH),
+                );
             }
             (row, bottom::ABSOLUTE) => {
                 let absolute_series = self.data_frame[RETENTION_TIME]
@@ -214,7 +219,7 @@ impl TableView<'_> {
                 let text = mean_series
                     .f64()?
                     .get(row)
-                    .map_or(Cow::Borrowed("-"), |mean| mean.to_string().into());
+                    .map_or(Cow::Borrowed(EM_DASH), |mean| mean.to_string().into());
                 ui.label(text)
                     .try_on_hover_ui(|ui| {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);

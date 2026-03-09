@@ -1,3 +1,6 @@
+pub(crate) const EM_DASH: &str = "—";
+pub(crate) const NO_BREAK_SPACE: &str = " ";
+
 pub(crate) const FILTER: &str = "Filter";
 pub(crate) const MODE: &str = "Mode";
 pub(crate) const ONSET_TEMPERATURE: &str = "OnsetTemperature";

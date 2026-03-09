@@ -1,3 +1,4 @@
+use crate::r#const::EM_DASH;
 use polars::prelude::*;
 use std::borrow::Cow;
 
@@ -11,6 +12,7 @@ impl SeriesExt for Series {
         Ok(self
             .f64()?
             .get(index)
-            .map_or(Cow::Borrowed("-"), |float| float.to_string().into()))
+            .filter(|float| !float.is_nan())
+            .map_or(Cow::Borrowed(EM_DASH), |float| float.to_string().into()))
     }
 }
