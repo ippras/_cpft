@@ -67,6 +67,14 @@ impl<'a> Key<'a> {
 type Value = HashedDataFrame;
 
 fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
+    println!("key: {:?}", key.filter);
+    println!(
+        "COMPUTE0 lazy_frame: {}",
+        filter(lazy_frame.clone(), key)?
+            .filter(col(FILTER))
+            .collect()
+            .unwrap()
+    );
     lazy_frame = lazy_frame
         .with_columns([
             // Retention time mean

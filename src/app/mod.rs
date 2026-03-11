@@ -15,8 +15,8 @@ use data::Data;
 use eframe::{APP_KEY, get_value, set_value};
 use egui::{
     Align, Align2, CentralPanel, Color32, Context, FontDefinitions, Frame, Id, LayerId, Layout,
-    MenuBar, Order, RichText, ScrollArea, Sides, TextStyle, TopBottomPanel, Ui, Widget, Window,
-    warn_if_debug_build,
+    MenuBar, Order, Panel, RichText, ScrollArea, Sides, TextStyle, TopBottomPanel, Ui, Widget,
+    Window, warn_if_debug_build,
 };
 use egui_ext::{HoveredFileExt, LightDarkButton};
 use egui_l20n::prelude::*;
@@ -79,9 +79,9 @@ impl App {
             .unwrap_or_default()
     }
 
-    fn drag_and_drop(&mut self, ctx: &Context) {
+    fn drag_and_drop(&mut self, ui: &Ui) {
         // Preview hovering files
-        if let Some(text) = ctx.input(|input| {
+        if let Some(text) = ui.input(|input| {
             (!input.raw.hovered_files.is_empty()).then(|| {
                 let mut text = String::from("Dropping files:");
                 for file in &input.raw.hovered_files {
@@ -91,19 +91,19 @@ impl App {
             })
         }) {
             let painter =
-                ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("FileDropTarget")));
-            let content_rect = ctx.content_rect();
+                ui.layer_painter(LayerId::new(Order::Foreground, Id::new("FileDropTarget")));
+            let content_rect = ui.content_rect();
             painter.rect_filled(content_rect, 0.0, Color32::from_black_alpha(192));
             painter.text(
                 content_rect.center(),
                 Align2::CENTER_CENTER,
                 text,
-                TextStyle::Heading.resolve(&ctx.style()),
+                TextStyle::Heading.resolve(&ui.style()),
                 Color32::WHITE,
             );
         }
         // Parse dropped files
-        if let Some(dropped_files) = ctx.input(|input| {
+        if let Some(dropped_files) = ui.input(|input| {
             (!input.raw.dropped_files.is_empty()).then_some(input.raw.dropped_files.clone())
         }) {
             info!(?dropped_files);
@@ -174,15 +174,15 @@ impl App {
 }
 
 impl App {
-    fn panels(&mut self, ctx: &Context, state: &mut State) {
-        self.top_panel(ctx, state);
-        self.bottom_panel(ctx);
-        self.central_panel(ctx);
+    fn panels(&mut self, ui: &mut Ui, state: &mut State) {
+        self.top_panel(ui, state);
+        self.bottom_panel(ui);
+        self.central_panel(ui);
     }
 
     // Bottom panel
-    fn bottom_panel(&mut self, ctx: &Context) {
-        TopBottomPanel::bottom("BottomPanel").show(ctx, |ui| {
+    fn bottom_panel(&mut self, ui: &mut Ui) {
+        Panel::bottom("BottomPanel").show_inside(ui, |ui| {
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                 Sides::new().show(
                     ui,
@@ -198,10 +198,10 @@ impl App {
     }
 
     // Central panel
-    fn central_panel(&mut self, ctx: &Context) {
+    fn central_panel(&mut self, ui: &mut Ui) {
         CentralPanel::default()
-            .frame(Frame::central_panel(&ctx.style()).inner_margin(0))
-            .show(ctx, |ui| {
+            .frame(Frame::central_panel(&ui.style()).inner_margin(0))
+            .show_inside(ui, |ui| {
                 let mut behavior = Behavior { close: None };
                 self.tree.ui(&mut behavior, ui);
                 if let Some(id) = behavior.close {
@@ -211,8 +211,8 @@ impl App {
     }
 
     // Top panel
-    fn top_panel(&mut self, ctx: &Context, state: &mut State) {
-        TopBottomPanel::top("TopPanel").show(ctx, |ui| {
+    fn top_panel(&mut self, ui: &mut Ui, state: &mut State) {
+        Panel::top("TopPanel").show_inside(ui, |ui| {
             MenuBar::new().ui(ui, |ui| {
                 ScrollArea::horizontal().show(ui, |ui| {
                     ReactiveButton::new(&mut state.settings.reactive)
@@ -275,9 +275,9 @@ impl App {
 
 // Windows
 impl App {
-    fn windows(&mut self, ctx: &Context, state: &mut State) {
+    fn windows(&mut self, ui: &Ui, state: &mut State) {
         // self.about_window(ctx, state);
-        self.settings_window(ctx, state);
+        self.settings_window(ui, state);
     }
 
     // fn about_window(&mut self, ctx: &Context, state: &mut State) {
@@ -286,31 +286,31 @@ impl App {
     //         .show(ctx, |ui| About.ui(ui));
     // }
 
-    fn settings_window(&mut self, ctx: &Context, state: &mut State) {
+    fn settings_window(&mut self, ui: &Ui, state: &mut State) {
         Window::new(format!("{SLIDERS_HORIZONTAL} Settings"))
             .open(&mut state.windows.open_settings)
-            .show(ctx, |ui| {
+            .show(ui, |ui| {
                 state.settings.show(ui);
             });
     }
 }
 
 impl App {
-    fn distance(&mut self, ctx: &Context) {
-        if let Some(frame) = ctx.data_mut(|data| data.remove_temp(Id::new("Distance"))) {
+    fn distance(&mut self, ui: &Ui) {
+        if let Some(frame) = ui.data_mut(|data| data.remove_temp(Id::new("Distance"))) {
             self.tree.insert_pane::<VERTICAL>(Pane::distance(frame));
         }
     }
 
-    fn state(&mut self, ctx: &Context, state: &mut State) {
+    fn state(&mut self, ui: &Ui, state: &mut State) {
         if state.settings.reset_state {
             *self = Default::default();
             // Cache
-            let caches = ctx.memory_mut(|memory| memory.caches.clone());
-            ctx.memory_mut(|memory| {
+            let caches = ui.memory_mut(|memory| memory.caches.clone());
+            ui.memory_mut(|memory| {
                 memory.caches = caches;
             });
-            ctx.set_localizations();
+            ui.set_localizations();
             state.settings.reset_state = false;
         }
         if let Some(container_kind) = state.settings.layout.container_kind.take()
@@ -320,7 +320,7 @@ impl App {
             container.set_kind(container_kind);
         }
         if state.settings.reactive {
-            ctx.request_repaint();
+            ui.request_repaint();
         }
     }
 }
@@ -332,16 +332,16 @@ impl eframe::App for App {
     }
 
     /// Called each time the UI needs repainting, which may be many times per second.
-    fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
-        let mut state = State::load(ctx, Id::new(ID_SOURCE));
-        self.distance(ctx);
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let mut state = State::load(ui, Id::new(ID_SOURCE));
+        self.distance(ui);
         // Pre update
-        self.panels(ctx, &mut state);
-        self.windows(ctx, &mut state);
+        self.panels(ui, &mut state);
+        self.windows(ui, &mut state);
         // Post update
-        self.drag_and_drop(ctx);
-        self.state(ctx, &mut state);
-        state.store(ctx, Id::new(ID_SOURCE));
+        self.drag_and_drop(ui);
+        self.state(ui, &mut state);
+        state.store(ui, Id::new(ID_SOURCE));
     }
 }
 

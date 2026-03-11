@@ -12,6 +12,75 @@ mod presets;
 mod special;
 mod utils;
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{
+        presets::AGILENT,
+        utils::hash::{HashedDataFrame, HashedMetaDataFrame},
+    };
+    use lipid::{expr::ExprExt, prelude::*, r#trait::Atomic};
+    use metadata::{Metadata, polars::MetaDataFrame};
+    use polars::prelude::*;
+    use std::{fs::File, io::Cursor};
+
+    // Ok  Some(Struct({'Carbon': UInt8, 'Indices': List(Struct({'Index': UInt8, 'Triple': Boolean, 'Parity': Boolean}))}))
+    // Err Some(Struct({'Carbon': UInt8, 'Indices': List(Struct({'Index': UInt8, 'Parity': Boolean, 'Triple': Boolean}))}))
+    #[test]
+    fn test() -> anyhow::Result<()> {
+        println!("AGILENT.meta: {:?}", AGILENT.meta);
+        println!("AGILENT.data: {:?}", AGILENT.data);
+        let onset_temperature = 60.0;
+        let temperature_step = 3.0;
+        let fa = C20DC11.clone(); // 20:1Δ11c
+        // let value1 = 14.148;
+        // let value2 = 0.0;
+        let value3 = 47.239;
+        let mut lazy_frame = AGILENT.data.data_frame.clone().lazy();
+        let condition = col("Mode")
+            .struct_()
+            .field_by_name("OnsetTemperature")
+            .eq(lit(onset_temperature))
+            .and(
+                col("Mode")
+                    .struct_()
+                    .field_by_name("TemperatureStep")
+                    .eq(lit(temperature_step)),
+            )
+            .and(col("FattyAcid").fatty_acid().equal(fa));
+        println!(
+            "before: {:?}",
+            lazy_frame
+                .clone()
+                .select([col("RetentionTime").filter(condition.clone())])
+                .collect()
+                .unwrap()
+        );
+        lazy_frame = lazy_frame.with_columns([when(condition.clone())
+            .then(concat_list([
+                col("RetentionTime").list().get(lit(0), true),
+                // lit(value1),
+                col("RetentionTime").list().get(lit(1), true),
+                lit(value3),
+            ])?)
+            .otherwise(col("RetentionTime"))
+            .alias("RetentionTime")]);
+        println!(
+            "after: {:?}",
+            lazy_frame
+                .clone()
+                .select([col("RetentionTime").filter(condition.clone())])
+                .collect()
+                .unwrap()
+        );
+        println!("AGILENT: {:?}", lazy_frame.clone().collect().unwrap());
+        let data = lazy_frame.collect()?;
+        let frame = MetaDataFrame::new(AGILENT.meta.clone(), HashedDataFrame::new(data)?);
+        export::ron::save(&frame, "name.temp.ron")?;
+        Ok(())
+    }
+}
+
 // #[cfg(test)]
 // mod test {
 //     use super::*;

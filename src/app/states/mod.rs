@@ -1,5 +1,5 @@
 use self::{settings::Settings, windows::Windows};
-use egui::{Context, Id};
+use egui::{Context, Id, Ui};
 use serde::{Deserialize, Serialize};
 
 /// State
@@ -19,12 +19,12 @@ impl State {
 }
 
 impl State {
-    pub(crate) fn load(ctx: &Context, id: Id) -> Self {
-        ctx.data_mut(|data| data.get_persisted_mut_or_insert_with(id, Self::new).clone())
+    pub(crate) fn load(ui: &Ui, id: Id) -> Self {
+        ui.data_mut(|data| data.get_persisted_mut_or_insert_with(id, Self::new).clone())
     }
 
-    pub(crate) fn store(self, ctx: &Context, id: Id) {
-        ctx.data_mut(|data| {
+    pub(crate) fn store(self, ui: &Ui, id: Id) {
+        ui.data_mut(|data| {
             data.insert_persisted(id, self);
         });
     }

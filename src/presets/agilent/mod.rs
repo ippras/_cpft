@@ -7,7 +7,8 @@ macro ron($name:literal) {
     })
 }
 
-pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[2.0].2025-12-01.cpft.ron");
+// pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[2.0].2025-12-01.ron");
+pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[2.2].2026-03-30.ron");
 
 // fn parse(bytes: &[u8]) -> Result<HashedMetaDataFrame> {
 //     let frame = ron::de::from_bytes::<MetaDataFrame>(bytes)?;

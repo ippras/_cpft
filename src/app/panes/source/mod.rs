@@ -18,7 +18,7 @@ use crate::{
 };
 use anyhow::Result;
 use egui::{
-    Button, CentralPanel, CursorIcon, Frame, Id, MenuBar, Response, RichText, ScrollArea,
+    Button, CentralPanel, CursorIcon, Frame, Id, MenuBar, Panel, Response, RichText, ScrollArea,
     TextStyle, TopBottomPanel, Ui, Widget as _, Window, util::hash,
 };
 use egui_l20n::prelude::*;
@@ -72,7 +72,7 @@ impl Pane {
         let id = *self.id.get_or_insert_with(|| ui.next_auto_id());
         let mut state = State::load(ui.ctx(), id);
         _ = self.init(ui, &mut state);
-        let response = TopBottomPanel::top(ui.auto_id_with("Pane"))
+        let response = Panel::top(ui.auto_id_with("Pane"))
             .show_inside(ui, |ui| {
                 MenuBar::new()
                     .ui(ui, |ui| {
@@ -118,6 +118,7 @@ impl Pane {
                 .caches
                 .cache::<SourceComputed>()
                 .get(SourceKey::new(&self.frame.data, &state.settings))
+                .clone()
         });
         state.settings.cache.onset_temperatures = self.calculated.data_frame[MODE]
             .struct_()?
@@ -267,6 +268,7 @@ impl Pane {
                 .caches
                 .cache::<DisplayComputed>()
                 .get(DisplayKey::new(&self.calculated, &state.settings))
+                .clone()
         });
         let mut data = data_frame
             .lazy()
@@ -295,6 +297,7 @@ impl Pane {
                 .caches
                 .cache::<DisplayComputed>()
                 .get(DisplayKey::new(&self.calculated, &state.settings))
+                .clone()
         });
         let mut data = data_frame
             .lazy()
@@ -328,7 +331,7 @@ impl Pane {
             let data = self.calculated.clone();
             let meta = self.frame.meta.clone();
             let frame = HashedMetaDataFrame::new(meta, data);
-            ui.data_mut(|data| data.insert_temp(Id::new("Distance"), frame))
+            ui.data_mut(|data| data.insert_temp(Id::new("Distance"), frame));
         }
     }
 
@@ -340,6 +343,7 @@ impl Pane {
                         .caches
                         .cache::<PlotComputed>()
                         .get(PlotKey::new(&self.calculated, &state.settings))
+                        .clone()
                 });
                 PlotView::new(points, &state.settings).show(ui)
             }
@@ -349,6 +353,7 @@ impl Pane {
                         .caches
                         .cache::<DisplayComputed>()
                         .get(DisplayKey::new(&self.calculated, &state.settings))
+                        .clone()
                 });
                 TableView::new(&data_frame, state).show(ui)
             }

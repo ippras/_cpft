@@ -14,7 +14,7 @@ use crate::{
     utils::hash::{HashedDataFrame, HashedMetaDataFrame},
 };
 use egui::{
-    CentralPanel, CursorIcon, Frame, Id, MenuBar, Response, RichText, ScrollArea, TextStyle,
+    CentralPanel, CursorIcon, Frame, Id, MenuBar, Panel, Response, RichText, ScrollArea, TextStyle,
     TopBottomPanel, Ui, Widget as _, Window, util::hash,
 };
 use egui_l20n::prelude::*;
@@ -69,7 +69,7 @@ impl Pane {
         let id = *self.id.get_or_insert_with(|| ui.next_auto_id());
         let mut state = State::load(ui.ctx(), id);
         self.init(ui, &mut state);
-        let response = TopBottomPanel::top(ui.auto_id_with("Pane"))
+        let response = Panel::top(ui.auto_id_with("Pane"))
             .show_inside(ui, |ui| {
                 MenuBar::new()
                     .ui(ui, |ui| {
@@ -115,6 +115,7 @@ impl Pane {
                 .caches
                 .cache::<DistanceComputed>()
                 .get(DistanceKey::new(&self.frame.data, &state.settings))
+                .clone()
         });
     }
 
@@ -203,6 +204,7 @@ impl Pane {
                         .caches
                         .cache::<PlotComputed>()
                         .get(PlotKey::new(&self.calculated, &state.settings))
+                        .clone()
                 });
                 PlotView::new(points, &state.settings).show(ui)
             }
@@ -213,6 +215,7 @@ impl Pane {
                         .caches
                         .cache::<DisplayComputed>()
                         .get(DisplayKey::new(&self.calculated, &state.settings))
+                        .clone()
                 });
                 TableView::new(&data_frame, &mut state.settings).show(ui)
             }
@@ -248,20 +251,64 @@ impl Pane {
     }
 
     fn sum_window(&mut self, ui: &mut Ui, state: &mut State) {
+        // TopBottomPanel::top(ui.auto_id_with("Pane"))
+        //     .show_inside(ui, |ui| {
+        //         MenuBar::new()
+        //             .ui(ui, |ui| {
+        //                 ScrollArea::horizontal()
+        //                     .show(ui, |ui| {
+        //                         ui.set_height(
+        //                             ui.text_style_height(&TextStyle::Heading) + 4.0 * MARGIN.y,
+        //                         );
+        //                         ui.visuals_mut().button_frame = false;
+        //                         if ui.button(RichText::new(X).heading()).clicked() {
+        //                             behavior.close = Some(tile_id);
+        //                         }
+        //                         ui.separator();
+        //                         self.top(ui, &mut state)
+        //                     })
+        //                     .inner
+        //             })
+        //             .inner
+        //     })
         Window::new(format!("{SIGMA} Distance sum"))
             .id(ui.auto_id_with(ID_SOURCE).with("Sum"))
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_sum)
-            .show(ui.ctx(), |ui| self.sum_content(ui, &mut state.settings));
+            .show(ui.ctx(), |ui| {
+                MenuBar::new()
+                    .ui(ui, |ui| {
+                        ScrollArea::horizontal()
+                            .show(ui, |ui| {
+                                ui.set_height(
+                                    ui.text_style_height(&TextStyle::Heading) + 4.0 * MARGIN.y,
+                                );
+                                ui.visuals_mut().button_frame = false;
+                                ResetButton::new(&mut state.settings.reset_sum).ui(ui);
+                                ui.separator();
+                                ResizeButton::new(&mut state.settings.resizable).ui(ui);
+                                ui.separator();
+                            })
+                            .inner
+                    })
+                    .inner;
+                self.sum_central(ui, &mut state.settings)
+                // TopBottomPanel::top(ui.auto_id_with("Pane")).show_inside(ui, |ui| {
+                // });
+                // CentralPanel::default()
+                //     // .frame(Frame::central_panel(ui.style()))
+                //     .show_inside(ui, |ui| );
+            });
     }
 
     #[instrument(skip_all, err)]
-    fn sum_content(&mut self, ui: &mut Ui, settings: &mut Settings) -> PolarsResult<()> {
+    fn sum_central(&mut self, ui: &mut Ui, settings: &mut Settings) -> PolarsResult<()> {
         let data_frame = ui.memory_mut(|memory| {
             memory
                 .caches
                 .cache::<SumComputed>()
                 .get(SumKey::new(&self.calculated, settings))
+                .clone()
         });
         Sum::new(&data_frame, settings).show(ui);
         Ok(())

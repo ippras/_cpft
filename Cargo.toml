@@ -1,29 +1,29 @@
 [package]
 name = "cpft"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2024"
 
 [dependencies]
 anyhow = "1.0.102"
 const_format = "0.2.35"
-eframe = { version = "0.33.3", default-features = false, features = [
+eframe = { version = "0.34.1", default-features = false, features = [
     "accesskit",
     "default_fonts",
     "glow",
     "persistence",
     "wayland",
 ] }
-egui = "0.33.3"
-egui-phosphor = "0.11.0"
-egui_dnd = "0.14.0"
-egui_extras = "0.33.3"
-egui_plot = "0.34.1"
-egui_table = "0.7.0"
-egui_tiles = "0.14.1"
-indexmap = "2.13.0"
+egui = "0.34.1"
+egui-phosphor = "0.12.0"
+egui_dnd = "0.15.0"
+egui_extras = "0.34.1"
+egui_plot = "0.35.0"
+egui_table = "0.8.0"
+egui_tiles = "0.15.0"
+indexmap = "2.13.1"
 itertools = "0.14.0"
 log = "0.4.29"
-nalgebra = "0.34.1"
+nalgebra = "0.34.2"
 polars = { git = "https://github.com/pola-rs/polars", rev = "099564e", default-features = false, features = [
     "abs",
     "bitwise",
@@ -55,20 +55,22 @@ polars = { git = "https://github.com/pola-rs/polars", rev = "099564e", default-f
     # "interpolate_by",
 ] }
 polars-utils = { version = "0.53.0", features = ["nightly"] }
-ron = "0.12.0"
+ron = "0.12.1"
 serde = { version = "1.0.228", features = ["derive"] }
 tracing = "0.1.44"
 uom = { version = "0.38.0", features = ["serde"] }
 
 # polars_excel_writer = "0.22.0"
 
-egui_ext = { git = "https://github.com/kgv/egui_ext" }
-egui_l20n = { git = "https://github.com/kgv/egui_l20n", features = ["macros"] }
-egui_tiles_ext = { git = "https://github.com/kgv/egui_tiles_ext" }
+egui_ext = { git = "https://github.com/kgv/egui_ext", branch = "0.6.0" }
+egui_l20n = { git = "https://github.com/kgv/egui_l20n", branch = "0.5.0", features = [
+    "macros",
+] }
+egui_tiles_ext = { git = "https://github.com/kgv/egui_tiles_ext", branch = "0.3.0" }
 lipid = { git = "https://github.com/ippras/lipid", branch = "099564e", features = [
     "serde",
 ] }
-metadata = { git = "https://github.com/ippras/metadata", branch = "099564e", features = [
+metadata = { git = "https://github.com/ippras/metadata", branch = "0.10.0", features = [
     "egui",
     "polars",
 ] }
@@ -78,14 +80,14 @@ polars_ext = { git = "https://github.com/kgv/polars_ext", branch = "099564e", fe
 
 # native
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 # web
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.7"
 tracing-wasm = "0.2.1"
-wasm-bindgen-futures = "0.4.64"
-web-sys = "0.3.91"
+wasm-bindgen-futures = "0.4.67"
+web-sys = "0.3.94"
 
 [profile.release]
 opt-level = 2 # fast and small wasm
