@@ -256,7 +256,7 @@ impl Pane {
             .with_row_index("Index", None)
             .collect()?;
         let frame = MetaDataFrame::new(&self.frame.meta, data);
-        export::ron::save(&frame, &format!("{name}.cpft.ron"))?;
+        // export::ron::save(&frame, &format!("{name}.cpft.ron"))?;
         Ok(())
     }
 

@@ -3,6 +3,7 @@ pub use self::native::save;
 #[cfg(target_arch = "wasm32")]
 pub use self::web::save;
 
+use crate::utils::hash::HashedDataFrame;
 use anyhow::Result;
 use metadata::{Metadata, polars::MetaDataFrame};
 use polars::frame::DataFrame;
@@ -23,7 +24,7 @@ mod native {
 
     #[instrument(skip(frame), err)]
     pub fn save(
-        frame: &MetaDataFrame<impl Borrow<Metadata>, impl Borrow<DataFrame>>,
+        frame: &MetaDataFrame<impl Borrow<Metadata>, impl Borrow<HashedDataFrame>>,
         name: &str,
     ) -> Result<()> {
         let mut file = File::create(name)?;
@@ -42,7 +43,7 @@ mod web {
 
     #[instrument(skip(frame), err)]
     pub fn save(
-        frame: &MetaDataFrame<impl Borrow<Metadata>, impl Borrow<DataFrame>>,
+        frame: &MetaDataFrame<impl Borrow<Metadata>, impl Borrow<HashedDataFrame>>,
         name: &str,
     ) -> Result<()> {
         let frame = MetaDataFrame::new(frame.meta.borrow(), frame.data.borrow());

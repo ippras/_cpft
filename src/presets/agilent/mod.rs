@@ -1,21 +1,30 @@
-use crate::utils::hash::{HashedDataFrame, HashedMetaDataFrame};
-use anyhow::Result;
-use metadata::polars::MetaDataFrame;
+use crate::utils::hash::HashedMetaDataFrame;
 use std::sync::LazyLock;
 
 macro ron($name:literal) {
-    LazyLock::new(|| parse(include_bytes!($name)).expect(concat!("ron asset ", $name)))
-}
-
-fn parse(bytes: &[u8]) -> Result<HashedMetaDataFrame> {
-    let frame = ron::de::from_bytes::<MetaDataFrame>(bytes)?;
-    Ok(MetaDataFrame {
-        meta: frame.meta,
-        data: HashedDataFrame::new(frame.data).unwrap(),
+    LazyLock::new(|| {
+        ron::de::from_bytes(include_bytes!($name)).expect(concat!("ron preset ", $name))
     })
 }
 
-pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[2.0].2025-12-01.ron");
+pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[2.0].2025-12-01.cpft.ron");
+
+// fn parse(bytes: &[u8]) -> Result<HashedMetaDataFrame> {
+//     let frame = ron::de::from_bytes::<MetaDataFrame>(bytes)?;
+//     let hmd_frame = MetaDataFrame {
+//         meta: frame.meta,
+//         data: HashedDataFrame::new(frame.data).unwrap(),
+//     };
+//     crate::export::ron::save(
+//         &hmd_frame,
+//         &format!("{}.cpft.ron", hmd_frame.meta.format(".")),
+//     )?;
+//     Ok(hmd_frame)
+//     // Ok(MetaDataFrame {
+//     //     meta: frame.meta,
+//     //     data: HashedDataFrame::new(frame.data).unwrap(),
+//     // })
+// }
 
 // macro ipc($name:literal) {
 //     LazyLock::new(|| parse(include_bytes!($name)).expect(concat!("ipc asset ", $name)))
