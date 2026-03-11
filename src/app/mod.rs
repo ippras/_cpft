@@ -3,7 +3,7 @@ use self::{
     states::State,
 };
 use crate::{
-    app::widgets::{
+    app::widgets::buttons::{
         GridButton, HorizontalButton, ReactiveButton, ResetButton, SettingsButton, TabsButton,
         VerticalButton,
     },

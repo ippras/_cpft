@@ -15,7 +15,7 @@ fn parse(bytes: &[u8]) -> Result<HashedMetaDataFrame> {
     })
 }
 
-pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[0.2.0].2025-12-01.ron");
+pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[2.0].2025-12-01.ron");
 
 // macro ipc($name:literal) {
 //     LazyLock::new(|| parse(include_bytes!($name)).expect(concat!("ipc asset ", $name)))

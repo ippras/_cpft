@@ -9,7 +9,7 @@ use crate::{
         },
         panes::{Behavior, MARGIN},
         states::distance::{Settings, State, View},
-        widgets::{ResetButton, ResizeButton, SettingsButton, ViewButton},
+        widgets::buttons::{MetadataButton, ResetButton, ResizeButton, SettingsButton, ViewButton},
     },
     utils::hash::{HashedDataFrame, HashedMetaDataFrame},
 };
@@ -18,8 +18,9 @@ use egui::{
     TopBottomPanel, Ui, Widget as _, Window, util::hash,
 };
 use egui_l20n::prelude::*;
-use egui_phosphor::regular::{EXCLUDE, FLOPPY_DISK, SIGMA, SLIDERS_HORIZONTAL, X};
+use egui_phosphor::regular::{EXCLUDE, FLOPPY_DISK, SIGMA, SLIDERS_HORIZONTAL, TAG, X};
 use egui_tiles::{TileId, UiResponse};
+use metadata::egui::MetadataWidget;
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, from_fn};
@@ -125,7 +126,12 @@ impl Pane {
             .on_hover_text(format!("{}/{:x}", self.id(), self.calculated.hash))
             .on_hover_cursor(CursorIcon::Grab);
         ui.separator();
-        ResetButton::new(&mut state.settings.reset_table).ui(ui);
+        let mut selected = false;
+        ResetButton::new(&mut selected).ui(ui);
+        if selected {
+            state.settings.reset_table = selected;
+            state.settings.reset_sum = selected;
+        }
         ui.separator();
         ResizeButton::new(&mut state.settings.resizable).ui(ui);
         ui.separator();
@@ -133,9 +139,11 @@ impl Pane {
         ui.separator();
         ViewButton::new(&mut state.settings.view).ui(ui);
         ui.separator();
-        self.save_button(ui);
+        MetadataButton::new(&mut state.windows.open_metadata).ui(ui);
         ui.separator();
         self.sum_button(ui, state);
+        ui.separator();
+        self.save_button(ui);
         ui.separator();
         response
     }
@@ -214,8 +222,19 @@ impl Pane {
 
 impl Pane {
     fn windows(&mut self, ui: &mut Ui, state: &mut State) {
+        self.metadata_window(ui, state);
         self.settings_window(ui, state);
         self.sum_window(ui, state);
+    }
+
+    fn metadata_window(&mut self, ui: &mut Ui, state: &mut State) {
+        Window::new(format!("{TAG} Distance metadata"))
+            .id(ui.auto_id_with(ID_SOURCE).with("Metadata"))
+            .default_pos(ui.next_widget_position())
+            .open(&mut state.windows.open_metadata)
+            .show(ui.ctx(), |ui| {
+                MetadataWidget::new(&self.frame.meta).show(ui);
+            });
     }
 
     fn settings_window(&mut self, ui: &mut Ui, state: &mut State) {

@@ -8,7 +8,7 @@ use crate::{
         },
         panes::{Behavior, MARGIN},
         states::source::{ID_SOURCE, State, View},
-        widgets::{ResetButton, ResizeButton, SettingsButton, ViewButton},
+        widgets::buttons::{MetadataButton, ResetButton, ResizeButton, SettingsButton, ViewButton},
     },
     r#const::{
         ABSOLUTE, DEAD_TIME, MEAN, MODE, ONSET_TEMPERATURE, RETENTION_TIME, TEMPERATURE_STEP,
@@ -22,7 +22,7 @@ use egui::{
     TextStyle, TopBottomPanel, Ui, Widget as _, Window, util::hash,
 };
 use egui_l20n::prelude::*;
-use egui_phosphor::regular::{EXCLUDE, FLOPPY_DISK, SLIDERS_HORIZONTAL, TABLE, X};
+use egui_phosphor::regular::{EXCLUDE, FLOPPY_DISK, SLIDERS_HORIZONTAL, TABLE, TAG, X};
 use egui_tiles::{TileId, UiResponse};
 use lipid::prelude::*;
 use metadata::{egui::MetadataWidget, polars::MetaDataFrame};
@@ -160,6 +160,8 @@ impl Pane {
         SettingsButton::new(&mut state.windows.open_settings).ui(ui);
         ui.separator();
         ViewButton::new(&mut state.settings.view).ui(ui);
+        ui.separator();
+        MetadataButton::new(&mut state.windows.open_metadata).ui(ui);
         ui.separator();
         self.save_button(ui, state);
         ui.separator();
@@ -356,7 +358,18 @@ impl Pane {
 
 impl Pane {
     fn windows(&mut self, ui: &mut Ui, state: &mut State) {
+        self.metadata_window(ui, state);
         self.settings_window(ui, state);
+    }
+
+    fn metadata_window(&mut self, ui: &mut Ui, state: &mut State) {
+        Window::new(format!("{TAG} Source metadata"))
+            .id(ui.auto_id_with(ID_SOURCE).with("Metadata"))
+            .default_pos(ui.next_widget_position())
+            .open(&mut state.windows.open_metadata)
+            .show(ui.ctx(), |ui| {
+                MetadataWidget::new(&self.frame.meta).show(ui);
+            });
     }
 
     fn settings_window(&mut self, ui: &mut Ui, state: &mut State) {
