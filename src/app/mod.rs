@@ -2,30 +2,24 @@ use self::{
     panes::{Behavior, Pane},
     states::State,
 };
-use crate::{
-    app::widgets::buttons::{
-        GridButton, HorizontalButton, ReactiveButton, ResetButton, SettingsButton, TabsButton,
-        VerticalButton,
-    },
-    localization::ContextExt as _,
-    presets::AGILENT,
+use crate::{localization::ContextExt as _, presets::AGILENT};
+use ::widgets::buttons::{
+    GridButton, HorizontalButton, ReactiveButton, ResetButton, SettingsButton, TabsButton,
+    VerticalButton,
 };
 use anyhow::Result;
 use data::Data;
-use eframe::{APP_KEY, get_value, set_value};
+use eframe::{APP_KEY, CreationContext, get_value, set_value};
 use egui::{
     Align, Align2, CentralPanel, Color32, Context, FontDefinitions, Frame, Id, LayerId, Layout,
-    MenuBar, Order, Panel, RichText, ScrollArea, Sides, TextStyle, TopBottomPanel, Ui, Widget,
-    Window, warn_if_debug_build,
+    MenuBar, Order, Panel, RichText, ScrollArea, Sides, TextStyle, Ui, Widget, Window,
+    warn_if_debug_build,
 };
 use egui_ext::{HoveredFileExt, LightDarkButton};
-use egui_l20n::prelude::*;
+use egui_l10n::ContextExt as _;
 use egui_phosphor::{
     Variant, add_to_fonts,
-    regular::{
-        DATABASE, GRID_FOUR, SLIDERS_HORIZONTAL, SQUARE_SPLIT_HORIZONTAL, SQUARE_SPLIT_VERTICAL,
-        TABS,
-    },
+    regular::{DATABASE, SLIDERS_HORIZONTAL},
 };
 use egui_tiles::{ContainerKind, Tile, Tree};
 use egui_tiles_ext::{TreeExt as _, VERTICAL};
@@ -63,7 +57,7 @@ impl Default for App {
 
 impl App {
     /// Called once before the first frame.
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(cc: &CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
         let mut fonts = FontDefinitions::default();
@@ -160,7 +154,7 @@ impl App {
             //     .sort(["Mode"], SortMultipleOptions::new())
             //     .select([all()
             //         .sort_by(&[col("Time").list().mean()], SortMultipleOptions::new())
-            //         .over([col("Mode")])])
+            //         .over([MODE])])
             //     .collect()
             //     .unwrap();
             // println!("data_frame: {data_frame}");
@@ -215,21 +209,27 @@ impl App {
         Panel::top("TopPanel").show_inside(ui, |ui| {
             MenuBar::new().ui(ui, |ui| {
                 ScrollArea::horizontal().show(ui, |ui| {
-                    ReactiveButton::new(&mut state.settings.reactive)
+                    ReactiveButton::builder()
+                        .selected(&mut state.settings.reactive)
                         .size(ICON_SIZE)
+                        .build()
                         .ui(ui);
                     ui.separator();
                     // Light/Dark
                     ui.light_dark_button(ICON_SIZE);
                     ui.separator();
-                    ResetButton::new(&mut state.settings.reset_state)
+                    ResetButton::builder()
+                        .selected(&mut state.settings.reset_state)
                         .size(ICON_SIZE)
+                        .build()
                         .ui(ui);
                     ui.separator();
                     self.layouts(ui, state);
                     ui.separator();
-                    SettingsButton::new(&mut state.windows.open_settings)
+                    SettingsButton::builder()
+                        .selected(&mut state.windows.open_settings)
                         .size(ICON_SIZE)
+                        .build()
                         .ui(ui);
                     ui.separator();
                     // Database
@@ -241,25 +241,34 @@ impl App {
     }
 
     fn layouts(&mut self, ui: &mut Ui, state: &mut State) {
-        VerticalButton::new(&mut state.settings.layout.container_kind)
+        VerticalButton::builder()
+            .current_value(&mut state.settings.layout.container_kind)
             .size(ICON_SIZE)
+            .build()
             .ui(ui);
-        HorizontalButton::new(&mut state.settings.layout.container_kind)
+        HorizontalButton::builder()
+            .current_value(&mut state.settings.layout.container_kind)
             .size(ICON_SIZE)
+            .build()
             .ui(ui);
-        GridButton::new(&mut state.settings.layout.container_kind)
+        GridButton::builder()
+            .current_value(&mut state.settings.layout.container_kind)
             .size(ICON_SIZE)
+            .build()
             .ui(ui);
-        TabsButton::new(&mut state.settings.layout.container_kind)
+        TabsButton::builder()
+            .current_value(&mut state.settings.layout.container_kind)
             .size(ICON_SIZE)
+            .build()
             .ui(ui);
     }
 
     /// Database button
     fn database_button(&mut self, ui: &mut Ui) {
         ui.menu_button(RichText::new(DATABASE).size(ICON_SIZE), |ui| {
-            let mut response =
-                ui.button(RichText::new(format!("{DATABASE} IPPRAS/Agilent")).heading());
+            let mut response = ui.button(
+                RichText::new(format!("{DATABASE} {}", AGILENT.meta.format(" "))).heading(),
+            );
             response = response.on_hover_ui(|ui| {
                 MetadataWidget::new(&AGILENT.meta).show(ui);
             });
@@ -269,7 +278,9 @@ impl App {
             }
         })
         .response
-        .on_hover_localized("Database");
+        .on_hover_ui(|ui| {
+            ui.label(ui.localize("Database"));
+        });
     }
 }
 
@@ -332,7 +343,7 @@ impl eframe::App for App {
     }
 
     /// Called each time the UI needs repainting, which may be many times per second.
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame) {
         let mut state = State::load(ui, Id::new(ID_SOURCE));
         self.distance(ui);
         // Pre update

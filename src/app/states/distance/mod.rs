@@ -2,7 +2,7 @@ pub(crate) use self::{
     settings::{Aggregation, Distance, Priority, Settings, Sort},
     windows::Windows,
 };
-pub(crate) use crate::app::states::source::{Filter, Order, View};
+pub(crate) use crate::app::states::source::{Filter, View};
 
 use egui::{Context, Id};
 use serde::{Deserialize, Serialize};

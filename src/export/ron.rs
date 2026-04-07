@@ -6,7 +6,6 @@ pub use self::web::save;
 use crate::utils::hash::HashedDataFrame;
 use anyhow::Result;
 use metadata::{Metadata, polars::MetaDataFrame};
-use polars::frame::DataFrame;
 use ron::{
     extensions::Extensions,
     ser::{PrettyConfig, to_string_pretty},
@@ -27,8 +26,8 @@ mod native {
         frame: &MetaDataFrame<impl Borrow<Metadata>, impl Borrow<HashedDataFrame>>,
         name: &str,
     ) -> Result<()> {
-        let mut file = File::create(name)?;
         let frame = MetaDataFrame::new(frame.meta.borrow(), frame.data.borrow());
+        let mut file = File::create(name)?;
         let serialized = to_string_pretty(&frame, CONFIG.clone())?;
         file.write_all(serialized.as_bytes())?;
         Ok(())

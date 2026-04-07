@@ -5,13 +5,11 @@ use cpft::App;
 // Native
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result<()> {
-    // unsafe { std::env::set_var("POLARS_TABLE_WIDTH", "256") };
-    // unsafe { std::env::set_var("POLARS_FMT_MAX_ROWS", "5") };
     // unsafe { std::env::set_var("POLARS_FMT_MAX_COLS", "9") };
+    // unsafe { std::env::set_var("POLARS_FMT_MAX_ROWS", "10240") };
     // unsafe { std::env::set_var("POLARS_FMT_STR_LEN", "256") };
-    unsafe { std::env::set_var("POLARS_FMT_STR_LEN", "256") };
-    unsafe { std::env::set_var("POLARS_TABLE_WIDTH", "256") };
-    unsafe { std::env::set_var("POLARS_FMT_MAX_ROWS", "256") };
+    unsafe { std::env::set_var("POLARS_FMT_TABLE_FORMATTING", "MARKDOWN") };
+    // unsafe { std::env::set_var("POLARS_TABLE_WIDTH", "256") };
 
     // Log to stdout (if you run with `RUST_LOG=debug`).
     tracing_subscriber::fmt::init();

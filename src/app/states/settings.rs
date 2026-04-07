@@ -1,6 +1,6 @@
 use crate::app::ID_SOURCE;
 use egui::{ComboBox, Grid, Sense, Ui};
-use egui_l20n::prelude::*;
+use egui_l10n::prelude::*;
 use egui_tiles::ContainerKind;
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};

@@ -7,3 +7,12 @@ reorder_keys = true
 include = ["**/Cargo.toml"]
 keys = ["package"]
 formatting = { reorder_keys = false }
+
+# https://rust-lang.github.io/rustup/overrides.html#the-toolchain-file
+[[rule]]
+include = ["**/rust-toolchain.toml"]
+formatting = { reorder_arrays = false, reorder_keys = false }
+
+[[rule]]
+include = ["**/taplo.toml"]
+formatting = { reorder_arrays = false, reorder_keys = false }

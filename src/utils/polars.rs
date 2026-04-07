@@ -1,6 +1,9 @@
 use crate::r#const::EM_DASH;
 use polars::prelude::*;
-use std::borrow::Cow;
+use std::{borrow::Cow, sync::LazyLock};
+
+pub const NULL_RETENTION_TIME: LazyLock<Scalar> =
+    LazyLock::new(|| Scalar::null(DataType::Array(Box::new(DataType::Float64), 3)));
 
 /// Extension methods for [`Series`]
 pub trait SeriesExt {

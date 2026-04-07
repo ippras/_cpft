@@ -1,6 +1,6 @@
 use crate::{app::states::source::View, localization::Text as _};
 use egui::{Response, RichText, Ui, UiKind, Widget};
-use egui_l20n::prelude::*;
+use egui_l10n::prelude::*;
 use egui_phosphor::regular::{CHART_BAR, TABLE};
 
 /// View button widget
@@ -38,10 +38,14 @@ impl Widget for ViewButton<'_> {
         ui.menu_button(atoms, |ui| {
             let mut response = ui
                 .selectable_value(self.view, View::Table, ui.localize(View::Table.text()))
-                .on_hover_localized(View::Table.hover_text());
+                .on_hover_ui(|ui| {
+                    ui.label(ui.localize(View::Table.hover_text()));
+                });
             response |= ui
                 .selectable_value(self.view, View::Plot, ui.localize(View::Plot.text()))
-                .on_hover_localized(View::Plot.hover_text());
+                .on_hover_ui(|ui| {
+                    ui.label(ui.localize(View::Plot.hover_text()));
+                });
             if response.changed() {
                 ui.close_kind(UiKind::Menu);
             }

@@ -1,5 +1,5 @@
 use egui::Context;
-use egui_l20n::prelude::*;
+use egui_l10n::{ContextExt as _, Localization};
 
 /// Text
 pub trait Text {
@@ -17,39 +17,41 @@ impl ContextExt for Context {
     fn set_localizations(&self) {
         self.set_localization(
             locales::EN,
-            Localization::new(locales::EN).with_sources(sources::EN),
+            Localization::new(locales::EN)
+                .with_sources(l10n::EN)
+                .with_sources(fatty_acid_names::l10n::EN)
+                .with_sources(widgets::l10n::EN),
         );
         self.set_localization(
             locales::RU,
-            Localization::new(locales::RU).with_sources(sources::RU),
+            Localization::new(locales::RU)
+                .with_sources(l10n::RU)
+                .with_sources(fatty_acid_names::l10n::RU)
+                .with_sources(widgets::l10n::RU),
         );
         self.set_language_identifier(locales::EN)
     }
 }
 
 mod locales {
-    use egui_l20n::{LanguageIdentifier, langid};
+    use egui_l10n::{LanguageIdentifier, langid};
 
     pub(super) const EN: LanguageIdentifier = langid!("en");
     pub(super) const RU: LanguageIdentifier = langid!("ru");
 }
 
-mod sources {
-    macro_rules! source {
-        ($path:literal) => {
-            include_str!(concat!(env!("CARGO_MANIFEST_DIR"), $path))
-        };
-    }
+mod l10n {
+    use egui_l10n::ftl;
 
     pub(super) const EN: &[&str] = &[
-        source!("/ftl/en/main.ftl"),
-        source!("/ftl/en/params.ftl"),
-        source!("/ftl/und/icons.ftl"),
+        ftl!("en/main.ftl"),
+        ftl!("en/params.ftl"),
+        ftl!("und/icons.ftl"),
     ];
 
     pub(super) const RU: &[&str] = &[
-        source!("/ftl/ru/main.ftl"),
-        source!("/ftl/ru/params.ftl"),
-        source!("/ftl/und/icons.ftl"),
+        ftl!("ru/main.ftl"),
+        ftl!("ru/params.ftl"),
+        ftl!("und/icons.ftl"),
     ];
 }

@@ -118,7 +118,7 @@ fn join(mut lazy_frame: LazyFrame, key: Key) -> LazyFrame {
                     .keep(),
                 (col(TO).struct_().field_by_name(RETENTION_TIME)
                     - col(FROM).struct_().field_by_name(RETENTION_TIME))
-                .over([col(MODE)])
+                .over([MODE])
                 .alias(DELTA),
             ])
             .alias(RETENTION_TIME),
@@ -135,13 +135,13 @@ fn join(mut lazy_frame: LazyFrame, key: Key) -> LazyFrame {
                     .keep(),
                 (col(TO).struct_().field_by_name(EQUIVALENT_CHAIN_LENGTH)
                     - col(FROM).struct_().field_by_name(EQUIVALENT_CHAIN_LENGTH))
-                .over([col(MODE)])
+                .over([MODE])
                 .alias(DELTA),
             ])
             .alias(EQUIVALENT_CHAIN_LENGTH),
             ((col(FROM).struct_().field_by_name(RETENTION_TIME) - col(DEAD_TIME))
                 / (col(TO).struct_().field_by_name(RETENTION_TIME) - col(DEAD_TIME))
-                    .over([col(MODE)]))
+                    .over([MODE]))
             .alias(ALPHA),
         ])
         .with_column(

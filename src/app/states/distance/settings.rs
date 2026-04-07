@@ -1,18 +1,17 @@
 use crate::{
     app::{
-        MAX_PRECISION,
-        panes::distance::table::NUM_COLUMNS,
-        states::source::{Axis, Filter, Order, PlotSettings, View},
+        panes::distance::view::table::NUM_COLUMNS,
+        states::source::{Axis, Filter, PlotSettings, View},
     },
-    r#const::{ALPHA, EQUIVALENT_CHAIN_LENGTH, EUCLIDEAN},
+    r#const::{EQUIVALENT_CHAIN_LENGTH, MAXIMUM, MEAN, MEDIAN, MINIMUM, SELECTIVITY_FACTOR},
     localization::Text,
 };
 use const_format::formatcp;
-use egui::{ComboBox, Grid, Slider, Ui, Widget as _};
-use egui_l20n::prelude::*;
+use egui::{ComboBox, RichText, Slider, Ui, Widget as _};
+use egui_l10n::prelude::ContextExt;
 use egui_phosphor::regular::BOOKMARK;
-use polars::prelude::*;
 use serde::{Deserialize, Serialize};
+use widgets::settings::{MeanAndStandardDeviation, Order, Precision};
 
 const AGGREGATIONS: [Aggregation; 4] = [
     Aggregation::Maximum,
@@ -21,16 +20,14 @@ const AGGREGATIONS: [Aggregation; 4] = [
     Aggregation::Minimum,
 ];
 
-const DISTANCES: [Distance; 3] = [
-    Distance::Alpha,
-    Distance::EquivalentChainLength,
-    Distance::Euclidean,
-];
+const DISTANCES: [Distance; 2] = [Distance::EquivalentChainLength, Distance::SelectivityFactor];
 
 /// Settings
 #[derive(Clone, Debug, Deserialize, Hash, PartialEq, Serialize)]
 pub(crate) struct Settings {
-    pub(crate) precision: usize,
+    pub(crate) precision: Precision,
+    pub(crate) mean_and_standard_deviation: MeanAndStandardDeviation,
+
     pub(crate) resizable: bool,
     pub(crate) sticky: usize,
     pub(crate) truncate: bool,
@@ -42,249 +39,270 @@ pub(crate) struct Settings {
 
     pub(crate) view: View,
     pub(crate) plot: PlotSettings,
+
     // Reset
-    pub(crate) reset_sum: bool,
-    pub(crate) reset_table: bool,
+    pub(crate) reset: bool,
 }
 
 impl Settings {
     pub(crate) fn new() -> Self {
         Self {
-            precision: 2,
+            precision: Precision::new(),
+            mean_and_standard_deviation: MeanAndStandardDeviation::new(),
+
             resizable: false,
             sticky: 0,
             truncate: false,
 
             filter: Filter::new(),
             sort: Sort::Value,
-            order: Order::Descending,
+            order: Order::new(),
             priority: Priority::new(),
 
             view: View::Table,
             plot: PlotSettings::new(),
+
             // Reset
-            reset_sum: false,
-            reset_table: false,
+            reset: false,
         }
     }
 
     pub(crate) fn show(&mut self, ui: &mut Ui) {
-        Grid::new("Calculation").show(ui, |ui| -> PolarsResult<()> {
-            self.precision(ui);
-            self.sticky(ui);
-            self.truncate(ui);
+        ui.visuals_mut().collapsing_header_frame = true;
 
-            // Filter
-            ui.heading("Filter");
-            ui.separator();
-            ui.end_row();
-
-            // self.filter.show(ui, data_frame)?;
-            ui.end_row();
-
-            // Sort
-            ui.heading("SortByDistance");
-            ui.separator();
-            ui.end_row();
-
-            self.sort(ui);
-            self.order(ui);
-            ui.label(ui.localize("Priority"));
-            ui.separator();
-            ui.end_row();
-            self.distance(ui);
-            self.aggregation(ui);
-
-            if let View::Plot = self.view {
-                // Plot
-                ui.heading("Plot");
-                ui.separator();
-                ui.end_row();
-
-                self.legend(ui);
-                self.radius_of_points(ui);
-                self.axis(ui);
-            }
-            Ok(())
+        ui.group(|ui| {
+            ui.set_width(ui.available_width());
+            self.precision.show(ui);
         });
+
+        ui.group(|ui| {
+            ui.set_width(ui.available_width());
+            self.mean_and_standard_deviation.show(ui);
+        });
+
+        self.sticky(ui);
+        self.truncate(ui);
+
+        // Filter
+        ui.heading("Filter");
+        ui.separator();
+
+        // self.filter.show(ui, data_frame)?;
+
+        // Sort
+        ui.heading(ui.localize("Sort"));
+        ui.separator();
+
+        self.sort(ui);
+        self.distance(ui);
+        self.aggregation(ui);
+        self.order.show(ui);
+
+        ui.separator();
+
+        // Plot
+        ui.collapsing(
+            RichText::from(ui.localize("PlotSettings")).heading(),
+            |ui| {
+                ui.add_enabled_ui(self.view == View::Plot, |ui| {
+                    self.plot(ui);
+                });
+            },
+        );
     }
 
-    /// Precision
-    fn precision(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("Precision"))
-            .on_hover_localized("Precision.hover");
-        ui.horizontal(|ui| {
-            Slider::new(&mut self.precision, 1..=MAX_PRECISION).ui(ui);
-            if ui.button((BOOKMARK, "3")).clicked() {
-                self.precision = 3;
-            };
-        });
-        ui.end_row();
-    }
-
-    // Sticky columns
+    /// Sticky columns
     fn sticky(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("StickyColumns"))
-            .on_hover_localized("StickyColumns.hover");
-        Slider::new(&mut self.sticky, 0..=NUM_COLUMNS).ui(ui);
-        ui.end_row();
+        ui.horizontal(|ui| {
+            ui.label(ui.localize("StickyColumns")).on_hover_ui(|ui| {
+                ui.label(ui.localize("StickyColumns.hover"));
+            });
+            Slider::new(&mut self.sticky, 0..=NUM_COLUMNS).ui(ui);
+        });
     }
 
-    // Truncate headers
+    /// Truncate headers
     fn truncate(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("TruncateHeaders"))
-            .on_hover_localized("TruncateHeaders.hover");
-        ui.checkbox(&mut self.truncate, "");
-        ui.end_row();
+        ui.horizontal(|ui| {
+            ui.label(ui.localize("TruncateHeaders")).on_hover_ui(|ui| {
+                ui.label(ui.localize("TruncateHeaders.hover"));
+            });
+            ui.checkbox(&mut self.truncate, "");
+        });
     }
 
     /// Sort
     fn sort(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("SortByDistance"))
-            .on_hover_localized("SortByDistance.hover");
-        ComboBox::from_id_salt(ui.next_auto_id())
-            .selected_text(ui.localize(self.sort.text()))
-            .show_ui(ui, |ui| {
-                ui.selectable_value(&mut self.sort, Sort::Key, ui.localize(Sort::Key.text()))
-                    .on_hover_localized(Sort::Key.hover_text());
-                ui.selectable_value(&mut self.sort, Sort::Value, ui.localize(Sort::Value.text()))
-                    .on_hover_localized(Sort::Value.hover_text());
-            })
-            .response
-            .on_hover_localized(self.sort.hover_text());
-        ui.end_row();
-    }
-
-    /// Order
-    fn order(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("Order"));
-        ComboBox::from_id_salt(ui.next_auto_id())
-            .selected_text(ui.localize(self.order.text()))
-            .show_ui(ui, |ui| {
-                ui.selectable_value(
-                    &mut self.order,
-                    Order::Ascending,
-                    ui.localize(Order::Ascending.text()),
-                )
-                .on_hover_localized(Order::Ascending.hover_text());
-                ui.selectable_value(
-                    &mut self.order,
-                    Order::Descending,
-                    ui.localize(Order::Descending.text()),
-                )
-                .on_hover_localized(Order::Descending.hover_text());
-            })
-            .response
-            .on_hover_localized(self.order.hover_text());
-        ui.end_row();
+        ui.horizontal(|ui| {
+            ui.label(ui.localize("SortByDistance")).on_hover_ui(|ui| {
+                ui.label(ui.localize("SortByDistance.hover"));
+            });
+            ComboBox::from_id_salt(ui.next_auto_id())
+                .selected_text(ui.localize(self.sort.text()))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut self.sort, Sort::Key, ui.localize(Sort::Key.text()))
+                        .on_hover_ui(|ui| {
+                            ui.label(ui.localize(Sort::Key.hover_text()));
+                        });
+                    ui.selectable_value(
+                        &mut self.sort,
+                        Sort::Value,
+                        ui.localize(Sort::Value.text()),
+                    )
+                    .on_hover_ui(|ui| {
+                        ui.label(ui.localize(Sort::Value.hover_text()));
+                    });
+                })
+                .response
+                .on_hover_ui(|ui| {
+                    ui.label(ui.localize(self.sort.hover_text()));
+                });
+        });
     }
 
     /// Distance
     fn distance(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("SortByDistance"))
-            .on_hover_localized("SortByDistance.hover");
-        let enabled = self.sort == Sort::Value;
-        ui.add_enabled_ui(enabled, |ui| {
-            ComboBox::from_id_salt(ui.next_auto_id())
-                .selected_text(ui.localize(self.priority.distance.text()))
-                .show_ui(ui, |ui| {
-                    for distance in DISTANCES {
-                        ui.selectable_value(
-                            &mut self.priority.distance,
-                            distance,
-                            ui.localize(distance.text()),
-                        )
-                        .on_hover_localized(distance.hover_text());
-                    }
-                })
-                .response
-                .on_hover_localized(self.priority.distance.hover_text());
-        })
-        .response
-        .on_disabled_hover_text("Used only for sort by value");
-        ui.end_row();
+        ui.horizontal(|ui| {
+            ui.label(ui.localize("SortByDistance")).on_hover_ui(|ui| {
+                ui.label(ui.localize("SortByDistance.hover"));
+            });
+            let enabled = self.sort == Sort::Value;
+            ui.add_enabled_ui(enabled, |ui| {
+                ComboBox::from_id_salt(ui.next_auto_id())
+                    .selected_text(ui.localize(self.priority.distance.text()))
+                    .show_ui(ui, |ui| {
+                        for distance in DISTANCES {
+                            ui.selectable_value(
+                                &mut self.priority.distance,
+                                distance,
+                                ui.localize(distance.text()),
+                            )
+                            .on_hover_ui(|ui| {
+                                ui.label(ui.localize(distance.hover_text()));
+                            });
+                        }
+                    })
+                    .response
+                    .on_hover_ui(|ui| {
+                        ui.label(ui.localize(self.priority.distance.hover_text()));
+                    });
+            })
+            .response
+            .on_disabled_hover_text("Used only for sort by value");
+        });
     }
 
     /// Aggregation
     fn aggregation(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("SortByAggregation"))
-            .on_hover_localized("SortByAggregation.hover");
-        let enabled = self.sort == Sort::Value;
-        ui.add_enabled_ui(enabled, |ui| {
-            ComboBox::from_id_salt(ui.next_auto_id())
-                .selected_text(ui.localize(self.priority.aggregation.text()))
-                .show_ui(ui, |ui| {
-                    for aggregation in AGGREGATIONS {
-                        ui.selectable_value(
-                            &mut self.priority.aggregation,
-                            aggregation,
-                            ui.localize(aggregation.text()),
-                        )
-                        .on_hover_localized(aggregation.hover_text());
-                    }
-                })
-                .response
-                .on_hover_localized(self.priority.aggregation.hover_text());
-        })
-        .response
-        .on_disabled_hover_text("Used only for sort by value");
-        ui.end_row();
+        ui.horizontal(|ui| {
+            ui.label(ui.localize("SortByAggregation"))
+                .on_hover_ui(|ui| {
+                    ui.label(ui.localize("SortByAggregation.hover"));
+                });
+            let enabled = self.sort == Sort::Value;
+            ui.add_enabled_ui(enabled, |ui| {
+                ComboBox::from_id_salt(ui.next_auto_id())
+                    .selected_text(ui.localize(self.priority.aggregation.text()))
+                    .show_ui(ui, |ui| {
+                        for aggregation in AGGREGATIONS {
+                            ui.selectable_value(
+                                &mut self.priority.aggregation,
+                                aggregation,
+                                ui.localize(aggregation.text()),
+                            )
+                            .on_hover_ui(|ui| {
+                                ui.label(ui.localize(aggregation.hover_text()));
+                            });
+                        }
+                    })
+                    .response
+                    .on_hover_ui(|ui| {
+                        ui.label(ui.localize(self.priority.aggregation.hover_text()));
+                    });
+            })
+            .response
+            .on_disabled_hover_text("Used only for sort by value");
+        });
+    }
+
+    /// Plot
+    fn plot(&mut self, ui: &mut Ui) {
+        self.legend(ui);
+        self.radius_of_points(ui);
+        self.axis(ui);
     }
 
     /// Legend
     fn legend(&mut self, ui: &mut Ui) {
-        ui.label(ui.localize("Legend"));
-        ui.checkbox(&mut self.plot.legend, "");
-        ui.end_row();
+        ui.horizontal(|ui| {
+            ui.label(ui.localize("Legend"));
+            ui.checkbox(&mut self.plot.legend, "");
+        });
     }
 
     /// Radius of points
     fn radius_of_points(&mut self, ui: &mut Ui) {
-        // Radius of points
-        ui.label(ui.localize("RadiusOfPoints"))
-            .on_hover_localized("RadiusOfPoints.hover");
         ui.horizontal(|ui| {
-            Slider::new(&mut self.plot.radius_of_points, 0..=u8::MAX)
-                .logarithmic(true)
-                .ui(ui);
-            if ui.button((BOOKMARK, "2")).clicked() {
-                self.plot.radius_of_points = 2;
-            };
+            ui.label(ui.localize("RadiusOfPoints")).on_hover_ui(|ui| {
+                ui.label(ui.localize("RadiusOfPoints.hover"));
+            });
+            ui.horizontal(|ui| {
+                Slider::new(&mut self.plot.radius_of_points, 0..=u8::MAX)
+                    .logarithmic(true)
+                    .ui(ui);
+                if ui.button((BOOKMARK, "2")).clicked() {
+                    self.plot.radius_of_points = 2;
+                };
+            });
         });
-        ui.end_row();
     }
 
     /// Axis
     fn axis(&mut self, ui: &mut Ui) {
         for axis in [&mut self.plot.axes.x, &mut self.plot.axes.y] {
-            ui.label(ui.localize("PlotAxes"));
-            ComboBox::from_id_salt(ui.next_auto_id())
-                .selected_text(ui.localize(axis.text()))
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(axis, Axis::Alpha, ui.localize(Axis::Alpha.text()))
-                        .on_hover_localized(Axis::Alpha.hover_text());
-                    ui.selectable_value(
-                        axis,
-                        Axis::EquivalentChainLength,
-                        ui.localize(Axis::EquivalentChainLength.text()),
-                    )
-                    .on_hover_localized(Axis::EquivalentChainLength.hover_text());
-                    ui.selectable_value(
-                        axis,
-                        Axis::OnsetTemperature,
-                        ui.localize(Axis::OnsetTemperature.text()),
-                    )
-                    .on_hover_localized(Axis::OnsetTemperature.hover_text());
-                    ui.selectable_value(
-                        axis,
-                        Axis::TemperatureStep,
-                        ui.localize(Axis::TemperatureStep.text()),
-                    )
-                    .on_hover_localized(Axis::TemperatureStep.hover_text());
-                })
-                .response
-                .on_hover_localized(axis.hover_text());
-            ui.end_row();
+            ui.horizontal(|ui| {
+                ui.label(ui.localize("PlotAxes"));
+                ComboBox::from_id_salt(ui.next_auto_id())
+                    .selected_text(ui.localize(axis.text()))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            axis,
+                            Axis::SelectivityFactor,
+                            ui.localize(Axis::SelectivityFactor.text()),
+                        )
+                        .on_hover_ui(|ui| {
+                            ui.label(ui.localize(Axis::SelectivityFactor.hover_text()));
+                        });
+                        ui.selectable_value(
+                            axis,
+                            Axis::EquivalentChainLength,
+                            ui.localize(Axis::EquivalentChainLength.text()),
+                        )
+                        .on_hover_ui(|ui| {
+                            ui.label(ui.localize(Axis::EquivalentChainLength.hover_text()));
+                        });
+                        ui.selectable_value(
+                            axis,
+                            Axis::OnsetTemperature,
+                            ui.localize(Axis::OnsetTemperature.text()),
+                        )
+                        .on_hover_ui(|ui| {
+                            ui.label(ui.localize(Axis::OnsetTemperature.hover_text()));
+                        });
+                        ui.selectable_value(
+                            axis,
+                            Axis::TemperatureStep,
+                            ui.localize(Axis::TemperatureStep.text()),
+                        )
+                        .on_hover_ui(|ui| {
+                            ui.label(ui.localize(Axis::TemperatureStep.hover_text()));
+                        });
+                    })
+                    .response
+                    .on_hover_ui(|ui| {
+                        ui.label(ui.localize(axis.hover_text()));
+                    });
+            });
         }
     }
 }
@@ -329,78 +347,9 @@ impl Priority {
     fn new() -> Self {
         Self {
             aggregation: Aggregation::Median,
-            distance: Distance::Alpha,
+            distance: Distance::SelectivityFactor,
         }
     }
-
-    pub(crate) const fn id(&self) -> &'static str {
-        match self {
-            Priority {
-                aggregation: Aggregation::Maximum,
-                distance: Distance::Alpha,
-            } => formatcp!("{ALPHA}.Max"),
-            Priority {
-                aggregation: Aggregation::Mean,
-                distance: Distance::Alpha,
-            } => formatcp!("{ALPHA}.Mean"),
-            Priority {
-                aggregation: Aggregation::Median,
-                distance: Distance::Alpha,
-            } => formatcp!("{ALPHA}.Median"),
-            Priority {
-                aggregation: Aggregation::Minimum,
-                distance: Distance::Alpha,
-            } => formatcp!("{ALPHA}.Min"),
-            Priority {
-                aggregation: Aggregation::Maximum,
-                distance: Distance::EquivalentChainLength,
-            } => formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Max"),
-            Priority {
-                aggregation: Aggregation::Mean,
-                distance: Distance::EquivalentChainLength,
-            } => formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Mean"),
-            Priority {
-                aggregation: Aggregation::Median,
-                distance: Distance::EquivalentChainLength,
-            } => formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Median"),
-            Priority {
-                aggregation: Aggregation::Minimum,
-                distance: Distance::EquivalentChainLength,
-            } => formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Min"),
-            Priority {
-                aggregation: Aggregation::Maximum,
-                distance: Distance::Euclidean,
-            } => formatcp!("{EUCLIDEAN}.Max"),
-            Priority {
-                aggregation: Aggregation::Mean,
-                distance: Distance::Euclidean,
-            } => formatcp!("{EUCLIDEAN}.Mean"),
-            Priority {
-                aggregation: Aggregation::Median,
-                distance: Distance::Euclidean,
-            } => formatcp!("{EUCLIDEAN}.Median"),
-            Priority {
-                aggregation: Aggregation::Minimum,
-                distance: Distance::Euclidean,
-            } => formatcp!("{EUCLIDEAN}.Min"),
-        }
-    }
-
-    // pub(crate) const fn aggregation(&self) -> &'static str {
-    //     match self.aggregation {
-    //         Aggregation::Maximum => "Max",
-    //         Aggregation::Mean => "Mean",
-    //         Aggregation::Median => "Median",
-    //         Aggregation::Minimum => "Min",
-    //     }
-    // }
-
-    // pub(crate) const fn distance(&self) -> &'static str {
-    //     match self.distance {
-    //         Distance::Alpha => "Alpha",
-    //         Distance::Euclidean => "Euclidean",
-    //     }
-    // }
 }
 
 /// Aggregation
@@ -410,6 +359,17 @@ pub(crate) enum Aggregation {
     Mean,
     Median,
     Minimum,
+}
+
+impl Aggregation {
+    pub(crate) const fn id(&self) -> &'static str {
+        match self {
+            Self::Maximum => MAXIMUM,
+            Self::Mean => MEAN,
+            Self::Median => MEDIAN,
+            Self::Minimum => MINIMUM,
+        }
+    }
 }
 
 impl Text for Aggregation {
@@ -435,25 +395,31 @@ impl Text for Aggregation {
 /// Distance
 #[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
 pub(crate) enum Distance {
-    Alpha,
     EquivalentChainLength,
-    Euclidean,
+    SelectivityFactor,
+}
+
+impl Distance {
+    pub(crate) const fn id(&self) -> &'static str {
+        match self {
+            Self::EquivalentChainLength => EQUIVALENT_CHAIN_LENGTH,
+            Self::SelectivityFactor => SELECTIVITY_FACTOR,
+        }
+    }
 }
 
 impl Text for Distance {
     fn text(&self) -> &'static str {
         match self {
-            Self::Alpha => "Alpha",
-            Self::EquivalentChainLength => "EquivalentChainLength",
-            Self::Euclidean => "Euclidean",
+            Self::EquivalentChainLength => EQUIVALENT_CHAIN_LENGTH,
+            Self::SelectivityFactor => SELECTIVITY_FACTOR,
         }
     }
 
     fn hover_text(&self) -> &'static str {
         match self {
-            Self::Alpha => "Alpha.hover",
-            Self::EquivalentChainLength => "EquivalentChainLength.hover",
-            Self::Euclidean => "Euclidean.hover",
+            Self::EquivalentChainLength => formatcp!("{EQUIVALENT_CHAIN_LENGTH}.hover"),
+            Self::SelectivityFactor => formatcp!("{SELECTIVITY_FACTOR}.hover"),
         }
     }
 }

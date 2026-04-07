@@ -1,30 +1,53 @@
 pub(crate) const EM_DASH: &str = "—";
 pub(crate) const NO_BREAK_SPACE: &str = " ";
 
+// pub(crate) const INDEX: &str = "Index";
+// pub(crate) const SLOPE: &str = "Slope";
+// pub(crate) const DERIVATIVE: &str = "Derivative";
+// pub(crate) const ANGLE: &str = "Angle";
+// pub(crate) const EUCLIDEAN: &str = "Euclidean";
+
+pub(crate) const ID: &str = "Id";
+pub(crate) const RANK: &str = "Rank";
+pub(crate) const CHANGED: &str = "Changed";
+pub(crate) const EXPORT: &str = "Export";
+
+pub(crate) const ABSOLUTE: &str = "Absolute";
+pub(crate) const ADJUSTED: &str = "Adjusted";
+pub(crate) const ANY: &str = "Any";
+pub(crate) const ARRAY: &str = "Array";
+pub(crate) const CHAIN_LENGTH: &str = "ChainLength";
+pub(crate) const CORRELATION: &str = "Correlation";
+pub(crate) const DEAD_TIME: &str = "DeadTime";
+pub(crate) const DISTANCE: &str = "Distance";
+pub(crate) const EQUIVALENT_CARBON_NUMBER: &str = "EquivalentCarbonNumber";
+pub(crate) const EQUIVALENT_CHAIN_LENGTH: &str = "EquivalentChainLength";
+pub(crate) const ERROR: &str = "Error";
 pub(crate) const FILTER: &str = "Filter";
+pub(crate) const FRACTIONAL_CHAIN_LENGTH: &str = "FractionalChainLength";
+pub(crate) const FROM: &str = "From";
+pub(crate) const MASS: &str = "Mass";
 pub(crate) const MODE: &str = "Mode";
 pub(crate) const ONSET_TEMPERATURE: &str = "OnsetTemperature";
-pub(crate) const TEMPERATURE_STEP: &str = "TemperatureStep";
-pub(crate) const RETENTION_TIME: &str = "RetentionTime";
-pub(crate) const ABSOLUTE: &str = "Absolute";
+pub(crate) const REGRESSION: &str = "Regression";
+pub(crate) const RELATIVE_STANDARD_DEVIATION: &str = "RelativeStandardDeviation";
 pub(crate) const RELATIVE: &str = "Relative";
-pub(crate) const DELTA: &str = "Delta";
-pub(crate) const MEAN: &str = "Mean";
+pub(crate) const RETENTION_FACTOR: &str = "RetentionFactor";
+pub(crate) const RETENTION_TIME: &str = "RetentionTime";
+pub(crate) const SELECTIVITY_FACTOR: &str = "SelectivityFactor";
 pub(crate) const STANDARD_DEVIATION: &str = "StandardDeviation";
-pub(crate) const SAMPLE: &str = "Sample";
+pub(crate) const STANDARD: &str = "Standard";
+pub(crate) const TEMPERATURE_STEP: &str = "TemperatureStep";
 pub(crate) const TEMPERATURE: &str = "Temperature";
-pub(crate) const CHAIN_LENGTH: &str = "ChainLength";
-pub(crate) const EQUIVALENT_CHAIN_LENGTH: &str = "EquivalentChainLength";
-pub(crate) const FRACTIONAL_CHAIN_LENGTH: &str = "FractionalChainLength";
-pub(crate) const EQUIVALENT_CARBON_NUMBER: &str = "EquivalentCarbonNumber";
-pub(crate) const MASS: &str = "Mass";
-pub(crate) const DERIVATIVE: &str = "Derivative";
-pub(crate) const ANGLE: &str = "Angle";
-pub(crate) const SLOPE: &str = "Slope";
-pub(crate) const DEAD_TIME: &str = "DeadTime";
-pub(crate) const EUCLIDEAN: &str = "Euclidean";
-pub(crate) const ALPHA: &str = "Alpha";
-pub(crate) const FROM: &str = "From";
 pub(crate) const TO: &str = "To";
+pub(crate) const WARNING: &str = "Warning";
+
+pub(crate) const BACKWARD: &str = "Backward";
+pub(crate) const FORWARD: &str = "Forward";
+
+pub(crate) const MAXIMUM: &str = "Maximum";
+pub(crate) const MEAN: &str = "Mean";
+pub(crate) const MEDIAN: &str = "Median";
+pub(crate) const MINIMUM: &str = "Minimum";
 
 pub(crate) const POINTS: &str = "Points";
