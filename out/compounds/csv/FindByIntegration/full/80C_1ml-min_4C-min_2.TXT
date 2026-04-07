@@ -1,0 +1,42 @@
+﻿#Compound List: 4326 found
+#
+Show/Hide;Label;RT;Height;Area;Ion Polarity;Base Peak;Formula;Width;Score;Cpd;Name;Hit Count;CAS ID;Reference mass;Reference Retention Time;RT Diff
+True;"Cpd 1: Methane-d, trichloro-; C D Cl3; 5.919";5.919;36399;160327;Positive;83.99;C D Cl3;0.165;73.7;1;Methane-d, trichloro-;2;865-49-6;118.921;;;
+True;Cpd 2: 6.307;6.307;43227;364265;Positive;83.99;;0.343;;2;;0;;;;;
+True;Cpd 3: 6.946;6.946;548848;3314948;Positive;74.09;;0.333;;3;;0;;;;;
+True;Cpd 4: 9.744;9.744;891279;5230333;Positive;74.09;;0.42;;4;;0;;;;;
+True;Cpd 5: 13.545;13.545;1244014;6575025;Positive;74.1;;0.366;;5;;0;;;;;
+True;Cpd 6: 15.606;15.606;688831;3511462;Positive;74.09;;0.317;;6;;0;;;;;
+True;Cpd 7: 17.663;17.663;1575878;7790686;Positive;74.1;;0.326;;7;;0;;;;;
+True;Cpd 8: 19.678;19.678;861239;4170943;Positive;74.09;;0.334;;8;;0;;;;;
+True;Cpd 9: 21.636;21.636;1921822;9210108;Positive;74.1;;0.33;;9;;0;;;;;
+True;"Cpd 10: Methyl myristoleate; C15 H28 O2; 22.902";22.902;865026;4253570;Positive;55.1;C15 H28 O2;0.334;72.31;10;Methyl myristoleate;3;56219-06-8;240.209;28.133;5.232;
+True;Cpd 11: 23.520;23.52;993578;4720518;Positive;74.09;;0.307;;11;;0;;;;;
+True;"Cpd 12: Methyl (Z)-10-pentadecenoate; C16 H30 O2; 24.757";24.757;932726;4491538;Positive;55.1;C16 H30 O2;0.313;77.69;12;Methyl (Z)-10-pentadecenoate;1;1000426-92-2;254.225;29.783;5.027;
+True;Cpd 13: 25.337;25.337;3232270;15219010;Positive;74.1;;0.301;;13;;0;;;;;
+True;"Cpd 14: 11-Hexadecenoic acid, methyl ester; C17 H32 O2; 26.298";26.298;964592;4661324;Positive;55.1;C17 H32 O2;0.33;72.78;14;11-Hexadecenoic acid, methyl ester;4;55000-42-5;268.24;31.433;5.135;
+True;Cpd 15: 27.061;27.061;1129629;5251003;Positive;74.09;;0.309;;15;;0;;;;;
+True;"Cpd 16: Methyl 8-heptadecenoate; C18 H34 O2; 28.005";28.005;1032086;4878208;Positive;55.1;C18 H34 O2;0.305;72.67;16;Methyl 8-heptadecenoate;3;1000336-36-4;282.256;33.1;5.095;
+True;"Cpd 17: Methyl stearate; C19 H38 O2; 28.734";28.734;2475732;11668518;Positive;74.1;C19 H38 O2;0.322;70.44;17;Methyl stearate;1;112-61-8;298.287;34.617;5.882;
+True;"Cpd 18: 13-Octadecenoic acid, methyl ester; C19 H36 O2; 29.250";29.25;1124970;5369715;Positive;55.1;C19 H36 O2;0.26;72.49;18;13-Octadecenoic acid, methyl ester;2;56554-47-3;296.272;34.75;5.5;
+True;"Cpd 19: 13-Octadecenoic acid, methyl ester; C19 H36 O2; 29.509";29.509;2306941;11228806;Positive;55.1;C19 H36 O2;0.309;73.63;19;13-Octadecenoic acid, methyl ester;6;56554-47-3;296.272;34.75;5.241;
+True;"Cpd 20: Methyl 9,10-octadecadienoate; C19 H34 O2; 30.173";30.173;1010618;4380068;Positive;67.1;C19 H34 O2;0.164;88.17;20;Methyl 9,10-octadecadienoate;10;1010336-45-7;294.256;;;
+True;Cpd 21: 30.326;30.326;2464495;12081179;Positive;74.1;;0.28;;21;;0;;;;;
+True;"Cpd 22: Methyl 9,10-octadecadienoate; C19 H34 O2; 30.762";30.762;974123;4723561;Positive;67.1;C19 H34 O2;0.313;88.1;22;Methyl 9,10-octadecadienoate;10;1010336-45-7;294.256;;;
+True;"Cpd 23: Methyl 6,9,12-hexadecatrienoate; C17 H28 O2; 31.632";31.632;855061;4150932;Positive;79.1;C17 H28 O2;0.227;75.73;23;Methyl 6,9,12-hexadecatrienoate;8;1000336-34-6;264.209;31.7;0.068;
+True;Cpd 24: 31.860;31.86;2678828;12686170;Positive;74.1;;0.317;;24;;0;;;;;
+True;"Cpd 25: Methyl 8,9-octadecadienoate; C19 H34 O2; 32.209";32.209;824650;3922666;Positive;79.1;C19 H34 O2;0.3;76.08;25;Methyl 8,9-octadecadienoate;8;1000336-45-0;294.256;;;
+True;"Cpd 26: cis-13-Eicosenoic acid, methyl ester; C21 H40 O2; 32.580";32.58;1178771;5843969;Positive;55.1;C21 H40 O2;0.334;72.99;26;cis-13-Eicosenoic acid, methyl ester;2;69120-02-1;324.303;38.067;5.487;
+True;Cpd 27: 33.318;33.318;1294646;6262446;Positive;74.09;;0.317;;27;;0;;;;;
+True;"Cpd 28: Methyl 10,11-octadecadienoate; C19 H34 O2; 33.769";33.769;1010253;5089075;Positive;67.1;C19 H34 O2;0.338;81.28;28;Methyl 10,11-octadecadienoate;10;1000336-45-3;294.256;;;
+True;"Cpd 29: Methyl 7,8-octadecadienoate; C19 H34 O2; 34.584";34.584;887748;4113480;Positive;79.1;C19 H34 O2;0.173;78.68;29;Methyl 7,8-octadecadienoate;10;1010336-44-6;294.256;;;
+True;"Cpd 30: Methyl 20-methyl-heneicosanoate; C23 H46 O2; 34.753";34.752;2605378;13547716;Positive;74.09;C23 H46 O2;0.309;71.01;30;Methyl 20-methyl-heneicosanoate;1;1000336-47-4;354.35;40.183;5.431;
+True;"Cpd 31: (6Z,9Z,12Z,15Z)-Methyl octadeca-6,9,12,15-tetraenoate; C19 H30 O2; 35.173";35.173;1053435;7618540;Positive;79.1;C19 H30 O2;0.25;79.82;31;(6Z,9Z,12Z,15Z)-Methyl octadeca-6,9,12,15-tetraenoate;10;73097-00-4;290.225;35.15;-0.023;
+True;"Cpd 32: Methyl 11-docosenoate; C23 H44 O2; 35.433";35.433;1111073;5431956;Positive;55.1;C23 H44 O2;0.32;70.84;32;Methyl 11-docosenoate;1;1000336-23-0;352.334;41.383;5.951;
+True;Cpd 33: 36.105;36.104;1158499;5964746;Positive;74.08;;0.317;;33;;0;;;;;
+True;"Cpd 34: Methyl 9,10-octadecadienoate; C19 H34 O2; 36.561";36.561;1711936;9333921;Positive;67.1;C19 H34 O2;0.346;77.3;34;Methyl 9,10-octadecadienoate;9;1010336-45-7;294.256;;;
+True;Cpd 35: 37.440;37.44;2251873;11830006;Positive;74.1;;0.326;;35;;0;;;;;
+True;Cpd 36: 38.092;38.092;1004810;5350843;Positive;55.1;;0.253;;36;;0;;;;;
+True;Cpd 37: 38.289;38.289;101397;651984;Positive;149;;0.296;;37;;0;;;;;
+True;"Cpd 38: Oxacyclotetradeca-4,11-diyne; C13 H18 O; 39.843";39.843;593438;3352032;Positive;79.1;C13 H18 O;0.379;74.77;38;Oxacyclotetradeca-4,11-diyne;4;6568-32-7;190.136;;;
+

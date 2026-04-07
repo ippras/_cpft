@@ -1,0 +1,36 @@
+﻿#Compound List: 6163 found
+#
+Cpd;RT;Height;Area;Base Peak;Width;Formula;Label
+1;5.614;433778;2749613;74.1;0.314;C11 H22 O2;"Cpd 1: Decanoic acid, methyl ester; C11 H22 O2; 5.614";
+2;6.094;272931;1630583;74.09;0.279;C12 H24 O2;"Cpd 2: Undecanoic acid, methyl ester; C12 H24 O2; 6.094";
+3;6.68;664938;3713061;74.1;0.33;C13 H26 O2;"Cpd 3: Dodecanoic acid, methyl ester; C13 H26 O2; 6.680";
+4;7.369;387169;1982338;74.1;0.278;C14 H28 O2;"Cpd 4: Tridecanoic acid, methyl ester; C14 H28 O2; 7.369";
+5;8.146;927031;4202763;74.1;0.261;C15 H30 O2;"Cpd 5: Methyl tetradecanoate; C15 H30 O2; 8.146";
+6;8.782;448561;1918440;55.1;0.214;C15 H28 O2;"Cpd 6: Methyl myristoleate; C15 H28 O2; 8.782";
+7;8.995;523114;2130499;74.1;0.23;C16 H32 O2;"Cpd 7: Pentadecanoic acid, methyl ester; C16 H32 O2; 8.995";
+8;9.674;521923;2018173;55.1;0.199;C16 H30 O2;"Cpd 8: Methyl (Z)-10-pentadecenoate; C16 H30 O2; 9.674";
+9;9.905;1858400;6822212;74.1;0.26;C17 H34 O2;"Cpd 9: Hexadecanoic acid, methyl ester; C17 H34 O2; 9.905";
+10;10.487;581265;2117055;55.1;0.262;C15 H29 B O;"Cpd 10: 13-Borabicyclo[7.3.0]tridecane, 13-propoxy-, (Z)- or (E)-; C15 H29 B O; 10.487";
+11;10.838;669678;2271341;74.1;0.216;C18 H36 O2;"Cpd 11: Heptadecanoic acid, methyl ester; C18 H36 O2; 10.838";
+12;11.433;665556;2227714;55.1;0.22;C18 H34 O2;"Cpd 12: cis-10-Heptadecenoic acid, methyl ester; C18 H34 O2; 11.433";
+13;11.797;1530747;5007259;74.1;0.232;C19 H38 O2;"Cpd 13: Methyl stearate; C19 H38 O2; 11.797";
+14;12.135;719419;2304804;55.1;0.169;C19 H36 O2;"Cpd 14: 6-Octadecenoic acid, methyl ester, (Z)-; C19 H36 O2; 12.135";
+15;12.313;1439561;4679734;55.1;0.231;C19 H36 O2;"Cpd 15: 6-Octadecenoic acid, methyl ester, (Z)-; C19 H36 O2; 12.313";
+16;12.699;671146;2150434;67.1;0.217;C19 H34 O2;"Cpd 16: Methyl 9,10-octadecadienoate; C19 H34 O2; 12.699";
+17;13.104;651595;2085351;67.1;0.227;C19 H34 O2;"Cpd 17: Methyl 9,10-octadecadienoate; C19 H34 O2; 13.104";
+18;13.694;1993621;7336776;74.1;0.244;;Cpd 18: 13.694;
+19;14.028;572188;1747131;79.1;0.16;C12 H20;"Cpd 19: Cyclododecyne; C12 H20; 14.028";
+20;14.196;763039;2367596;55.1;0.218;C21 H40 O2;"Cpd 20: 11-Eicosenoic acid, methyl ester; C21 H40 O2; 14.196";
+21;14.623;872988;2675987;74.1;0.227;C22 H44 O2;"Cpd 21: Heneicosanoic acid, methyl ester; C22 H44 O2; 14.623";
+22;14.978;679544;2085897;67.1;0.217;C19 H34 O2;"Cpd 22: Methyl 9,10-octadecadienoate; C19 H34 O2; 14.978";
+23;15.542;2206376;7712189;74.1;0.244;;Cpd 23: 15.542;
+24;15.871;618526;1729228;79.1;0.089;C12 H20;"Cpd 24: Cyclododecyne; C12 H20; 15.871";
+25;15.938;609213;1878198;79.1;0.075;C13 H20 N2;"Cpd 25: 1,4-Methanocycloocta[d]pyridazine, 1,4,4a,5,6,9,10,10a-octahydro-11,11-dimethyl-, (1.alpha.,4.alpha.,4a.alpha.,10a.alpha.)-; C13 H20 N2; 15.938";
+26;16.022;807166;2733043;55.1;0.209;;Cpd 26: 16.022;
+27;16.422;888576;2774214;74.1;0.198;C24 H48 O2;"Cpd 27: Tricosanoic acid, methyl ester; C24 H48 O2; 16.422";
+28;16.768;706898;2015589;67.1;0.105;C19 H34 O2;"Cpd 28: Methyl 9,10-octadecadienoate; C19 H34 O2; 16.768";
+29;16.853;519817;1667562;79.1;0.146;C13 H20 N2;"Cpd 29: 1,4-Methanocycloocta[d]pyridazine, 1,4,4a,5,6,9,10,10a-octahydro-11,11-dimethyl-, (1.alpha.,4.alpha.,4a.alpha.,10a.alpha.)-; C13 H20 N2; 16.853";
+30;17.301;1703065;5731577;74.1;0.235;C25 H50 O2;"Cpd 30: Tetracosanoic acid, methyl ester; C25 H50 O2; 17.301";
+31;17.754;799088;2682699;55.1;0.231;;Cpd 31: 17.754;
+32;19.016;451907;1616612;79.1;0.248;C15 H22;"Cpd 32: 1,8-Cyclopentadecadiyne; C15 H22; 19.016";
+

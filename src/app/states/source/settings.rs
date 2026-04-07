@@ -46,7 +46,7 @@ pub(crate) struct Settings {
 impl Settings {
     pub(crate) fn new() -> Self {
         Self {
-            precision: 2,
+            precision: 3,
             resizable: false,
             significant: true,
             sticky: 0,
@@ -55,7 +55,7 @@ impl Settings {
             view: View::Table,
             ddof: 1,
             logarithmic: false,
-            relative: None,
+            relative: Some(MARGARIC),
 
             filter: Filter::new(),
             sort: Sort::RetentionTime,

@@ -11,7 +11,7 @@ fn main() -> eframe::Result<()> {
     // unsafe { std::env::set_var("POLARS_FMT_STR_LEN", "256") };
     unsafe { std::env::set_var("POLARS_FMT_STR_LEN", "256") };
     unsafe { std::env::set_var("POLARS_TABLE_WIDTH", "256") };
-    unsafe { std::env::set_var("POLARS_FMT_MAX_ROWS", "256") };
+    unsafe { std::env::set_var("POLARS_FMT_MAX_ROWS", "1024") };
 
     // Log to stdout (if you run with `RUST_LOG=debug`).
     tracing_subscriber::fmt::init();

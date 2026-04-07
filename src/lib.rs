@@ -16,26 +16,42 @@ mod utils;
 mod test {
     use super::*;
     use crate::{
+        r#const::{ABSOLUTE, CHAIN_LENGTH, EQUIVALENT_CHAIN_LENGTH, MEAN, MODE, RETENTION_TIME},
         presets::AGILENT,
         utils::hash::{HashedDataFrame, HashedMetaDataFrame},
     };
     use lipid::{expr::ExprExt, prelude::*, r#trait::Atomic};
     use metadata::{Metadata, polars::MetaDataFrame};
     use polars::prelude::*;
-    use std::{fs::File, io::Cursor};
 
     // Ok  Some(Struct({'Carbon': UInt8, 'Indices': List(Struct({'Index': UInt8, 'Triple': Boolean, 'Parity': Boolean}))}))
     // Err Some(Struct({'Carbon': UInt8, 'Indices': List(Struct({'Index': UInt8, 'Parity': Boolean, 'Triple': Boolean}))}))
+    // 2.4: 80.0 5.0 C22DC13
+    // 2.5: 80.0 7.0 C23
+    // 2.6: 90.0 8.0 C22DC13
+    // 2.7: 130.0 9.0 C23
+    // 2.8: 130.0 10.0 C22DC13
+    // 2.9: 130.0 10.0 C23
+    // 2.10: 60.0 3.0 C20DC11
+    // 2.10: 120.0 9.0 C22DC13
+    // 2.11: 60.0 5.0 C18DC9DC12DC15
+    //
+    // 2.12: 100.0 7.0 C18DC9DC12DC15
+    // 2.13: 70.0 8.0 C18DC9DC12
+    // 2.14: 110.0 6.0 C18DT9
     #[test]
-    fn test() -> anyhow::Result<()> {
+    fn rt() -> anyhow::Result<()> {
         println!("AGILENT.meta: {:?}", AGILENT.meta);
         println!("AGILENT.data: {:?}", AGILENT.data);
-        let onset_temperature = 60.0;
-        let temperature_step = 3.0;
-        let fa = C20DC11.clone(); // 20:1Δ11c
-        // let value1 = 14.148;
-        // let value2 = 0.0;
-        let value3 = 47.239;
+        let onset_temperature = 110.0;
+        let temperature_step = 6.0;
+        let fa = C18DT9.clone();
+        // let value1 = Option::<f64>::None;
+        // let value2 = Option::<f64>::None;
+        // let value3 = Option::<f64>::None;
+        let value1 = Some(16.884);
+        let value2 = Some(16.852);
+        let value3 = Some(16.842);
         let mut lazy_frame = AGILENT.data.data_frame.clone().lazy();
         let condition = col("Mode")
             .struct_()
@@ -58,10 +74,9 @@ mod test {
         );
         lazy_frame = lazy_frame.with_columns([when(condition.clone())
             .then(concat_list([
-                col("RetentionTime").list().get(lit(0), true),
-                // lit(value1),
-                col("RetentionTime").list().get(lit(1), true),
-                lit(value3),
+                value1.map_or(col("RetentionTime").list().get(lit(0), true), lit),
+                value2.map_or(col("RetentionTime").list().get(lit(1), true), lit),
+                value3.map_or(col("RetentionTime").list().get(lit(2), true), lit),
             ])?)
             .otherwise(col("RetentionTime"))
             .alias("RetentionTime")]);
@@ -74,6 +89,34 @@ mod test {
                 .unwrap()
         );
         println!("AGILENT: {:?}", lazy_frame.clone().collect().unwrap());
+        let data = lazy_frame.collect()?;
+        let frame = MetaDataFrame::new(AGILENT.meta.clone(), HashedDataFrame::new(data)?);
+        export::ron::save(&frame, "name.temp.ron")?;
+        Ok(())
+    }
+
+    // (10.969+10.966)/2=10.9675
+    // (10.967+10.944+10.941)/3=10.950666666666666667
+    #[test]
+    fn sort() -> anyhow::Result<()> {
+        unsafe { std::env::set_var("POLARS_FMT_STR_LEN", "256") };
+        unsafe { std::env::set_var("POLARS_TABLE_WIDTH", "256") };
+        unsafe { std::env::set_var("POLARS_FMT_MAX_ROWS", "1024") };
+
+        println!("AGILENT.meta: {:?}", AGILENT.meta);
+        println!("AGILENT.data: {:?}", AGILENT.data);
+        let sort_options = SortMultipleOptions::new()
+            .with_maintain_order(true)
+            .with_nulls_last(false)
+            .with_order_descending(false);
+        let mut lazy_frame = AGILENT.data.data_frame.clone().lazy();
+        println!("before: {:?}", lazy_frame.clone().collect().unwrap());
+        lazy_frame = lazy_frame.sort([MODE], sort_options.clone()).select([all()
+            .as_expr()
+            .sort_by(&[col(RETENTION_TIME).list().mean()], sort_options)
+            .over([col(MODE)])]);
+        // println!("after: {:?}", lazy_frame.clone().collect().unwrap());
+        // println!("AGILENT: {:?}", lazy_frame.clone().collect().unwrap());
         let data = lazy_frame.collect()?;
         let frame = MetaDataFrame::new(AGILENT.meta.clone(), HashedDataFrame::new(data)?);
         export::ron::save(&frame, "name.temp.ron")?;

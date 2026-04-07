@@ -1,0 +1,6 @@
+﻿#Compound List: 7225 found
+#
+Show/Hide;Label;RT;Height;Area;Base Peak;File;Precursor;Width;Ions;Cpd
+True;Cpd 1: 4.130;4.13;128625;820650;32;D:\g\temp\150C_1ml-min_10C-min_Air.D;32;0.374;3;1;
+True;Cpd 2: 4.247;4.247;5588075;59816122;49;D:\g\temp\150C_1ml-min_10C-min_Air.D;49;0.48;7;2;
+

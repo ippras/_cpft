@@ -1,0 +1,36 @@
+﻿#Compound List: 4326 found
+#
+Show/Hide;Label;RT;Height;Area;Ion Polarity;Base Peak;Formula;Width;Score;Cpd;Name;Hit Count;CAS ID;Reference mass;Reference Retention Time;RT Diff
+True;Cpd 1: 6.845;6.845;129472;552091;Positive;74.08;;0.276;;1;;0;;;;;
+True;Cpd 2: 8.486;8.486;741962;2335217;Positive;74.1;;0.209;;2;;0;;;;;
+True;Cpd 3: 9.372;9.372;504189;1424053;Positive;74.1;;0.19;;3;;0;;;;;
+True;Cpd 4: 10.262;10.262;1241852;3202726;Positive;74.1;;0.181;;4;;0;;;;;
+True;Cpd 5: 11.136;11.136;691622;1708644;Positive;74.1;;0.202;;5;;0;;;;;
+True;Cpd 6: 11.994;11.994;1514001;3629310;Positive;74.1;;0.177;;6;;0;;;;;
+True;"Cpd 7: Methyl myristoleate; C15 H28 O2; 12.587";12.587;718056;1705859;Positive;55.1;C15 H28 O2;0.175;72.47;7;Methyl myristoleate;3;56219-06-8;240.209;28.133;15.546;
+True;Cpd 8: 12.818;12.818;784328;1822797;Positive;74.1;;0.173;;8;;0;;;;;
+True;"Cpd 9: Methyl (Z)-10-pentadecenoate; C16 H30 O2; 13.399";13.399;751190;1783544;Positive;55.1;C16 H30 O2;0.177;77.58;9;Methyl (Z)-10-pentadecenoate;1;1000426-92-2;254.225;29.783;16.384;
+True;Cpd 10: 13.618;13.618;2504209;5846426;Positive;74.1;;0.172;;10;;0;;;;;
+True;"Cpd 11: 11-Hexadecenoic acid, methyl ester; C17 H32 O2; 14.079";14.079;770772;1800585;Positive;55.1;C17 H32 O2;0.122;73.24;11;11-Hexadecenoic acid, methyl ester;4;55000-42-5;268.24;31.433;17.354;
+True;Cpd 12: 14.372;14.372;882240;2003872;Positive;74.1;;0.173;;12;;0;;;;;
+True;"Cpd 13: Methyl 9-heptadecenoate or 9-17:1; C18 H34 O2; 14.825";14.825;844973;1972531;Positive;55.1;C18 H34 O2;0.169;73.25;13;Methyl 9-heptadecenoate or 9-17:1;3;1000336-38-0;282.256;33.1;18.275;
+True;"Cpd 14: 1-Hexadecanaminium, N,N,N-trimethyl-, octadecanoate; C37 H77 N O2; 15.114";15.114;1906919;4495855;Positive;74.1;C37 H77 N O2;0.165;71.49;14;1-Hexadecanaminium, N,N,N-trimethyl-, octadecanoate;2;124-23-2;567.595;;;
+True;"Cpd 15: 13-Octadecenoic acid, methyl ester; C19 H36 O2; 15.357";15.357;883820;2095237;Positive;55.1;C19 H36 O2;0.127;73.08;15;13-Octadecenoic acid, methyl ester;2;56554-47-3;296.272;34.75;19.393;
+True;"Cpd 16: 13-Octadecenoic acid, methyl ester; C19 H36 O2; 15.489";15.489;1783022;4249254;Positive;55.1;C19 H36 O2;0.177;74.39;16;13-Octadecenoic acid, methyl ester;6;56554-47-3;296.272;34.75;19.261;
+True;"Cpd 17: Methyl 9,10-octadecadienoate; C19 H34 O2; 15.769";15.769;834062;1945545;Positive;67.1;C19 H34 O2;0.148;87.64;17;Methyl 9,10-octadecadienoate;10;1010336-45-7;294.256;;;
+True;"Cpd 18: Methyl 9,10-octadecadienoate; C19 H34 O2; 16.066";16.066;800338;1872923;Positive;67.1;C19 H34 O2;0.169;89.01;18;Methyl 9,10-octadecadienoate;10;1010336-45-7;294.256;;;
+True;Cpd 19: 16.483;16.482;2671025;6809402;Positive;74.1;;0.181;;19;;0;;;;;
+True;"Cpd 20: Methyl 8,9-octadecadienoate; C19 H34 O2; 16.726";16.726;689748;1579338;Positive;79.1;C19 H34 O2;0.115;75.2;20;Methyl 8,9-octadecadienoate;10;1000336-45-0;294.256;;;
+True;"Cpd 21: cis-13-Eicosenoic acid, methyl ester; C21 H40 O2; 16.837";16.837;984166;2308588;Positive;55.1;C21 H40 O2;0.157;73.83;21;cis-13-Eicosenoic acid, methyl ester;2;69120-02-1;324.303;38.067;21.23;
+True;Cpd 22: 17.126;17.126;1126589;2592051;Positive;74.1;;0.168;;22;;0;;;;;
+True;"Cpd 23: Methyl 12,13-tetradecadienoate; C15 H26 O2; 17.385";17.385;858138;2017945;Positive;67.1;C15 H26 O2;0.163;79.41;23;Methyl 12,13-tetradecadienoate;10;1000336-33-7;238.193;;;
+True;Cpd 24: 17.764;17.764;3012220;7580224;Positive;74.1;;0.186;;24;;0;;;;;
+True;"Cpd 25: Methyl 8,9-octadecadienoate; C19 H34 O2; 18.004";18.004;756305;1635937;Positive;79.1;C19 H34 O2;0.07;74.06;25;Methyl 8,9-octadecadienoate;9;1000336-45-0;294.256;;;
+True;Cpd 26: 18.094;18.094;1169626;4532746;Positive;55.1;;0.19;;26;;0;;;;;
+True;Cpd 27: 18.366;18.366;1114476;2821557;Positive;74.09;;0.173;;27;;0;;;;;
+True;"Cpd 28: Methyl 9,10-octadecadienoate; C19 H34 O2; 18.638";18.638;860725;2128357;Positive;67.1;C19 H34 O2;0.099;76.88;28;Methyl 9,10-octadecadienoate;8;1010336-45-7;294.256;;;
+True;"Cpd 29: 1,4-Methanocycloocta[d]pyridazine, 1,4,4a,5,6,9,10,10a-octahydro-11,11-dimethyl-, (1.alpha.,4.alpha.,4a.alpha.,10a.alpha.)-; C13 H20 N2; 18.729";18.729;595286;1732573;Positive;79.1;C13 H20 N2;0.185;75.16;29;1,4-Methanocycloocta[d]pyridazine, 1,4,4a,5,6,9,10,10a-octahydro-11,11-dimethyl-, (1.alpha.,4.alpha.,4a.alpha.,10a.alpha.)-;3;1000221-85-9;204.163;;;
+True;"Cpd 30: Tetracosanoic acid, methyl ester; C25 H50 O2; 19.009";19.009;2016067;5931060;Positive;74.1;C25 H50 O2;0.194;71.39;30;Tetracosanoic acid, methyl ester;1;2442-49-1;382.381;44.567;25.557;
+True;Cpd 31: 19.368;19.368;920747;2733774;Positive;55.1;;0.179;;31;;0;;;;;
+True;"Cpd 32: Oxacyclotetradeca-4,11-diyne; C13 H18 O; 20.473";20.473;450590;1561997;Positive;79.1;C13 H18 O;0.238;74.61;32;Oxacyclotetradeca-4,11-diyne;3;6568-32-7;190.136;;;
+

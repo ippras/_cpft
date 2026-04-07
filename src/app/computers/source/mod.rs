@@ -247,16 +247,11 @@ fn sort(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
         Sort::RetentionTime => lazy_frame.sort([MODE], sort_options.clone()).select([all()
             .as_expr()
             .sort_by(
-                &[
-                    col(CHAIN_LENGTH)
-                        .struct_()
-                        .field_by_name(EQUIVALENT_CHAIN_LENGTH),
-                    col(RETENTION_TIME)
-                        .struct_()
-                        .field_by_name(ABSOLUTE)
-                        .struct_()
-                        .field_by_name(MEAN),
-                ],
+                &[col(RETENTION_TIME)
+                    .struct_()
+                    .field_by_name(ABSOLUTE)
+                    .struct_()
+                    .field_by_name(MEAN)],
                 sort_options,
             )
             .over([col(MODE)])]),
