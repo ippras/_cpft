@@ -1,7 +1,8 @@
 use crate::{
     app::{
         panes::MARGIN,
-        states::source::{ID_SOURCE, State},
+        states::source::{ID_SOURCE, Settings, State},
+        widgets::array::Array,
     },
     r#const::*,
     utils::polars::SeriesExt as _,
@@ -36,22 +37,25 @@ const TOP: &[Range<usize>] = &[
 #[derive(Debug)]
 pub(super) struct TableView<'a> {
     data_frame: &'a DataFrame,
-    state: &'a mut State,
+    settings: &'a mut Settings,
 }
 
 impl<'a> TableView<'a> {
-    pub(super) const fn new(data_frame: &'a DataFrame, state: &'a mut State) -> Self {
-        Self { data_frame, state }
+    pub(super) const fn new(data_frame: &'a DataFrame, settings: &'a mut Settings) -> Self {
+        Self {
+            data_frame,
+            settings,
+        }
     }
 }
 
 impl TableView<'_> {
     pub(super) fn show(&mut self, ui: &mut Ui) {
         let id_salt = Id::new(ID_SOURCE).with("Table");
-        if self.state.reset_table_state {
+        if self.settings.reset {
             let id = TableState::id(ui, Id::new(id_salt));
             TableState::reset(ui.ctx(), id);
-            self.state.reset_table_state = false;
+            self.settings.reset = false;
         }
         let height = ui.text_style_height(&TextStyle::Heading) + 2.0 * MARGIN.y;
         let num_rows = self.data_frame.height() as _;
@@ -60,11 +64,10 @@ impl TableView<'_> {
             .id_salt(id_salt)
             .num_rows(num_rows)
             .columns(vec![
-                Column::default()
-                    .resizable(self.state.settings.resizable);
+                Column::default().resizable(self.settings.resizable);
                 num_columns
             ])
-            .num_sticky_cols(self.state.settings.sticky)
+            .num_sticky_cols(self.settings.sticky)
             .headers([
                 HeaderRow {
                     height,
@@ -77,7 +80,7 @@ impl TableView<'_> {
     }
 
     fn header_cell_content_ui(&mut self, ui: &mut Ui, row: usize, column: Range<usize>) {
-        if self.state.settings.truncate {
+        if self.settings.truncate {
             ui.style_mut().wrap_mode = Some(TextWrapMode::Truncate);
         }
         match (row, column) {
@@ -202,91 +205,78 @@ impl TableView<'_> {
                 );
             }
             (row, bottom::ABSOLUTE) => {
-                let absolute_series = self.data_frame[RETENTION_TIME]
-                    .struct_()?
-                    .field_by_name(ABSOLUTE)?;
-                let mean_series = absolute_series.struct_()?.field_by_name(MEAN)?;
-                let standard_deviation_series = absolute_series
-                    .struct_()?
-                    .field_by_name(STANDARD_DEVIATION)?;
-                if let Some(standard_deviation) = standard_deviation_series.f64()?.get(row) {
-                    if standard_deviation > 0.1 {
-                        ui.visuals_mut().override_text_color = Some(Color32::RED);
-                    } else if standard_deviation > 0.05 {
-                        ui.visuals_mut().override_text_color = Some(Color32::YELLOW);
-                    }
-                }
-                let text = mean_series
-                    .f64()?
-                    .get(row)
-                    .map_or(Cow::Borrowed(EM_DASH), |mean| mean.to_string().into());
-                ui.label(text)
-                    .try_on_hover_ui(|ui| {
-                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
-                        let Some(mean) = mean_series.f64()?.get(row) else {
-                            polars_bail!(NoData: "Mean[{row}]");
-                        };
-                        let Some(standard_deviation) = standard_deviation_series.f64()?.get(row)
-                        else {
-                            polars_bail!(NoData: "StandardDeviation[{row}]");
-                        };
-                        ui.heading(ui.localize("StandardDeviation"));
-                        ui.label(format!("{mean} ±{standard_deviation}"));
-                        Ok(())
-                    })?
-                    .try_on_hover_ui(|ui| {
-                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
-                        let Some(sample) = absolute_series
+                Array::builder()
+                    .series(
+                        &self.data_frame[RETENTION_TIME]
                             .struct_()?
-                            .field_by_name("Sample")?
-                            .list()?
-                            .get_as_series(row)
-                        else {
-                            polars_bail!(NoData: "Sample[{row}]");
-                        };
-                        ui.heading(ui.localize("Sample"));
-                        ui.label(format_list!(sample.iter()));
-                        Ok(())
-                    })?;
+                            .field_by_name(ABSOLUTE)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::RELATIVE) => {
-                ui.label(
-                    self.data_frame[RETENTION_TIME]
-                        .struct_()?
-                        .field_by_name(RELATIVE)?
-                        .str_f64(row)?,
-                );
+                Array::builder()
+                    .series(
+                        &self.data_frame[RETENTION_TIME]
+                            .struct_()?
+                            .field_by_name(RELATIVE)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::DELTA) => {
-                ui.label(
-                    self.data_frame[RETENTION_TIME]
-                        .struct_()?
-                        .field_by_name(DELTA)?
-                        .str_f64(row)?,
-                );
+                Array::builder()
+                    .series(
+                        &self.data_frame[RETENTION_TIME]
+                            .struct_()?
+                            .field_by_name(DELTA)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, top::TEMPERATURE) => {
-                ui.label(
-                    self.data_frame[TEMPERATURE]
-                        .as_materialized_series()
-                        .str_f64(row)?,
-                );
+                Array::builder()
+                    .series(self.data_frame[TEMPERATURE].as_materialized_series())
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::ECL) => {
-                ui.label(
-                    self.data_frame[CHAIN_LENGTH]
-                        .struct_()?
-                        .field_by_name(EQUIVALENT_CHAIN_LENGTH)?
-                        .str_f64(row)?,
-                );
+                Array::builder()
+                    .series(
+                        &self.data_frame[CHAIN_LENGTH]
+                            .struct_()?
+                            .field_by_name(EQUIVALENT_CHAIN_LENGTH)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::FCL) => {
-                ui.label(
-                    self.data_frame[CHAIN_LENGTH]
-                        .struct_()?
-                        .field_by_name(FRACTIONAL_CHAIN_LENGTH)?
-                        .str_f64(row)?,
-                );
+                Array::builder()
+                    .series(
+                        &self.data_frame[CHAIN_LENGTH]
+                            .struct_()?
+                            .field_by_name(FRACTIONAL_CHAIN_LENGTH)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::ECN) => {
                 let ecn_series = self.data_frame[CHAIN_LENGTH]
@@ -322,20 +312,30 @@ impl TableView<'_> {
                 })?;
             }
             (row, bottom::SLOPE) => {
-                ui.label(
-                    self.data_frame[DERIVATIVE]
-                        .struct_()?
-                        .field_by_name(SLOPE)?
-                        .str_f64(row)?,
-                );
+                Array::builder()
+                    .series(
+                        &self.data_frame[DERIVATIVE]
+                            .struct_()?
+                            .field_by_name(SLOPE)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::ANGLE) => {
-                ui.label(
-                    self.data_frame[DERIVATIVE]
-                        .struct_()?
-                        .field_by_name(ANGLE)?
-                        .str_f64(row)?,
-                );
+                Array::builder()
+                    .series(
+                        &self.data_frame[DERIVATIVE]
+                            .struct_()?
+                            .field_by_name(ANGLE)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             _ => unreachable!(),
         }

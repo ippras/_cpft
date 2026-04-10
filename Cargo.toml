@@ -26,7 +26,9 @@ log = "0.4.29"
 nalgebra = "0.34.2"
 polars = { git = "https://github.com/pola-rs/polars", rev = "099564e", default-features = false, features = [
     "abs",
+    "array_arithmetic",
     "bitwise",
+    "cov",
     "cross_join",
     "diagonal_concat",
     "dtype-array",
@@ -56,8 +58,11 @@ polars = { git = "https://github.com/pola-rs/polars", rev = "099564e", default-f
 ] }
 polars-utils = { version = "0.53.0", features = ["nightly"] }
 ron = "0.12.1"
+scirs2 = "0.4.2"
+scirs2-core = { version = "0.4.2", features = ["arrow"] }
 serde = { version = "1.0.228", features = ["derive"] }
 tracing = "0.1.44"
+typed-builder = "0.23.2"
 uom = { version = "0.38.0", features = ["serde"] }
 
 # polars_excel_writer = "0.22.0"
@@ -75,6 +80,7 @@ metadata = { git = "https://github.com/ippras/metadata", branch = "0.10.0", feat
     "polars",
 ] }
 polars_ext = { git = "https://github.com/kgv/polars_ext", branch = "099564e", features = [
+    "array",
     "temporal_conversions",
 ] }
 

@@ -1,6 +1,7 @@
 #![feature(debug_closure_helpers)]
 #![feature(decl_macro)]
 #![feature(tuple_trait)]
+#![feature(if_let_guard)]
 
 pub use app::App;
 

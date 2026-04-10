@@ -11,7 +11,6 @@ pub(crate) const ID_SOURCE: &str = "Source";
 /// State
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub(crate) struct State {
-    pub(crate) reset_table_state: bool,
     pub(crate) settings: Settings,
     pub(crate) windows: Windows,
 }
@@ -19,7 +18,6 @@ pub(crate) struct State {
 impl State {
     pub(crate) fn new() -> Self {
         Self {
-            reset_table_state: false,
             settings: Settings::new(),
             windows: Windows::new(),
         }

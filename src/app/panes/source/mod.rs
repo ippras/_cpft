@@ -3,10 +3,14 @@ use crate::{
     app::{
         computers::source::{
             Computed as SourceComputed, Key as SourceKey,
-            display::{Computed as DisplayComputed, Key as DisplayKey},
+            format::{Computed as DisplayComputed, Key as DisplayKey},
             plot::{Computed as PlotComputed, Key as PlotKey},
+            sum::{
+                correlation::{Computed as CorrelationComputed, Key as CorrelationKey},
+                regression::{Computed as RegressionComputed, Key as RegressionKey},
+            },
         },
-        panes::{Behavior, MARGIN},
+        panes::{Behavior, MARGIN, source::sum::correlation::Correlation},
         states::source::{ID_SOURCE, State, View},
         widgets::buttons::{MetadataButton, ResetButton, ResizeButton, SettingsButton, ViewButton},
     },
@@ -22,7 +26,7 @@ use egui::{
     TextStyle, TopBottomPanel, Ui, Widget as _, Window, util::hash,
 };
 use egui_l20n::prelude::*;
-use egui_phosphor::regular::{EXCLUDE, FLOPPY_DISK, SLIDERS_HORIZONTAL, TABLE, TAG, X};
+use egui_phosphor::regular::{EXCLUDE, FLOPPY_DISK, SIGMA, SLIDERS_HORIZONTAL, TABLE, TAG, X};
 use egui_tiles::{TileId, UiResponse};
 use lipid::prelude::*;
 use metadata::{egui::MetadataWidget, polars::MetaDataFrame};
@@ -154,7 +158,7 @@ impl Pane {
             .on_hover_ui(|ui| MetadataWidget::new(&self.frame.meta).show(ui))
             .on_hover_cursor(CursorIcon::Grab);
         ui.separator();
-        ResetButton::new(&mut state.reset_table_state).ui(ui);
+        ResetButton::new(&mut state.settings.reset).ui(ui);
         ui.separator();
         ResizeButton::new(&mut state.settings.resizable).ui(ui);
         ui.separator();
@@ -164,11 +168,35 @@ impl Pane {
         ui.separator();
         MetadataButton::new(&mut state.windows.open_metadata).ui(ui);
         ui.separator();
+        self.sum_button(ui, state);
+        ui.separator();
         self.save_button(ui, state);
         ui.separator();
         self.distance_button(ui, state);
         ui.separator();
         response
+    }
+
+    /// Sum button
+    fn sum_button(&self, ui: &mut Ui, state: &mut State) {
+        ui.menu_button(RichText::new(SIGMA).heading(), |ui| {
+            ui.toggle_value(
+                &mut state.windows.open_correlation,
+                (
+                    RichText::new(SIGMA).heading(),
+                    RichText::new(ui.localize("Correlation")).heading(),
+                ),
+            )
+            .on_hover_localized("Correlation.hover");
+            ui.toggle_value(
+                &mut state.windows.open_regression,
+                (
+                    RichText::new(SIGMA).heading(),
+                    RichText::new(ui.localize("Regression")).heading(),
+                ),
+            )
+            .on_hover_localized("Regression.hover");
+        });
     }
 
     /// Save button
@@ -355,7 +383,7 @@ impl Pane {
                         .get(DisplayKey::new(&self.calculated, &state.settings))
                         .clone()
                 });
-                TableView::new(&data_frame, state).show(ui)
+                TableView::new(&data_frame, &mut state.settings).show(ui)
             }
         };
     }
@@ -365,6 +393,7 @@ impl Pane {
     fn windows(&mut self, ui: &mut Ui, state: &mut State) {
         self.metadata_window(ui, state);
         self.settings_window(ui, state);
+        self.sum_windows(ui, state);
     }
 
     fn metadata_window(&mut self, ui: &mut Ui, state: &mut State) {
@@ -386,7 +415,85 @@ impl Pane {
                 let _ = state.settings.show(ui);
             });
     }
+
+    fn sum_windows(&mut self, ui: &mut Ui, state: &mut State) {
+        self.correlation_window(ui, state);
+        self.regression_window(ui, state);
+    }
+
+    fn correlation_window(&mut self, ui: &mut Ui, state: &mut State) {
+        Window::new(format!("{SIGMA} Correlation"))
+            .id(ui.auto_id_with(ID_SOURCE).with("Correlation"))
+            .default_pos(ui.next_widget_position())
+            .open(&mut state.windows.open_correlation)
+            .resizable(state.settings.resizable)
+            .show(ui.ctx(), |ui| {
+                Panel::top(ui.auto_id_with("Top")).show_inside(ui, |ui| {
+                    MenuBar::new()
+                        .ui(ui, |ui| {
+                            ScrollArea::horizontal()
+                                .show(ui, |ui| {
+                                    ui.set_height(
+                                        ui.text_style_height(&TextStyle::Heading) + 4.0 * MARGIN.y,
+                                    );
+                                    ui.visuals_mut().button_frame = false;
+                                    ResetButton::new(&mut state.settings.reset).ui(ui);
+                                    ui.separator();
+                                    ResizeButton::new(&mut state.settings.resizable).ui(ui);
+                                    ui.separator();
+                                })
+                                .inner
+                        })
+                        .inner;
+                });
+                let data_frame = ui.memory_mut(|memory| {
+                    memory
+                        .caches
+                        .cache::<CorrelationComputed>()
+                        .get(CorrelationKey::new(&self.calculated, &state.settings))
+                        .clone()
+                });
+                Correlation::new(&data_frame, &mut state.settings).show(ui);
+            });
+    }
+
+    fn regression_window(&mut self, ui: &mut Ui, state: &mut State) {
+        Window::new(format!("{SIGMA} Regression"))
+            .id(ui.auto_id_with(ID_SOURCE).with("Regression"))
+            .default_pos(ui.next_widget_position())
+            .open(&mut state.windows.open_regression)
+            .resizable(state.settings.resizable)
+            .show(ui.ctx(), |ui| {
+                Panel::top(ui.auto_id_with("Top")).show_inside(ui, |ui| {
+                    MenuBar::new()
+                        .ui(ui, |ui| {
+                            ScrollArea::horizontal()
+                                .show(ui, |ui| {
+                                    ui.set_height(
+                                        ui.text_style_height(&TextStyle::Heading) + 4.0 * MARGIN.y,
+                                    );
+                                    ui.visuals_mut().button_frame = false;
+                                    ResetButton::new(&mut state.settings.reset).ui(ui);
+                                    ui.separator();
+                                    ResizeButton::new(&mut state.settings.resizable).ui(ui);
+                                    ui.separator();
+                                })
+                                .inner
+                        })
+                        .inner;
+                });
+                let data_frame = ui.memory_mut(|memory| {
+                    memory
+                        .caches
+                        .cache::<RegressionComputed>()
+                        .get(RegressionKey::new(&self.calculated, &state.settings))
+                        .clone()
+                });
+                // Regression::new(&data_frame, &mut state.settings).show(ui);
+            });
+    }
 }
 
 pub(crate) mod plot;
+pub(crate) mod sum;
 pub(crate) mod table;

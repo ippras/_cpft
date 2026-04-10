@@ -6,9 +6,11 @@ use crate::{
     r#const::*,
     utils::hash::HashedDataFrame,
 };
+use const_format::formatcp;
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;
+use polars_ext::expr::{ExprExt, eval_arr};
 
 /// Source computed
 pub(crate) type Computed = FrameCache<Value, Computer>;
@@ -68,136 +70,160 @@ type Value = HashedDataFrame;
 
 fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     println!("key: {:?}", key.filter);
+    lazy_frame = lazy_frame.with_column(col(RETENTION_TIME).list().to_array(3));
     println!(
         "COMPUTE0 lazy_frame: {}",
-        filter(lazy_frame.clone(), key)?
-            .filter(col(FILTER))
-            .collect()
-            .unwrap()
+        lazy_frame.clone().collect().unwrap()
     );
-    lazy_frame = lazy_frame
-        .with_columns([
-            // Retention time mean
-            col(RETENTION_TIME).list().mean().alias("RetentionTimeMean"),
-            // Retention time standard deviation
-            col(RETENTION_TIME)
-                .list()
-                .std(key.ddof)
-                .alias("RetentionTimeStandardDeviation"),
+    lazy_frame = lazy_frame.with_columns([
+        col(RETENTION_TIME).alias(ABSOLUTE),
+        relative_retention_time(key)?.alias(RELATIVE),
+        delta_retention_time()?.alias(DELTA),
+        temperature()?.alias(TEMPERATURE),
+        fcl(key)?.alias(FRACTIONAL_CHAIN_LENGTH),
+        ecl(key)?.alias(EQUIVALENT_CHAIN_LENGTH),
+        ecn().alias(EQUIVALENT_CARBON_NUMBER),
+    ]);
+    lazy_frame = lazy_frame.with_columns([slope(key).alias(SLOPE)]);
+    println!(
+        "COMPUTE3 lazy_frame: {}",
+        lazy_frame.clone().collect().unwrap()
+    );
+    lazy_frame = lazy_frame.select([
+        col(MODE),
+        col(FATTY_ACID),
+        // Retention time
+        as_struct(vec![col(ABSOLUTE), col(RELATIVE), col(DELTA)]).alias(RETENTION_TIME),
+        // DeadTime
+        col(DEAD_TIME),
+        // Temperature
+        col(TEMPERATURE),
+        // Chain length
+        as_struct(vec![
+            col(EQUIVALENT_CHAIN_LENGTH),
+            col(FRACTIONAL_CHAIN_LENGTH),
+            col(EQUIVALENT_CARBON_NUMBER),
         ])
-        .with_columns([
-            // Relative retention time
-            relative_time(key)?
-                .over([MODE])
-                .alias("RelativeRetentionTime"),
-            // Delta retention time
+        .alias(CHAIN_LENGTH),
+        // Mass
+        as_struct(vec![
             col(FATTY_ACID)
                 .fatty_acid()
-                .delta(col("RetentionTimeMean"))
-                .over([MODE])
-                .alias("DeltaRetentionTime"),
-            // Temperature
-            (col(MODE).struct_().field_by_name(ONSET_TEMPERATURE)
-                + col("RetentionTimeMean") * col(MODE).struct_().field_by_name(TEMPERATURE_STEP))
-            .clip_max(lit(MAX_TEMPERATURE))
-            .alias(TEMPERATURE),
-            // FCL
+                .rco()
+                .relative_atomic_mass(None)
+                .alias("RCO"),
             col(FATTY_ACID)
                 .fatty_acid()
-                .fractional_chain_length(col("RetentionTimeMean"), key.logarithmic)
-                .over([MODE])
-                .alias(FRACTIONAL_CHAIN_LENGTH),
-            // ECL
+                .rcoo()
+                .relative_atomic_mass(None)
+                .alias("RCOO"),
             col(FATTY_ACID)
                 .fatty_acid()
-                .equivalent_chain_length(col("RetentionTimeMean"), key.logarithmic)
-                .over([MODE])
-                .alias(EQUIVALENT_CHAIN_LENGTH),
-            // ECN
+                .rcooh()
+                .relative_atomic_mass(None)
+                .alias("RCOOH"),
             col(FATTY_ACID)
                 .fatty_acid()
-                .equivalent_carbon_number()
-                .alias(EQUIVALENT_CARBON_NUMBER),
+                .rcooch3()
+                .relative_atomic_mass(None)
+                .alias("RCOOCH3"),
         ])
-        .with_columns([
-            // Slope
-            col(FATTY_ACID)
-                .fatty_acid()
-                .slope(col(EQUIVALENT_CHAIN_LENGTH), col("RetentionTimeMean"))
-                .over([MODE])
-                .alias(SLOPE),
+        .alias(MASS),
+        // Derivative
+        as_struct(vec![
+            col(SLOPE),
+            col(SLOPE)
+                .arr()
+                .eval(element().arctan().degrees(), false)
+                .alias(ANGLE),
         ])
-        .select([
-            col(MODE),
-            col(FATTY_ACID),
-            // Retention time
-            as_struct(vec![
-                as_struct(vec![
-                    col("RetentionTimeMean").alias(MEAN),
-                    col("RetentionTimeStandardDeviation").alias(STANDARD_DEVIATION),
-                    col(RETENTION_TIME).alias("Values"),
-                ])
-                .alias(ABSOLUTE),
-                col("RelativeRetentionTime").alias(RELATIVE),
-                col("DeltaRetentionTime").alias(DELTA),
-            ])
-            .alias(RETENTION_TIME),
-            // DeadTime
-            col("DeadTime"),
-            // Temperature
-            col(TEMPERATURE),
-            // Chain length
-            as_struct(vec![
-                col(EQUIVALENT_CHAIN_LENGTH),
-                col(FRACTIONAL_CHAIN_LENGTH),
-                col(EQUIVALENT_CARBON_NUMBER),
-            ])
-            .alias(CHAIN_LENGTH),
-            // Mass
-            as_struct(vec![
-                col(FATTY_ACID)
-                    .fatty_acid()
-                    .rco()
-                    .relative_atomic_mass(None)
-                    .alias("RCO"),
-                col(FATTY_ACID)
-                    .fatty_acid()
-                    .rcoo()
-                    .relative_atomic_mass(None)
-                    .alias("RCOO"),
-                col(FATTY_ACID)
-                    .fatty_acid()
-                    .rcooh()
-                    .relative_atomic_mass(None)
-                    .alias("RCOOH"),
-                col(FATTY_ACID)
-                    .fatty_acid()
-                    .rcooch3()
-                    .relative_atomic_mass(None)
-                    .alias("RCOOCH3"),
-            ])
-            .alias(MASS),
-            // Derivative
-            as_struct(vec![col(SLOPE), col(SLOPE).arctan().degrees().alias(ANGLE)])
-                .alias(DERIVATIVE),
-        ]);
+        .alias(DERIVATIVE),
+    ]);
+    println!(
+        "COMPUTE4 lazy_frame: {}",
+        lazy_frame.clone().collect().unwrap()
+    );
     Ok(lazy_frame)
 }
 
-fn relative_time(key: Key) -> PolarsResult<Expr> {
+// Relative retention time
+fn relative_retention_time(key: Key) -> PolarsResult<Expr> {
     Ok(match &key.relative {
         Some(fatty_acid) => {
-            col("RetentionTimeMean")
-                / col("RetentionTimeMean")
-                    .filter(
-                        col(FATTY_ACID)
-                            .fatty_acid()
-                            .equal(FattyAcidExpr::try_from(fatty_acid)?),
-                    )
-                    .first()
+            let fatty_acid = FattyAcidExpr::try_from(fatty_acid)?;
+            eval_arr(col(RETENTION_TIME), |expr| {
+                expr.clone()
+                    / expr
+                        .filter(col(FATTY_ACID).fatty_acid().equal(fatty_acid.clone()))
+                        .first()
+            })?
+            .over([MODE])
         }
-        None => lit(f64::NAN),
+        None => lit(Scalar::null(DataType::Array(
+            Box::new(DataType::Float64),
+            3,
+        ))),
     })
+}
+
+// Delta retention time
+fn delta_retention_time() -> PolarsResult<Expr> {
+    eval_arr(col(RETENTION_TIME), |expr| {
+        col(FATTY_ACID).fatty_acid().delta(expr).over([MODE])
+    })
+}
+
+/// Temperature
+fn temperature() -> PolarsResult<Expr> {
+    eval_arr(col(RETENTION_TIME), |expr| {
+        (col(MODE).struct_().field_by_name(ONSET_TEMPERATURE)
+            + expr * col(MODE).struct_().field_by_name(TEMPERATURE_STEP))
+        .clip_max(lit(MAX_TEMPERATURE))
+    })
+}
+
+// FCL
+fn fcl(key: Key) -> PolarsResult<Expr> {
+    eval_arr(col(RETENTION_TIME), |expr| {
+        col(FATTY_ACID)
+            .fatty_acid()
+            .fractional_chain_length(expr, key.logarithmic)
+            .over([MODE])
+    })
+}
+
+// ECL
+fn ecl(key: Key) -> PolarsResult<Expr> {
+    eval_arr(col(RETENTION_TIME), |expr| {
+        col(FATTY_ACID)
+            .fatty_acid()
+            .equivalent_chain_length(expr, key.logarithmic)
+            .over([MODE])
+    })
+}
+
+// ECN
+fn ecn() -> Expr {
+    col(FATTY_ACID).fatty_acid().equivalent_carbon_number()
+}
+
+// Slope
+fn slope(key: Key) -> Expr {
+    if key.relative.is_some() {
+        col(FATTY_ACID)
+            .fatty_acid()
+            .slope(col(EQUIVALENT_CHAIN_LENGTH), col(RELATIVE))
+            .over([MODE])
+            .arr()
+            .eval(element().fill_nan(lit(NULL)), false)
+    } else {
+        col(FATTY_ACID)
+            .fatty_acid()
+            .slope(col(EQUIVALENT_CHAIN_LENGTH), col(ABSOLUTE))
+            .over([MODE])
+            .arr()
+            .eval(element().fill_nan(lit(NULL)), false)
+    }
 }
 
 fn filter(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
@@ -232,7 +258,8 @@ fn filter(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
 
 fn sort(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
     let sort_options = SortMultipleOptions::new()
-        .with_nulls_last(true)
+        .with_maintain_order(true)
+        .with_nulls_last(false)
         .with_order_descending(key.order == Order::Descending);
     match key.sort {
         Sort::FattyAcid => lazy_frame.sort_by_exprs(
@@ -250,8 +277,8 @@ fn sort(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
                 &[col(RETENTION_TIME)
                     .struct_()
                     .field_by_name(ABSOLUTE)
-                    .struct_()
-                    .field_by_name(MEAN)],
+                    .arr()
+                    .mean()],
                 sort_options,
             )
             .over([col(MODE)])]),
@@ -275,23 +302,36 @@ pub trait Saturated {
 
 impl Saturated for FattyAcidExpr {
     fn delta(self, expr: Expr) -> Expr {
-        self.clone().backward(expr.clone()) - self.clone().forward(expr)
+        self.clone().backward(expr.clone()) - self.forward(expr)
     }
 
     fn slope(self, dividend: Expr, divisor: Expr) -> Expr {
-        self.clone().delta(dividend) / self.clone().delta(divisor)
+        // ternary_expr(
+        //     self.clone().is_saturated(),
+        //     self.clone().delta(dividend) / self.clone().delta(divisor),
+        //     self.clone().delta(dividend) / self.delta(divisor),
+        // )
+        self.clone().delta(dividend) / self.delta(divisor)
     }
 
+    // Следующее по направлению к концу серии
     fn backward(self, expr: Expr) -> Expr {
-        ternary_expr(self.is_saturated(), expr, lit(NULL))
+        expr.shift(lit(-1))
+            .nullify(self.is_saturated().shift(lit(-1)))
             .fill_null_with_strategy(FillNullStrategy::Backward(None))
+        // ternary_expr(self.is_saturated(), expr, lit(NULL))
+        //     .fill_null_with_strategy(FillNullStrategy::Backward(None))
     }
 
+    // Следующее по направлению к началу серии
     fn forward(self, expr: Expr) -> Expr {
-        ternary_expr(self.is_saturated(), expr, lit(NULL))
+        expr.nullify(self.is_saturated())
             .fill_null_with_strategy(FillNullStrategy::Forward(None))
+        // ternary_expr(self.is_saturated(), expr, lit(NULL))
+        //     .fill_null_with_strategy(FillNullStrategy::Forward(None))
     }
 }
 
-pub(crate) mod display;
+pub(crate) mod format;
 pub(crate) mod plot;
+pub(crate) mod sum;
