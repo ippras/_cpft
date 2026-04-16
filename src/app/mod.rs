@@ -160,7 +160,7 @@ impl App {
             //     .sort(["Mode"], SortMultipleOptions::new())
             //     .select([all()
             //         .sort_by(&[col("Time").list().mean()], SortMultipleOptions::new())
-            //         .over([col("Mode")])])
+            //         .over([MODE])])
             //     .collect()
             //     .unwrap();
             // println!("data_frame: {data_frame}");

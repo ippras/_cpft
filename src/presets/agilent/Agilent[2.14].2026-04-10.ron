@@ -3,7 +3,7 @@
     meta: {
         "Authors": "Giorgi Vladimirovich Kazakov;Roman Alexandrovich Sidorov",
         "Date": "2026-04-10",
-        "Description": "",
+        "Description": "Chromatographic parameters of fatty acid methyl esters in gas-liquid chromatography using an HP-88 capillary column, as a function of the initial analysis temperature and column heating rate.",
         "Name": "Agilent",
         "Version": "0.2.14",
     },

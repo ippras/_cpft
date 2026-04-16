@@ -4,7 +4,7 @@ use crate::{
         panes::distance::table::NUM_COLUMNS,
         states::source::{Axis, Filter, Order, PlotSettings, View},
     },
-    r#const::{ALPHA, EQUIVALENT_CHAIN_LENGTH, EUCLIDEAN},
+    r#const::{ALPHA, EQUIVALENT_CHAIN_LENGTH, EUCLIDEAN, MAXIMUM, MEAN, MEDIAN, MINIMUM},
     localization::Text,
 };
 use const_format::formatcp;
@@ -30,8 +30,12 @@ const DISTANCES: [Distance; 3] = [
 /// Settings
 #[derive(Clone, Debug, Deserialize, Hash, PartialEq, Serialize)]
 pub(crate) struct Settings {
+    pub(crate) ddof: u8,
+    pub(crate) mean: bool,
     pub(crate) precision: usize,
     pub(crate) resizable: bool,
+    pub(crate) significant: bool,
+    pub(crate) standard_deviation: bool,
     pub(crate) sticky: usize,
     pub(crate) truncate: bool,
 
@@ -50,8 +54,12 @@ pub(crate) struct Settings {
 impl Settings {
     pub(crate) fn new() -> Self {
         Self {
+            ddof: 1,
+            mean: false,
             precision: 2,
             resizable: false,
+            significant: false,
+            standard_deviation: false,
             sticky: 0,
             truncate: false,
 
@@ -332,75 +340,6 @@ impl Priority {
             distance: Distance::Alpha,
         }
     }
-
-    pub(crate) const fn id(&self) -> &'static str {
-        match self {
-            Priority {
-                aggregation: Aggregation::Maximum,
-                distance: Distance::Alpha,
-            } => formatcp!("{ALPHA}.Max"),
-            Priority {
-                aggregation: Aggregation::Mean,
-                distance: Distance::Alpha,
-            } => formatcp!("{ALPHA}.Mean"),
-            Priority {
-                aggregation: Aggregation::Median,
-                distance: Distance::Alpha,
-            } => formatcp!("{ALPHA}.Median"),
-            Priority {
-                aggregation: Aggregation::Minimum,
-                distance: Distance::Alpha,
-            } => formatcp!("{ALPHA}.Min"),
-            Priority {
-                aggregation: Aggregation::Maximum,
-                distance: Distance::EquivalentChainLength,
-            } => formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Max"),
-            Priority {
-                aggregation: Aggregation::Mean,
-                distance: Distance::EquivalentChainLength,
-            } => formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Mean"),
-            Priority {
-                aggregation: Aggregation::Median,
-                distance: Distance::EquivalentChainLength,
-            } => formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Median"),
-            Priority {
-                aggregation: Aggregation::Minimum,
-                distance: Distance::EquivalentChainLength,
-            } => formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Min"),
-            Priority {
-                aggregation: Aggregation::Maximum,
-                distance: Distance::Euclidean,
-            } => formatcp!("{EUCLIDEAN}.Max"),
-            Priority {
-                aggregation: Aggregation::Mean,
-                distance: Distance::Euclidean,
-            } => formatcp!("{EUCLIDEAN}.Mean"),
-            Priority {
-                aggregation: Aggregation::Median,
-                distance: Distance::Euclidean,
-            } => formatcp!("{EUCLIDEAN}.Median"),
-            Priority {
-                aggregation: Aggregation::Minimum,
-                distance: Distance::Euclidean,
-            } => formatcp!("{EUCLIDEAN}.Min"),
-        }
-    }
-
-    // pub(crate) const fn aggregation(&self) -> &'static str {
-    //     match self.aggregation {
-    //         Aggregation::Maximum => "Max",
-    //         Aggregation::Mean => "Mean",
-    //         Aggregation::Median => "Median",
-    //         Aggregation::Minimum => "Min",
-    //     }
-    // }
-
-    // pub(crate) const fn distance(&self) -> &'static str {
-    //     match self.distance {
-    //         Distance::Alpha => "Alpha",
-    //         Distance::Euclidean => "Euclidean",
-    //     }
-    // }
 }
 
 /// Aggregation
@@ -410,6 +349,17 @@ pub(crate) enum Aggregation {
     Mean,
     Median,
     Minimum,
+}
+
+impl Aggregation {
+    pub(crate) const fn id(&self) -> &'static str {
+        match self {
+            Self::Maximum => MAXIMUM,
+            Self::Mean => MEAN,
+            Self::Median => MEDIAN,
+            Self::Minimum => MINIMUM,
+        }
+    }
 }
 
 impl Text for Aggregation {
@@ -438,6 +388,16 @@ pub(crate) enum Distance {
     Alpha,
     EquivalentChainLength,
     Euclidean,
+}
+
+impl Distance {
+    pub(crate) const fn id(&self) -> &'static str {
+        match self {
+            Self::Alpha => ALPHA,
+            Self::EquivalentChainLength => EQUIVALENT_CHAIN_LENGTH,
+            Self::Euclidean => EUCLIDEAN,
+        }
+    }
 }
 
 impl Text for Distance {

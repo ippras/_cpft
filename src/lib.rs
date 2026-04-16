@@ -1,7 +1,6 @@
 #![feature(debug_closure_helpers)]
 #![feature(decl_macro)]
 #![feature(tuple_trait)]
-#![feature(if_let_guard)]
 
 pub use app::App;
 
@@ -10,7 +9,6 @@ mod r#const;
 mod export;
 mod localization;
 mod presets;
-mod special;
 mod utils;
 
 #[cfg(test)]
@@ -115,7 +113,7 @@ mod test {
         lazy_frame = lazy_frame.sort([MODE], sort_options.clone()).select([all()
             .as_expr()
             .sort_by(&[col(RETENTION_TIME).list().mean()], sort_options)
-            .over([col(MODE)])]);
+            .over([col(MODE)])?]);
         // println!("after: {:?}", lazy_frame.clone().collect().unwrap());
         // println!("AGILENT: {:?}", lazy_frame.clone().collect().unwrap());
         let data = lazy_frame.collect()?;

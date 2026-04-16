@@ -2,9 +2,11 @@ use crate::{
     app::{
         panes::{MARGIN, distance::ID_SOURCE},
         states::distance::Settings,
+        widgets::array::Float64Array,
     },
     r#const::{
-        ALPHA, EQUIVALENT_CHAIN_LENGTH, EUCLIDEAN, MODE, ONSET_TEMPERATURE, TEMPERATURE_STEP,
+        ALPHA, EQUIVALENT_CHAIN_LENGTH, EUCLIDEAN, MAXIMUM, MEAN, MEDIAN, MINIMUM, MODE,
+        ONSET_TEMPERATURE, TEMPERATURE_STEP,
     },
 };
 use const_format::formatcp;
@@ -76,19 +78,19 @@ impl<'a> Sum<'a> {
         match (row, column) {
             // Top
             (0, top::MODE) => {
-                ui.heading(ui.localize("Mode")).on_hover_ui(|ui| {
-                    ui.localize("Mode.hover");
+                ui.heading(ui.localize(MODE)).on_hover_ui(|ui| {
+                    ui.localize(formatcp!("{MODE}.hover"));
                 });
             }
             (0, top::ALPHA) => {
-                ui.heading(ui.localize("Alpha")).on_hover_ui(|ui| {
-                    ui.localize("Alpha.hover");
+                ui.heading(ui.localize(ALPHA)).on_hover_ui(|ui| {
+                    ui.localize(formatcp!("{ALPHA}.hover"));
                 });
             }
             (0, top::EQUIVALENT_CHAIN_LENGTH) => {
-                ui.heading(ui.localize("EquivalentChainLength"))
+                ui.heading(ui.localize(EQUIVALENT_CHAIN_LENGTH))
                     .on_hover_ui(|ui| {
-                        ui.localize("EquivalentChainLength.hover");
+                        ui.localize(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.hover"));
                     });
             }
             (0, top::EUCLIDEAN) => {
@@ -99,23 +101,23 @@ impl<'a> Sum<'a> {
             }
             // Bottom
             (1, bottom::mode::ONSET) => {
-                ui.heading(ui.localize("OnsetTemperature.abbreviation"))
+                ui.heading(ui.localize(formatcp!("{ONSET_TEMPERATURE}.abbreviation")))
                     .on_hover_ui(|ui| {
-                        ui.localize("OnsetTemperature.hover");
+                        ui.localize(formatcp!("{ONSET_TEMPERATURE}.hover"));
                     });
             }
             (1, bottom::mode::STEP) => {
-                ui.heading(ui.localize("TemperatureStep.abbreviation"))
+                ui.heading(ui.localize(formatcp!("{TEMPERATURE_STEP}.abbreviation")))
                     .on_hover_ui(|ui| {
-                        ui.localize("TemperatureStep.hover");
+                        ui.localize(formatcp!("{TEMPERATURE_STEP}.hover"));
                     });
             }
             (
                 1,
                 bottom::alpha::MAX | bottom::equivalent_chain_length::MAX | bottom::euclidean::MAX,
             ) => {
-                ui.heading(ui.localize("Maximum")).on_hover_ui(|ui| {
-                    ui.localize("Maximum.hover");
+                ui.heading(ui.localize(MAXIMUM)).on_hover_ui(|ui| {
+                    ui.localize(formatcp!("{MAXIMUM}.hover"));
                 });
             }
             (
@@ -124,8 +126,8 @@ impl<'a> Sum<'a> {
                 | bottom::equivalent_chain_length::MEAN
                 | bottom::euclidean::MEAN,
             ) => {
-                ui.heading(ui.localize("Mean")).on_hover_ui(|ui| {
-                    ui.localize("Mean.hover");
+                ui.heading(ui.localize(MEAN)).on_hover_ui(|ui| {
+                    ui.localize(formatcp!("{MEAN}.hover"));
                 });
             }
             (
@@ -134,16 +136,16 @@ impl<'a> Sum<'a> {
                 | bottom::equivalent_chain_length::MEDIAN
                 | bottom::euclidean::MEDIAN,
             ) => {
-                ui.heading(ui.localize("Median")).on_hover_ui(|ui| {
-                    ui.localize("Median.hover");
+                ui.heading(ui.localize(MEDIAN)).on_hover_ui(|ui| {
+                    ui.localize(formatcp!("{MEDIAN}.hover"));
                 });
             }
             (
                 1,
                 bottom::alpha::MIN | bottom::equivalent_chain_length::MIN | bottom::euclidean::MIN,
             ) => {
-                ui.heading(ui.localize("Minimum")).on_hover_ui(|ui| {
-                    ui.localize("Minimum.hover");
+                ui.heading(ui.localize(MINIMUM)).on_hover_ui(|ui| {
+                    ui.localize(formatcp!("{MINIMUM}.hover"));
                 });
             }
             _ => {}
@@ -177,88 +179,140 @@ impl<'a> Sum<'a> {
                 );
             }
             (row, bottom::alpha::MAX) => {
-                ui.label(
-                    self.data_frame[formatcp!("{ALPHA}.Max")]
-                        .get(row)?
-                        .str_value(),
-                );
+                Float64Array::builder()
+                    .series(&self.data_frame[ALPHA].struct_()?.field_by_name(MAXIMUM)?)
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::alpha::MEAN) => {
-                ui.label(
-                    self.data_frame[formatcp!("{ALPHA}.Mean")]
-                        .get(row)?
-                        .str_value(),
-                );
+                Float64Array::builder()
+                    .series(&self.data_frame[ALPHA].struct_()?.field_by_name(MEAN)?)
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::alpha::MEDIAN) => {
-                ui.label(
-                    self.data_frame[formatcp!("{ALPHA}.Median")]
-                        .get(row)?
-                        .str_value(),
-                );
+                Float64Array::builder()
+                    .series(&self.data_frame[ALPHA].struct_()?.field_by_name(MEDIAN)?)
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::alpha::MIN) => {
-                ui.label(
-                    self.data_frame[formatcp!("{ALPHA}.Min")]
-                        .get(row)?
-                        .str_value(),
-                );
+                Float64Array::builder()
+                    .series(&self.data_frame[ALPHA].struct_()?.field_by_name(MINIMUM)?)
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::equivalent_chain_length::MAX) => {
-                ui.label(
-                    self.data_frame[formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Max")]
-                        .get(row)?
-                        .str_value(),
-                );
+                Float64Array::builder()
+                    .series(
+                        &self.data_frame[EQUIVALENT_CHAIN_LENGTH]
+                            .struct_()?
+                            .field_by_name(MAXIMUM)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::equivalent_chain_length::MEAN) => {
-                ui.label(
-                    self.data_frame[formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Mean")]
-                        .get(row)?
-                        .str_value(),
-                );
+                Float64Array::builder()
+                    .series(
+                        &self.data_frame[EQUIVALENT_CHAIN_LENGTH]
+                            .struct_()?
+                            .field_by_name(MEAN)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::equivalent_chain_length::MEDIAN) => {
-                ui.label(
-                    self.data_frame[formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Median")]
-                        .get(row)?
-                        .str_value(),
-                );
+                Float64Array::builder()
+                    .series(
+                        &self.data_frame[EQUIVALENT_CHAIN_LENGTH]
+                            .struct_()?
+                            .field_by_name(MEDIAN)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::equivalent_chain_length::MIN) => {
-                ui.label(
-                    self.data_frame[formatcp!("{EQUIVALENT_CHAIN_LENGTH}.Min")]
-                        .get(row)?
-                        .str_value(),
-                );
+                Float64Array::builder()
+                    .series(
+                        &self.data_frame[EQUIVALENT_CHAIN_LENGTH]
+                            .struct_()?
+                            .field_by_name(MINIMUM)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::euclidean::MAX) => {
-                ui.label(
-                    self.data_frame[formatcp!("{EUCLIDEAN}.Max")]
-                        .get(row)?
-                        .str_value(),
-                );
+                Float64Array::builder()
+                    .series(
+                        &self.data_frame[EUCLIDEAN]
+                            .struct_()?
+                            .field_by_name(MAXIMUM)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::euclidean::MEAN) => {
-                ui.label(
-                    self.data_frame[formatcp!("{EUCLIDEAN}.Mean")]
-                        .get(row)?
-                        .str_value(),
-                );
+                Float64Array::builder()
+                    .series(&self.data_frame[EUCLIDEAN].struct_()?.field_by_name(MEAN)?)
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::euclidean::MEDIAN) => {
-                ui.label(
-                    self.data_frame[formatcp!("{EUCLIDEAN}.Median")]
-                        .get(row)?
-                        .str_value(),
-                );
+                Float64Array::builder()
+                    .series(
+                        &self.data_frame[EUCLIDEAN]
+                            .struct_()?
+                            .field_by_name(MEDIAN)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             (row, bottom::euclidean::MIN) => {
-                ui.label(
-                    self.data_frame[formatcp!("{EUCLIDEAN}.Min")]
-                        .get(row)?
-                        .str_value(),
-                );
+                Float64Array::builder()
+                    .series(
+                        &self.data_frame[EUCLIDEAN]
+                            .struct_()?
+                            .field_by_name(MINIMUM)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?;
             }
             _ => {}
         }

@@ -2,30 +2,39 @@ use crate::{
     app::{
         panes::MARGIN,
         states::source::{ID_SOURCE, Settings},
-        widgets::array::Float64Array,
+        widgets::array::{BooleanArray, Float64Array},
     },
-    r#const::{CORRELATION, MODE, ONSET_TEMPERATURE, TEMPERATURE_STEP},
+    r#const::{
+        ANY, EM_DASH, MODE, ONSET_TEMPERATURE, REGRESSION, RETENTION_TIME, TEMPERATURE_STEP,
+    },
 };
+use const_format::formatcp;
 use egui::{Frame, Id, Margin, Response, TextStyle, TextWrapMode, Ui, Widget};
 use egui_l20n::prelude::*;
-use egui_table::{
-    AutoSizeMode, CellInfo, Column, HeaderCellInfo, HeaderRow, Table, TableDelegate, TableState,
-};
+use egui_phosphor::regular::HASH;
+use egui_table::{CellInfo, Column, HeaderCellInfo, HeaderRow, Table, TableDelegate, TableState};
+use lipid::prelude::{FATTY_ACID, INDEX};
 use polars::prelude::*;
 use std::ops::Range;
 use tracing::instrument;
 
-const NUM_COLUMNS: usize = top::CORRELATION.end;
+const NUM_COLUMNS: usize = top::REGRESSION.end;
 
-const TOP: &[Range<usize>] = &[top::MODE, top::CORRELATION];
+const TOP: &[Range<usize>] = &[
+    top::INDEX,
+    top::MODE,
+    top::FATTY_ACID,
+    top::RETENTION_TIME,
+    top::REGRESSION,
+];
 
-/// Correlation widget
-pub struct Correlation<'a> {
+/// Regression widget
+pub struct Regression<'a> {
     data_frame: &'a DataFrame,
     settings: &'a mut Settings,
 }
 
-impl<'a> Correlation<'a> {
+impl<'a> Regression<'a> {
     pub fn new(data_frame: &'a DataFrame, settings: &'a mut Settings) -> Self {
         Self {
             data_frame,
@@ -34,7 +43,7 @@ impl<'a> Correlation<'a> {
     }
 
     pub fn show(&mut self, ui: &mut Ui) -> Response {
-        let id_salt = Id::new(ID_SOURCE).with("Correlation");
+        let id_salt = Id::new(ID_SOURCE).with(REGRESSION);
         if self.settings.reset {
             let id = TableState::id(ui, Id::new(id_salt));
             TableState::reset(ui.ctx(), id);
@@ -67,28 +76,40 @@ impl<'a> Correlation<'a> {
         }
         match (row, column) {
             // Top
+            (0, top::INDEX) => {
+                ui.heading(HASH).on_hover_localized(INDEX);
+            }
             (0, top::MODE) => {
-                ui.heading(ui.localize("Mode")).on_hover_ui(|ui| {
-                    ui.localize("Mode.hover");
+                ui.heading(ui.localize(MODE)).on_hover_ui(|ui| {
+                    ui.localize(formatcp!("{MODE}.hover"));
                 });
             }
-            (0, top::CORRELATION) => {
-                ui.heading(ui.localize("PearsonCorrelation"))
-                    .on_hover_ui(|ui| {
-                        ui.localize("PearsonCorrelation.hover");
-                    });
+            (0, top::FATTY_ACID) => {
+                ui.heading(ui.localize(FATTY_ACID)).on_hover_ui(|ui| {
+                    ui.localize(formatcp!("{FATTY_ACID}.hover"));
+                });
+            }
+            (0, top::RETENTION_TIME) => {
+                ui.heading(ui.localize(RETENTION_TIME)).on_hover_ui(|ui| {
+                    ui.localize(formatcp!("{RETENTION_TIME}.hover"));
+                });
+            }
+            (0, top::REGRESSION) => {
+                ui.heading(ui.localize(REGRESSION)).on_hover_ui(|ui| {
+                    ui.localize(formatcp!("{REGRESSION}.hover"));
+                });
             }
             // Bottom
             (1, bottom::mode::ONSET) => {
-                ui.heading(ui.localize("OnsetTemperature.abbreviation"))
+                ui.heading(ui.localize(formatcp!("{ONSET_TEMPERATURE}.abbreviation")))
                     .on_hover_ui(|ui| {
-                        ui.localize("OnsetTemperature.hover");
+                        ui.localize(formatcp!("{ONSET_TEMPERATURE}.hover"));
                     });
             }
             (1, bottom::mode::STEP) => {
-                ui.heading(ui.localize("TemperatureStep.abbreviation"))
+                ui.heading(ui.localize(formatcp!("{TEMPERATURE_STEP}.abbreviation")))
                     .on_hover_ui(|ui| {
-                        ui.localize("TemperatureStep.hover");
+                        ui.localize(formatcp!("{TEMPERATURE_STEP}.hover"));
                     });
             }
             _ => {}
@@ -102,7 +123,18 @@ impl<'a> Correlation<'a> {
         row: usize,
         column: Range<usize>,
     ) -> PolarsResult<()> {
+        if let Some(true) = self.data_frame[REGRESSION]
+            .struct_()?
+            .field_by_name(ANY)?
+            .bool()?
+            .get(row)
+        {
+            ui.visuals_mut().override_text_color = Some(ui.visuals().strong_text_color());
+        }
         match (row, column) {
+            (row, top::INDEX) => {
+                ui.label(row.to_string());
+            }
             (row, bottom::mode::ONSET) => {
                 ui.label(
                     self.data_frame[MODE]
@@ -121,14 +153,45 @@ impl<'a> Correlation<'a> {
                         .str_value(),
                 );
             }
-            (row, top::CORRELATION) => {
+            (row, top::FATTY_ACID) => {
+                ui.label(
+                    self.data_frame[FATTY_ACID]
+                        .str()?
+                        .get(row)
+                        .unwrap_or(EM_DASH),
+                );
+            }
+            (row, top::RETENTION_TIME) => {
                 Float64Array::builder()
-                    .series(self.data_frame[CORRELATION].as_materialized_series())
+                    .series(self.data_frame[RETENTION_TIME].as_materialized_series())
                     .row(row)
                     .mean(self.settings.mean)
                     .standard_deviation(self.settings.standard_deviation)
                     .build()
                     .show(ui)?;
+            }
+            (row, top::REGRESSION) => {
+                BooleanArray::builder()
+                    .series(self.data_frame[REGRESSION].as_materialized_series())
+                    .row(row)
+                    .build()
+                    .show(ui)?;
+                // let regression = self.data_frame[REGRESSION]
+                //     .bool()?
+                //     .get(row)
+                //     .unwrap_or_default();
+                // if regression {
+                //     ui.visuals_mut().override_text_color = Some(ui.visuals().strong_text_color());
+                // }
+                // ui.label(regression.to_string());
+
+                // Array::builder()
+                //     .series(self.data_frame[REGRESSION].as_materialized_series())
+                //     .row(row)
+                //     .mean(self.settings.mean)
+                //     .standard_deviation(self.settings.standard_deviation)
+                //     .build()
+                //     .show(ui)?;
             }
             _ => {}
         }
@@ -136,7 +199,7 @@ impl<'a> Correlation<'a> {
     }
 }
 
-impl TableDelegate for Correlation<'_> {
+impl TableDelegate for Regression<'_> {
     fn header_cell_ui(&mut self, ui: &mut Ui, cell: &HeaderCellInfo) {
         Frame::new()
             .inner_margin(Margin::from(MARGIN))
@@ -158,7 +221,7 @@ impl TableDelegate for Correlation<'_> {
     }
 }
 
-impl Widget for Correlation<'_> {
+impl Widget for Regression<'_> {
     fn ui(mut self, ui: &mut Ui) -> Response {
         self.show(ui)
     }
@@ -167,8 +230,11 @@ impl Widget for Correlation<'_> {
 mod top {
     use super::*;
 
-    pub(super) const MODE: Range<usize> = 0..2;
-    pub(super) const CORRELATION: Range<usize> = MODE.end..MODE.end + 1;
+    pub(super) const INDEX: Range<usize> = 0..1;
+    pub(super) const MODE: Range<usize> = INDEX.end..INDEX.end + 2;
+    pub(super) const FATTY_ACID: Range<usize> = MODE.end..MODE.end + 1;
+    pub(super) const RETENTION_TIME: Range<usize> = FATTY_ACID.end..FATTY_ACID.end + 1;
+    pub(super) const REGRESSION: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
 }
 
 mod bottom {

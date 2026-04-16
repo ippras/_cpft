@@ -10,20 +10,25 @@ use crate::{
                 regression::{Computed as RegressionComputed, Key as RegressionKey},
             },
         },
-        panes::{Behavior, MARGIN, source::sum::correlation::Correlation},
+        panes::{
+            Behavior, MARGIN,
+            source::sum::{correlation::Correlation, regression::Regression},
+        },
         states::source::{ID_SOURCE, State, View},
         widgets::buttons::{MetadataButton, ResetButton, ResizeButton, SettingsButton, ViewButton},
     },
     r#const::{
-        ABSOLUTE, DEAD_TIME, MEAN, MODE, ONSET_TEMPERATURE, RETENTION_TIME, TEMPERATURE_STEP,
+        ABSOLUTE, CORRELATION, DEAD_TIME, MEAN, MODE, ONSET_TEMPERATURE, REGRESSION,
+        RETENTION_TIME, TEMPERATURE_STEP,
     },
     export,
     utils::hash::{HashedDataFrame, HashedMetaDataFrame},
 };
 use anyhow::Result;
+use const_format::formatcp;
 use egui::{
     Button, CentralPanel, CursorIcon, Frame, Id, MenuBar, Panel, Response, RichText, ScrollArea,
-    TextStyle, TopBottomPanel, Ui, Widget as _, Window, util::hash,
+    TextStyle, Ui, Widget as _, Window, util::hash,
 };
 use egui_l20n::prelude::*;
 use egui_phosphor::regular::{EXCLUDE, FLOPPY_DISK, SIGMA, SLIDERS_HORIZONTAL, TABLE, TAG, X};
@@ -397,7 +402,7 @@ impl Pane {
     }
 
     fn metadata_window(&mut self, ui: &mut Ui, state: &mut State) {
-        Window::new(format!("{TAG} Source metadata"))
+        Window::new(formatcp!("{TAG} Source metadata"))
             .id(ui.auto_id_with(ID_SOURCE).with("Metadata"))
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_metadata)
@@ -407,7 +412,7 @@ impl Pane {
     }
 
     fn settings_window(&mut self, ui: &mut Ui, state: &mut State) {
-        Window::new(format!("{SLIDERS_HORIZONTAL} Source settings"))
+        Window::new(formatcp!("{SLIDERS_HORIZONTAL} Source settings"))
             .id(ui.auto_id_with(ID_SOURCE).with("Settings"))
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_settings)
@@ -422,8 +427,8 @@ impl Pane {
     }
 
     fn correlation_window(&mut self, ui: &mut Ui, state: &mut State) {
-        Window::new(format!("{SIGMA} Correlation"))
-            .id(ui.auto_id_with(ID_SOURCE).with("Correlation"))
+        Window::new(formatcp!("{SIGMA} {CORRELATION}"))
+            .id(ui.auto_id_with(ID_SOURCE).with(CORRELATION))
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_correlation)
             .resizable(state.settings.resizable)
@@ -458,8 +463,8 @@ impl Pane {
     }
 
     fn regression_window(&mut self, ui: &mut Ui, state: &mut State) {
-        Window::new(format!("{SIGMA} Regression"))
-            .id(ui.auto_id_with(ID_SOURCE).with("Regression"))
+        Window::new(formatcp!("{SIGMA} {REGRESSION}"))
+            .id(ui.auto_id_with(ID_SOURCE).with(REGRESSION))
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_regression)
             .resizable(state.settings.resizable)
@@ -489,7 +494,7 @@ impl Pane {
                         .get(RegressionKey::new(&self.calculated, &state.settings))
                         .clone()
                 });
-                // Regression::new(&data_frame, &mut state.settings).show(ui);
+                Regression::new(&data_frame, &mut state.settings).show(ui);
             });
     }
 }

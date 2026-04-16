@@ -18,7 +18,6 @@ pub(crate) struct Computer;
 impl Computer {
     fn try_compute(&mut self, key: Key) -> PolarsResult<Value> {
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
-        // println!("lazy_frame SUM 0: {}", lazy_frame.clone().collect()?);
         // Filter
         lazy_frame = lazy_frame
             .filter(col(FATTY_ACID).fatty_acid().is_saturated())
@@ -71,10 +70,10 @@ type Value = HashedDataFrame;
 fn group(lazy_frame: LazyFrame) -> PolarsResult<LazyFrame> {
     Ok(lazy_frame
         .group_by_stable([MODE])
-        .agg([
-            eval_arr(col(RETENTION_TIME), |expr| pearson_corr(col(CARBON), expr))?
-                .alias(CORRELATION),
-        ]))
+        .agg([eval_arr(col(RETENTION_TIME), |element| {
+            Ok(pearson_corr(col(CARBON), element))
+        })?
+        .alias(CORRELATION)]))
 }
 
 /// Format

@@ -3,7 +3,7 @@ use crate::{
     app::{
         computers::distance::{
             Computed as DistanceComputed, Key as DistanceKey,
-            display::{Computed as DisplayComputed, Key as DisplayKey},
+            format::{Computed as FormatComputed, Key as FormatKey},
             plot::{Computed as PlotComputed, Key as PlotKey},
             sum::{Computed as SumComputed, Key as SumKey},
         },
@@ -15,7 +15,7 @@ use crate::{
 };
 use egui::{
     CentralPanel, CursorIcon, Frame, Id, MenuBar, Panel, Response, RichText, ScrollArea, TextStyle,
-    TopBottomPanel, Ui, Widget as _, Window, util::hash,
+    Ui, Widget as _, Window, util::hash,
 };
 use egui_l20n::prelude::*;
 use egui_phosphor::regular::{EXCLUDE, FLOPPY_DISK, SIGMA, SLIDERS_HORIZONTAL, TAG, X};
@@ -209,12 +209,12 @@ impl Pane {
                 PlotView::new(points, &state.settings).show(ui)
             }
             View::Table => {
-                // Display
+                // Format
                 let data_frame = ui.memory_mut(|memory| {
                     memory
                         .caches
-                        .cache::<DisplayComputed>()
-                        .get(DisplayKey::new(&self.calculated, &state.settings))
+                        .cache::<FormatComputed>()
+                        .get(FormatKey::new(&self.calculated, &state.settings))
                         .clone()
                 });
                 TableView::new(&data_frame, &mut state.settings).show(ui)

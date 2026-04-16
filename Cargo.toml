@@ -1,6 +1,6 @@
 [package]
 name = "cpft"
-version = "0.6.0"
+version = "0.6.1"
 edition = "2024"
 
 [dependencies]
@@ -16,15 +16,16 @@ eframe = { version = "0.34.1", default-features = false, features = [
 egui = "0.34.1"
 egui-phosphor = "0.12.0"
 egui_dnd = "0.15.0"
+egui_double_slider = "1.1.0"
 egui_extras = "0.34.1"
 egui_plot = "0.35.0"
 egui_table = "0.8.0"
 egui_tiles = "0.15.0"
-indexmap = "2.13.1"
+indexmap = "2.14.0"
 itertools = "0.14.0"
 log = "0.4.29"
 nalgebra = "0.34.2"
-polars = { git = "https://github.com/pola-rs/polars", rev = "099564e", default-features = false, features = [
+polars = { git = "https://github.com/pola-rs/polars", rev = "bf6a425", default-features = false, features = [
     "abs",
     "array_arithmetic",
     "bitwise",
@@ -40,10 +41,11 @@ polars = { git = "https://github.com/pola-rs/polars", rev = "099564e", default-f
     "dtype-u8",
     "fmt_no_tty",
     "iejoin",
+    "interpolate",
     "is_between",
     "lazy",
     "list_eval",
-    "polars-io",
+    "meta",
     "rank",
     "round_series",
     "row_hash",
@@ -51,10 +53,10 @@ polars = { git = "https://github.com/pola-rs/polars", rev = "099564e", default-f
     "sign",
     "trigonometry",
     #
+    # "interpolate_by",
     # "ipc",
     # "parquet",
-    # "interpolate",
-    # "interpolate_by",
+    # "polars-io",
 ] }
 polars-utils = { version = "0.53.0", features = ["nightly"] }
 ron = "0.12.1"
@@ -72,17 +74,20 @@ egui_l20n = { git = "https://github.com/kgv/egui_l20n", branch = "0.5.0", featur
     "macros",
 ] }
 egui_tiles_ext = { git = "https://github.com/kgv/egui_tiles_ext", branch = "0.3.0" }
-lipid = { git = "https://github.com/ippras/lipid", branch = "099564e", features = [
+lipid = { git = "https://github.com/ippras/lipid", branch = "bf6a425", features = [
     "serde",
 ] }
-metadata = { git = "https://github.com/ippras/metadata", branch = "0.10.0", features = [
+metadata = { git = "https://github.com/ippras/metadata", branch = "bf6a425", features = [
     "egui",
     "polars",
 ] }
-polars_ext = { git = "https://github.com/kgv/polars_ext", branch = "099564e", features = [
+polars_ext = { git = "https://github.com/kgv/polars_ext", branch = "bf6a425", features = [
     "array",
     "temporal_conversions",
 ] }
+
+[dev-dependencies]
+ed25519-dalek = "2.2.0"
 
 # native
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -94,6 +99,10 @@ console_error_panic_hook = "0.1.7"
 tracing-wasm = "0.2.1"
 wasm-bindgen-futures = "0.4.67"
 web-sys = "0.3.94"
+
+[features]
+default = []
+wasm = []
 
 [profile.release]
 opt-level = 2 # fast and small wasm

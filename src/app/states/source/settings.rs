@@ -1,20 +1,25 @@
 use crate::{
     app::{MAX_PRECISION, panes::source::table::NUM_COLUMNS, states::source::ID_SOURCE},
-    r#const::EM_DASH,
+    r#const::{EM_DASH, REGRESSION},
     localization::Text,
     utils::VecExt as _,
 };
 use egui::{
-    ComboBox, Grid, Popup, PopupCloseBehavior, RichText, Slider, TextWrapMode, Ui, Vec2b, Widget,
-    emath::Float as _,
+    ComboBox, DragValue, Grid, Popup, PopupCloseBehavior, RichText, Slider, TextWrapMode, Ui,
+    Vec2b, Widget, emath::Float as _,
 };
+use egui_double_slider::DoubleSlider;
 use egui_l20n::prelude::*;
 use egui_phosphor::regular::{BOOKMARK, FUNNEL, FUNNEL_X};
 use lipid::prelude::FattyAcid;
 use polars::prelude::*;
 use polars_utils::format_list_truncated;
 use serde::{Deserialize, Serialize};
-use std::hash::{Hash, Hasher};
+use std::{
+    cmp::max,
+    collections::BTreeSet,
+    hash::{Hash, Hasher},
+};
 
 const MARGARIC: FattyAcid = FattyAcid {
     carbon: 17,
@@ -42,6 +47,7 @@ pub(crate) struct Settings {
     pub(crate) order: Order,
     pub(crate) sort: Sort,
 
+    pub(crate) regression: Regression,
     pub(crate) plot: Plot,
 
     pub(crate) cache: Cache,
@@ -69,6 +75,7 @@ impl Settings {
             sort: Sort::RetentionTime,
             order: Order::Ascending,
 
+            regression: Regression::new(),
             plot: Plot::new(),
 
             cache: Cache::new(),
@@ -106,6 +113,11 @@ impl Settings {
 
         self.sort(ui);
         self.order(ui);
+
+        // Regression
+        ui.collapsing(RichText::from(ui.localize(REGRESSION)).heading(), |ui| {
+            self.regression(ui);
+        });
 
         // Plot
         ui.collapsing(
@@ -418,6 +430,68 @@ impl Settings {
         });
     }
 
+    /// Regression
+    fn regression(&mut self, ui: &mut Ui) {
+        // ui.horizontal(|ui| {
+        //     ui.label(ui.localize(REGRESSION));
+        //     ui.add(DragValue::new(&mut self.regression.start));
+        //     ui.add(
+        //         DoubleSlider::new(
+        //             &mut self.regression.start,
+        //             &mut self.regression.end,
+        //             u8::MIN..=u8::MAX,
+        //         )
+        //         .separation_distance(0),
+        //     );
+        //     ui.add(DragValue::new(&mut self.regression.end));
+        // });
+        Grid::new(ui.next_auto_id()).show(ui, |ui| {
+            ui.label("START");
+            DragValue::new(&mut self.regression.start)
+                .clamp_existing_to_range(true)
+                .range(1..=self.regression.end)
+                .speed(0.1)
+                .update_while_editing(false)
+                .ui(ui);
+            ui.end_row();
+
+            ui.label("END");
+            DragValue::new(&mut self.regression.end)
+                .clamp_existing_to_range(true)
+                .range(self.regression.start + 1..=u8::MAX)
+                .speed(0.1)
+                .update_while_editing(false)
+                .ui(ui);
+            ui.end_row();
+
+            // ui.label("START");
+            // let response = ui.add(
+            //     Slider::new(&mut self.regression.start, 1..=u8::MAX)
+            //         .drag_value_speed(0.1)
+            //         .smart_aim(false)
+            //         .update_while_editing(false),
+            // );
+            // if response.changed() && self.regression.start > self.regression.end {
+            //     self.regression.end = self.regression.start;
+            // }
+            // ui.end_row();
+
+            // ui.label("END");
+            // let response2 = ui.add(
+            //     Slider::new(&mut self.regression.end, 1..=u8::MAX)
+            //         .drag_value_speed(0.1)
+            //         .smart_aim(false)
+            //         .update_while_editing(false),
+            // );
+            // if response2.changed() && self.regression.start > self.regression.end {
+            //     self.regression.start = self.regression.end;
+            // }
+            // ui.end_row();
+        });
+        // ui.horizontal(|ui| {});
+        // ui.horizontal(|ui| {});
+    }
+
     /// Plot
     fn plot(&mut self, ui: &mut Ui) {
         // // Group
@@ -507,6 +581,19 @@ impl Hash for Cache {
             temperature_step.ord().hash(state);
         }
         self.fatty_acids.hash(state);
+    }
+}
+
+/// Regression
+#[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
+pub(crate) struct Regression {
+    pub(crate) start: u8,
+    pub(crate) end: u8,
+}
+
+impl Regression {
+    pub(crate) fn new() -> Self {
+        Self { start: 1, end: 1 }
     }
 }
 

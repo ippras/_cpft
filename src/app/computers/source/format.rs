@@ -1,9 +1,9 @@
 use crate::{
     app::states::source::Settings,
     r#const::{
-        ABSOLUTE, CHAIN_LENGTH, DELTA, EQUIVALENT_CARBON_NUMBER, EQUIVALENT_CHAIN_LENGTH,
-        FRACTIONAL_CHAIN_LENGTH, MEAN, RELATIVE, RETENTION_TIME, STANDARD_DEVIATION, TEMPERATURE,
-        *,
+        ABSOLUTE, ANGLE, CHAIN_LENGTH, DEAD_TIME, DELTA, DERIVATIVE, EQUIVALENT_CARBON_NUMBER,
+        EQUIVALENT_CHAIN_LENGTH, FILTER, FRACTIONAL_CHAIN_LENGTH, MASS, RELATIVE, RETENTION_TIME,
+        SLOPE, TEMPERATURE,
     },
     utils::{hash::HashedDataFrame, polars::Array},
 };
@@ -80,6 +80,7 @@ fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
             .alias(DELTA),
         ])
         .alias(RETENTION_TIME),
+        col(DEAD_TIME).precision(key.precision, key.significant),
         mean_and_standard_deviation_and_array(col(TEMPERATURE), key).alias(TEMPERATURE),
         as_struct(vec![
             mean_and_standard_deviation_and_array(

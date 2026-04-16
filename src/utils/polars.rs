@@ -1,8 +1,15 @@
 use crate::r#const::{ARRAY, EM_DASH, MEAN, STANDARD_DEVIATION};
 use polars::prelude::*;
 use polars_ext::expr::ExprExt;
-use std::borrow::Cow;
+use std::{
+    borrow::Cow,
+    fmt::{Display, from_fn},
+    sync::LazyLock,
+};
 use typed_builder::TypedBuilder;
+
+pub const NULL_RETENTION_TIME: LazyLock<Scalar> =
+    LazyLock::new(|| Scalar::null(DataType::Array(Box::new(DataType::Float64), 3)));
 
 /// Extension methods for [`Series`]
 pub trait SeriesExt {
@@ -17,6 +24,13 @@ impl SeriesExt for Series {
             .filter(|float| !float.is_nan())
             .map_or(Cow::Borrowed(EM_DASH), |float| float.to_string().into()))
     }
+}
+
+pub fn format_option<T: Copy + Display>(option: Option<T>) -> impl Display {
+    from_fn(move |f| match option {
+        None => f.write_str(EM_DASH),
+        Some(t) => Display::fmt(&t, f),
+    })
 }
 
 /// Mean and standard deviation and array
@@ -50,6 +64,7 @@ impl From<Array> for Expr {
                 .alias(STANDARD_DEVIATION),
             value
                 .expr
+                .clone()
                 .arr()
                 .eval(
                     element().precision(value.precision, value.significant),
@@ -57,5 +72,7 @@ impl From<Array> for Expr {
                 )
                 .alias(ARRAY),
         ])
+        .name()
+        .keep()
     }
 }

@@ -2,9 +2,10 @@ use crate::{
     app::{
         panes::{MARGIN, distance::ID_SOURCE},
         states::distance::Settings,
+        widgets::array::Float64Array,
     },
     r#const::*,
-    utils::polars::SeriesExt,
+    utils::polars::{SeriesExt, format_option},
 };
 use egui::{Frame, Id, Margin, TextStyle, TextWrapMode, Ui};
 use egui_ext::ResponseExt;
@@ -15,7 +16,7 @@ use egui_table::{
 };
 use lipid::prelude::*;
 use polars::prelude::*;
-use std::ops::Range;
+use std::{fmt::from_fn, iter::zip, ops::Range};
 use tracing::instrument;
 
 pub(crate) const NUM_COLUMNS: usize = top::DISTANCE.end;
@@ -140,7 +141,7 @@ impl TableView<'_> {
             (row, top::INDEX) => {
                 ui.label(row.to_string())
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
-                        ui.heading(ui.localize("DeadTime"));
+                        ui.heading(ui.localize(DEAD_TIME));
                         ui.label(self.data_frame[DEAD_TIME].get(row)?.str_value());
                         Ok(())
                     })?;
@@ -168,7 +169,7 @@ impl TableView<'_> {
                         .field_by_name(FROM)?
                         .str()?
                         .get(row)
-                        .ok_or(polars_err!(NoData: "FattyAcid.From[{row}]"))?,
+                        .ok_or(polars_err!(NoData: "{FATTY_ACID}.{FROM}[{row}]"))?,
                 );
             }
             (row, bottom::TO) => {
@@ -178,74 +179,152 @@ impl TableView<'_> {
                         .field_by_name(TO)?
                         .str()?
                         .get(row)
-                        .ok_or(polars_err!(NoData: "FattyAcid.To[{row}]"))?,
+                        .ok_or(polars_err!(NoData: "{FATTY_ACID}.{TO}[{row}]"))?,
                 );
             }
             (row, bottom::RETENTION_TIME) => {
-                let retention_time = self.data_frame[RETENTION_TIME].struct_()?;
-                ui.label(retention_time.field_by_name(DELTA)?.str_f64(row)?)
+                let retention_time = &self.data_frame[RETENTION_TIME];
+                Float64Array::builder()
+                    .series(&retention_time.struct_()?.field_by_name(DELTA)?)
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
-                        ui.label(format!(
-                            "{} - {}",
-                            retention_time.field_by_name(TO)?.str_f64(row)?,
-                            retention_time.field_by_name(FROM)?.str_f64(row)?
-                        ));
+                        let retention_times = self.retention_times(row)?;
+                        for FromTo { from, to } in retention_times.into_no_null_iter()? {
+                            ui.label(format!("{to} - {from}"));
+                        }
                         Ok(())
                     })?;
             }
             (row, bottom::EQUIVALENT_CHAIN_LENGTH) => {
-                let ecl = self.data_frame[EQUIVALENT_CHAIN_LENGTH].struct_()?;
-                ui.label(ecl.field_by_name(DELTA)?.str_f64(row)?)
+                Float64Array::builder()
+                    .series(
+                        &self.data_frame[EQUIVALENT_CHAIN_LENGTH]
+                            .struct_()?
+                            .field_by_name(DELTA)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
-                        ui.label(format!(
-                            "{} - {}",
-                            ecl.field_by_name(TO)?.str_f64(row)?,
-                            ecl.field_by_name(FROM)?.str_f64(row)?
-                        ));
+                        let equivalent_chain_lengths = self.equivalent_chain_lengths(row)?;
+                        for FromTo { from, to } in equivalent_chain_lengths.into_no_null_iter()? {
+                            ui.label(format!("{to} - {from}",));
+                        }
                         Ok(())
                     })?;
             }
             (row, bottom::ALPHA) => {
-                ui.label(
-                    self.data_frame[ALPHA]
-                        .as_materialized_series()
-                        .str_f64(row)?,
-                )
-                .try_on_hover_ui(|ui| -> PolarsResult<()> {
-                    let retention_time = self.data_frame[RETENTION_TIME].struct_()?;
-                    let dead_time = self.data_frame[DEAD_TIME].get(row)?.str_value();
-                    ui.label(format!(
-                        "({} - {dead_time}) / ({} - {dead_time})",
-                        retention_time.field_by_name(TO)?.str_f64(row)?,
-                        retention_time.field_by_name(FROM)?.str_f64(row)?
-                    ));
-                    Ok(())
-                })?;
+                Float64Array::builder()
+                    .series(self.data_frame[ALPHA].as_materialized_series())
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+                        let retention_times = self.retention_times(row)?;
+                        let dead_time = self.data_frame[DEAD_TIME].get(row)?.str_value();
+                        for FromTo { from, to } in retention_times.into_no_null_iter()? {
+                            ui.label(format!("({to} - {dead_time}) / ({from} - {dead_time})"));
+                        }
+                        Ok(())
+                    })?;
             }
             (row, bottom::EUCLIDEAN) => {
-                ui.label(
-                    self.data_frame[EUCLIDEAN]
-                        .as_materialized_series()
-                        .str_f64(row)?,
-                )
-                .try_on_hover_ui(|ui| -> PolarsResult<()> {
-                    let retention_time = self.data_frame[RETENTION_TIME].struct_()?;
-                    let ecl = self.data_frame[EQUIVALENT_CHAIN_LENGTH].struct_()?;
-                    ui.label(format!(
-                        "√({} - {})^2 + ({} - {})^2",
-                        retention_time.field_by_name(TO)?.str_f64(row)?,
-                        retention_time.field_by_name(FROM)?.str_f64(row)?,
-                        ecl.field_by_name(TO)?.str_f64(row)?,
-                        ecl.field_by_name(FROM)?.str_f64(row)?
-                    ));
-                    Ok(())
-                })?;
+                Float64Array::builder()
+                    .series(self.data_frame[EUCLIDEAN].as_materialized_series())
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+                        let retention_times = self.retention_times(row)?;
+                        let equivalent_chain_lengths = self.equivalent_chain_lengths(row)?;
+                        for (retention_time, equivalent_chain_length) in zip(
+                            retention_times.into_no_null_iter()?,
+                            equivalent_chain_lengths.into_no_null_iter()?,
+                        ) {
+                            ui.label(format!(
+                                "√(({} - {})^2 + ({} - {})^2)",
+                                retention_time.to,
+                                retention_time.from,
+                                equivalent_chain_length.to,
+                                equivalent_chain_length.from
+                            ));
+                        }
+                        Ok(())
+                    })?;
             }
-            _ => {}
+            _ => unreachable!(),
         }
         Ok(())
+    }
+
+    fn equivalent_chain_lengths(&self, row: usize) -> PolarsResult<FromTo<Float64Chunked>> {
+        self.array(row, EQUIVALENT_CHAIN_LENGTH)
+    }
+
+    fn retention_times(&self, row: usize) -> PolarsResult<FromTo<Float64Chunked>> {
+        let r#struct = self.data_frame[RETENTION_TIME].struct_()?;
+        let Some(to) = r#struct
+            .field_by_name(TO)?
+            .struct_()?
+            .field_by_name(ARRAY)?
+            .array()?
+            .get_as_series(row)
+        else {
+            return Err(polars_err!(NoData: "{RETENTION_TIME}.{TO}.{ARRAY}[{row}]"));
+        };
+        let Some(from) = r#struct
+            .field_by_name(FROM)?
+            .struct_()?
+            .field_by_name(ARRAY)?
+            .array()?
+            .get_as_series(row)
+        else {
+            return Err(polars_err!(NoData: "{RETENTION_TIME}.{FROM}.{ARRAY}[{row}]"));
+        };
+        Ok(FromTo {
+            from: from.f64()?.fill_null_with_values(f64::NAN)?,
+            to: to.f64()?.fill_null_with_values(f64::NAN)?,
+        })
+    }
+
+    fn array(&self, row: usize, name: &str) -> PolarsResult<FromTo<Float64Chunked>> {
+        let r#struct = self.data_frame[name].struct_()?;
+        let Some(to) = r#struct
+            .field_by_name(TO)?
+            .struct_()?
+            .field_by_name(ARRAY)?
+            .array()?
+            .get_as_series(row)
+        else {
+            return Err(polars_err!(NoData: "{name}.{TO}.{ARRAY}[{row}]"));
+        };
+        let Some(from) = r#struct
+            .field_by_name(FROM)?
+            .struct_()?
+            .field_by_name(ARRAY)?
+            .array()?
+            .get_as_series(row)
+        else {
+            return Err(polars_err!(NoData: "{name}.{FROM}.{ARRAY}[{row}]"));
+        };
+        Ok(FromTo {
+            from: from.f64()?.fill_null_with_values(f64::NAN)?,
+            to: to.f64()?.fill_null_with_values(f64::NAN)?,
+        })
     }
 }
 
@@ -268,6 +347,20 @@ impl TableDelegate for TableView<'_> {
             .show(ui, |ui| {
                 _ = self.body_cell_content_ui(ui, cell.row_nr as _, cell.col_nr..cell.col_nr + 1);
             });
+    }
+}
+
+struct FromTo<T> {
+    from: T,
+    to: T,
+}
+
+impl FromTo<Float64Chunked> {
+    fn into_no_null_iter(&self) -> PolarsResult<impl Iterator<Item = FromTo<f64>>> {
+        Ok(
+            zip(self.from.into_no_null_iter(), self.to.into_no_null_iter())
+                .map(|(from, to)| FromTo { from, to }),
+        )
     }
 }
 

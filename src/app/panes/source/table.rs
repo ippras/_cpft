@@ -1,13 +1,14 @@
 use crate::{
     app::{
         panes::MARGIN,
-        states::source::{ID_SOURCE, Settings, State},
-        widgets::array::Array,
+        states::source::{ID_SOURCE, Settings},
+        widgets::array::Float64Array,
     },
     r#const::*,
     utils::polars::SeriesExt as _,
 };
-use egui::{Color32, Frame, Grid, Id, Margin, TextStyle, TextWrapMode, Ui};
+use const_format::formatcp;
+use egui::{Frame, Grid, Id, Margin, TextStyle, TextWrapMode, Ui};
 use egui_ext::ResponseExt;
 use egui_l20n::prelude::*;
 use egui_phosphor::regular::HASH;
@@ -16,8 +17,7 @@ use egui_table::{
 };
 use lipid::prelude::*;
 use polars::prelude::*;
-use polars_utils::format_list;
-use std::{borrow::Cow, ops::Range};
+use std::{f64, ops::Range};
 use tracing::instrument;
 
 pub(crate) const NUM_COLUMNS: usize = top::DERIVATIVE.end;
@@ -86,79 +86,79 @@ impl TableView<'_> {
         match (row, column) {
             // Top
             (0, top::INDEX) => {
-                ui.heading(HASH).on_hover_localized("Index");
+                ui.heading(HASH).on_hover_localized(INDEX);
             }
             (0, top::MODE) => {
-                ui.heading(ui.localize("Mode"))
-                    .on_hover_localized("Mode.hover");
+                ui.heading(ui.localize(MODE))
+                    .on_hover_localized(formatcp!("{MODE}.hover"));
             }
             (0, top::FATTY_ACID) => {
-                ui.heading(ui.localize("FattyAcid"))
-                    .on_hover_localized("FattyAcid.abbreviation");
+                ui.heading(ui.localize(FATTY_ACID))
+                    .on_hover_localized(formatcp!("{FATTY_ACID}.abbreviation"));
             }
             (0, top::RETENTION_TIME) => {
-                ui.heading(ui.localize("RetentionTime"))
-                    .on_hover_localized("RetentionTime.abbreviation")
-                    .on_hover_localized("RetentionTime.hover");
+                ui.heading(ui.localize(RETENTION_TIME))
+                    .on_hover_localized(formatcp!("{RETENTION_TIME}.abbreviation"))
+                    .on_hover_localized(formatcp!("{RETENTION_TIME}.hover"));
             }
             (0, top::TEMPERATURE) => {
-                ui.heading(ui.localize("Temperature"))
-                    .on_hover_localized("Temperature.abbreviation")
-                    .on_hover_localized("Temperature.hover");
+                ui.heading(ui.localize(TEMPERATURE))
+                    .on_hover_localized(formatcp!("{TEMPERATURE}.abbreviation"))
+                    .on_hover_localized(formatcp!("{TEMPERATURE}.hover"));
             }
             (0, top::CHAIN_LENGTH) => {
                 ui.heading(ui.localize("ChainLength"))
                     .on_hover_localized("ChainLength.hover");
             }
             (0, top::MASS) => {
-                ui.heading(ui.localize("Mass"))
-                    .on_hover_localized("Mass.hover");
+                ui.heading(ui.localize(MASS))
+                    .on_hover_localized(formatcp!("{MASS}.hover"));
             }
             (0, top::DERIVATIVE) => {
-                ui.heading(ui.localize("Derivative"))
-                    .on_hover_localized("Derivative.hover");
+                ui.heading(ui.localize(DERIVATIVE))
+                    .on_hover_localized(formatcp!("{DERIVATIVE}.hover"));
             }
             // Bottom
             (1, bottom::ONSET) => {
-                ui.heading(ui.localize("OnsetTemperature.abbreviation"))
-                    .on_hover_localized("OnsetTemperature");
+                ui.heading(ui.localize(formatcp!("{ONSET_TEMPERATURE}.abbreviation")))
+                    .on_hover_localized(ONSET_TEMPERATURE);
             }
             (1, bottom::STEP) => {
-                ui.heading(ui.localize("TemperatureStep.abbreviation"))
-                    .on_hover_localized("TemperatureStep")
-                    .on_hover_localized("TemperatureStep.hover");
+                ui.heading(ui.localize(formatcp!("{TEMPERATURE_STEP}.abbreviation")))
+                    .on_hover_localized(TEMPERATURE_STEP)
+                    .on_hover_localized(formatcp!("{TEMPERATURE_STEP}.hover"));
             }
             (1, bottom::ABSOLUTE) => {
-                ui.heading(ui.localize("AbsoluteRetentionTime"))
-                    .on_hover_localized("AbsoluteRetentionTime.hover");
+                ui.heading(ui.localize(formatcp!("{ABSOLUTE}{RETENTION_TIME}")))
+                    .on_hover_localized(formatcp!("{ABSOLUTE}{RETENTION_TIME}.hover"));
             }
             (1, bottom::RELATIVE) => {
-                ui.heading(ui.localize("RelativeRetentionTime"))
-                    .on_hover_localized("RelativeRetentionTime.hover");
+                ui.heading(ui.localize(formatcp!("{RELATIVE}{RETENTION_TIME}")))
+                    .on_hover_localized(formatcp!("{RELATIVE}{RETENTION_TIME}.hover"));
             }
             (1, bottom::DELTA) => {
                 ui.heading(ui.localize("DeltaRetentionTime"))
                     .on_hover_localized("DeltaRetentionTime.hover");
             }
             (1, bottom::ECL) => {
-                ui.heading(ui.localize("EquivalentChainLength.abbreviation"))
-                    .on_hover_localized("EquivalentChainLength");
+                ui.heading(ui.localize(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.abbreviation")))
+                    .on_hover_localized(EQUIVALENT_CHAIN_LENGTH);
             }
             (1, bottom::FCL) => {
-                ui.heading(ui.localize("FractionalChainLength.abbreviation"))
-                    .on_hover_localized("FractionalChainLength");
+                ui.heading(ui.localize(formatcp!("{FRACTIONAL_CHAIN_LENGTH}.abbreviation")))
+                    .on_hover_localized(FRACTIONAL_CHAIN_LENGTH);
             }
             (1, bottom::ECN) => {
-                ui.heading(ui.localize("EquivalentCarbonNumber.abbreviation"))
-                    .on_hover_localized("EquivalentCarbonNumber");
+                ui.heading(ui.localize(formatcp!("{EQUIVALENT_CARBON_NUMBER}.abbreviation")))
+                    .on_hover_localized(EQUIVALENT_CARBON_NUMBER);
             }
             (1, bottom::SLOPE) => {
-                ui.heading(ui.localize("Slope"))
-                    .on_hover_localized("Slope.hover");
+                ui.heading(ui.localize(SLOPE))
+                    .on_hover_localized(formatcp!("{SLOPE}.hover"));
             }
             (1, bottom::ANGLE) => {
-                ui.heading(ui.localize("Angle"))
-                    .on_hover_localized("Slope.hover");
+                ui.heading(ui.localize(ANGLE))
+                    .on_hover_localized(formatcp!("{ANGLE}.hover"));
             }
             _ => {}
         }
@@ -175,7 +175,7 @@ impl TableView<'_> {
             (row, top::INDEX) => {
                 ui.label(row.to_string())
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
-                        ui.heading(ui.localize("DeadTime"));
+                        ui.heading(ui.localize(DEAD_TIME));
                         ui.label(self.data_frame[DEAD_TIME].get(row)?.str_value());
                         Ok(())
                     })?;
@@ -205,7 +205,7 @@ impl TableView<'_> {
                 );
             }
             (row, bottom::ABSOLUTE) => {
-                Array::builder()
+                Float64Array::builder()
                     .series(
                         &self.data_frame[RETENTION_TIME]
                             .struct_()?
@@ -218,7 +218,7 @@ impl TableView<'_> {
                     .show(ui)?;
             }
             (row, bottom::RELATIVE) => {
-                Array::builder()
+                Float64Array::builder()
                     .series(
                         &self.data_frame[RETENTION_TIME]
                             .struct_()?
@@ -231,7 +231,7 @@ impl TableView<'_> {
                     .show(ui)?;
             }
             (row, bottom::DELTA) => {
-                Array::builder()
+                Float64Array::builder()
                     .series(
                         &self.data_frame[RETENTION_TIME]
                             .struct_()?
@@ -244,16 +244,24 @@ impl TableView<'_> {
                     .show(ui)?;
             }
             (row, top::TEMPERATURE) => {
-                Array::builder()
+                Float64Array::builder()
                     .series(self.data_frame[TEMPERATURE].as_materialized_series())
                     .row(row)
                     .mean(self.settings.mean)
                     .standard_deviation(self.settings.standard_deviation)
                     .build()
-                    .show(ui)?;
+                    .show(ui)?
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        let onset_temperature = self.onset_temperature(row)?;
+                        let temperature_step = self.temperature_step(row)?;
+                        for retention_time in self.retention_times(row)?.into_no_null_iter() {
+                            ui.label(format!("max({onset_temperature} + {retention_time} * {temperature_step}; 250)"));
+                        }
+                        Ok(())
+                    })?;
             }
             (row, bottom::ECL) => {
-                Array::builder()
+                Float64Array::builder()
                     .series(
                         &self.data_frame[CHAIN_LENGTH]
                             .struct_()?
@@ -266,7 +274,7 @@ impl TableView<'_> {
                     .show(ui)?;
             }
             (row, bottom::FCL) => {
-                Array::builder()
+                Float64Array::builder()
                     .series(
                         &self.data_frame[CHAIN_LENGTH]
                             .struct_()?
@@ -312,7 +320,7 @@ impl TableView<'_> {
                 })?;
             }
             (row, bottom::SLOPE) => {
-                Array::builder()
+                Float64Array::builder()
                     .series(
                         &self.data_frame[DERIVATIVE]
                             .struct_()?
@@ -325,7 +333,7 @@ impl TableView<'_> {
                     .show(ui)?;
             }
             (row, bottom::ANGLE) => {
-                Array::builder()
+                Float64Array::builder()
                     .series(
                         &self.data_frame[DERIVATIVE]
                             .struct_()?
@@ -340,6 +348,44 @@ impl TableView<'_> {
             _ => unreachable!(),
         }
         Ok(())
+    }
+
+    fn onset_temperature(&self, row: usize) -> PolarsResult<f64> {
+        let Some(onset_temperature) = self.data_frame[MODE]
+            .struct_()?
+            .field_by_name(ONSET_TEMPERATURE)?
+            .f64()?
+            .get(row)
+        else {
+            return Err(polars_err!(NoData: "{MODE}.{ONSET_TEMPERATURE}[{row}]"));
+        };
+        Ok(onset_temperature)
+    }
+
+    fn retention_times(&self, row: usize) -> PolarsResult<Float64Chunked> {
+        let Some(retention_times) = self.data_frame[RETENTION_TIME]
+            .struct_()?
+            .field_by_name(ABSOLUTE)?
+            .struct_()?
+            .field_by_name(ARRAY)?
+            .array()?
+            .get_as_series(row)
+        else {
+            return Err(polars_err!(NoData: "{RETENTION_TIME}.{ABSOLUTE}.{ARRAY}[{row}]"));
+        };
+        retention_times.f64()?.fill_null_with_values(f64::NAN)
+    }
+
+    fn temperature_step(&self, row: usize) -> PolarsResult<f64> {
+        let Some(temperature_step) = self.data_frame[MODE]
+            .struct_()?
+            .field_by_name(TEMPERATURE_STEP)?
+            .f64()?
+            .get(row)
+        else {
+            return Err(polars_err!(NoData: "{MODE}.{TEMPERATURE_STEP}[{row}]"));
+        };
+        Ok(temperature_step)
     }
 }
 

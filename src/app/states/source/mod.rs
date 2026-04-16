@@ -1,5 +1,5 @@
 pub(crate) use self::{
-    settings::{Axis, Filter, Order, PlotSettings, Settings, Sort, View},
+    settings::{Axis, Filter, Order, PlotSettings, Regression, Settings, Sort, View},
     windows::Windows,
 };
 

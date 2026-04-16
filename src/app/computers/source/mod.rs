@@ -28,7 +28,7 @@ impl Computer {
         lazy_frame = filter(lazy_frame, key)?;
         // Interpolate
         // Sort
-        lazy_frame = sort(lazy_frame, key);
+        lazy_frame = sort(lazy_frame, key)?;
         HashedDataFrame::new(lazy_frame.collect()?)
     }
 }
@@ -69,12 +69,7 @@ impl<'a> Key<'a> {
 type Value = HashedDataFrame;
 
 fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
-    println!("key: {:?}", key.filter);
     lazy_frame = lazy_frame.with_column(col(RETENTION_TIME).list().to_array(3));
-    println!(
-        "COMPUTE0 lazy_frame: {}",
-        lazy_frame.clone().collect().unwrap()
-    );
     lazy_frame = lazy_frame.with_columns([
         col(RETENTION_TIME).alias(ABSOLUTE),
         relative_retention_time(key)?.alias(RELATIVE),
@@ -84,11 +79,7 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
         ecl(key)?.alias(EQUIVALENT_CHAIN_LENGTH),
         ecn().alias(EQUIVALENT_CARBON_NUMBER),
     ]);
-    lazy_frame = lazy_frame.with_columns([slope(key).alias(SLOPE)]);
-    println!(
-        "COMPUTE3 lazy_frame: {}",
-        lazy_frame.clone().collect().unwrap()
-    );
+    lazy_frame = lazy_frame.with_columns([slope(key)?.alias(SLOPE)]);
     lazy_frame = lazy_frame.select([
         col(MODE),
         col(FATTY_ACID),
@@ -139,10 +130,6 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
         ])
         .alias(DERIVATIVE),
     ]);
-    println!(
-        "COMPUTE4 lazy_frame: {}",
-        lazy_frame.clone().collect().unwrap()
-    );
     Ok(lazy_frame)
 }
 
@@ -151,13 +138,13 @@ fn relative_retention_time(key: Key) -> PolarsResult<Expr> {
     Ok(match &key.relative {
         Some(fatty_acid) => {
             let fatty_acid = FattyAcidExpr::try_from(fatty_acid)?;
-            eval_arr(col(RETENTION_TIME), |expr| {
-                expr.clone()
-                    / expr
+            eval_arr(col(RETENTION_TIME), |element| {
+                Ok(element.clone()
+                    / element
                         .filter(col(FATTY_ACID).fatty_acid().equal(fatty_acid.clone()))
-                        .first()
+                        .first())
             })?
-            .over([MODE])
+            .over([MODE])?
         }
         None => lit(Scalar::null(DataType::Array(
             Box::new(DataType::Float64),
@@ -168,36 +155,36 @@ fn relative_retention_time(key: Key) -> PolarsResult<Expr> {
 
 // Delta retention time
 fn delta_retention_time() -> PolarsResult<Expr> {
-    eval_arr(col(RETENTION_TIME), |expr| {
-        col(FATTY_ACID).fatty_acid().delta(expr).over([MODE])
+    eval_arr(col(RETENTION_TIME), |element| {
+        col(FATTY_ACID).fatty_acid().delta(element).over([MODE])
     })
 }
 
 /// Temperature
 fn temperature() -> PolarsResult<Expr> {
-    eval_arr(col(RETENTION_TIME), |expr| {
-        (col(MODE).struct_().field_by_name(ONSET_TEMPERATURE)
-            + expr * col(MODE).struct_().field_by_name(TEMPERATURE_STEP))
-        .clip_max(lit(MAX_TEMPERATURE))
+    eval_arr(col(RETENTION_TIME), |element| {
+        Ok((col(MODE).struct_().field_by_name(ONSET_TEMPERATURE)
+            + element * col(MODE).struct_().field_by_name(TEMPERATURE_STEP))
+        .clip_max(lit(MAX_TEMPERATURE)))
     })
 }
 
 // FCL
 fn fcl(key: Key) -> PolarsResult<Expr> {
-    eval_arr(col(RETENTION_TIME), |expr| {
+    eval_arr(col(RETENTION_TIME), |element| {
         col(FATTY_ACID)
             .fatty_acid()
-            .fractional_chain_length(expr, key.logarithmic)
+            .fractional_chain_length(element, key.logarithmic)
             .over([MODE])
     })
 }
 
 // ECL
 fn ecl(key: Key) -> PolarsResult<Expr> {
-    eval_arr(col(RETENTION_TIME), |expr| {
+    eval_arr(col(RETENTION_TIME), |element| {
         col(FATTY_ACID)
             .fatty_acid()
-            .equivalent_chain_length(expr, key.logarithmic)
+            .equivalent_chain_length(element, key.logarithmic)
             .over([MODE])
     })
 }
@@ -208,22 +195,22 @@ fn ecn() -> Expr {
 }
 
 // Slope
-fn slope(key: Key) -> Expr {
-    if key.relative.is_some() {
+fn slope(key: Key) -> PolarsResult<Expr> {
+    Ok(if key.relative.is_some() {
         col(FATTY_ACID)
             .fatty_acid()
             .slope(col(EQUIVALENT_CHAIN_LENGTH), col(RELATIVE))
-            .over([MODE])
+            .over([MODE])?
             .arr()
             .eval(element().fill_nan(lit(NULL)), false)
     } else {
         col(FATTY_ACID)
             .fatty_acid()
             .slope(col(EQUIVALENT_CHAIN_LENGTH), col(ABSOLUTE))
-            .over([MODE])
+            .over([MODE])?
             .arr()
             .eval(element().fill_nan(lit(NULL)), false)
-    }
+    })
 }
 
 fn filter(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
@@ -256,12 +243,12 @@ fn filter(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     Ok(lazy_frame)
 }
 
-fn sort(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
+fn sort(lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     let sort_options = SortMultipleOptions::new()
         .with_maintain_order(true)
         .with_nulls_last(false)
         .with_order_descending(key.order == Order::Descending);
-    match key.sort {
+    Ok(match key.sort {
         Sort::FattyAcid => lazy_frame.sort_by_exprs(
             [
                 col(MODE),
@@ -281,8 +268,8 @@ fn sort(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
                     .mean()],
                 sort_options,
             )
-            .over([col(MODE)])]),
-    }
+            .over([MODE])?]),
+    })
 }
 
 /// Saturated

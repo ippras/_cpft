@@ -172,6 +172,6 @@ impl ExprExt for Expr {
             Aggregation::Median => self.abs().median(),
             Aggregation::Minimum => self.abs().min(),
         }
-        .over([col(MODE)])
+        .over([MODE])
     }
 }
