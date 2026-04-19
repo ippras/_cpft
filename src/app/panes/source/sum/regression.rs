@@ -5,8 +5,10 @@ use crate::{
         widgets::array::{BooleanArray, Float64Array},
     },
     r#const::{
-        ANY, EM_DASH, MODE, ONSET_TEMPERATURE, REGRESSION, RETENTION_TIME, TEMPERATURE_STEP,
+        ANY, DEAD_TIME, EM_DASH, MODE, ONSET_TEMPERATURE, REGRESSION, RETENTION_TIME,
+        TEMPERATURE_STEP,
     },
+    utils::egui::ToWidgetText,
 };
 use const_format::formatcp;
 use egui::{Frame, Id, Margin, Response, TextStyle, TextWrapMode, Ui, Widget};
@@ -25,6 +27,7 @@ const TOP: &[Range<usize>] = &[
     top::MODE,
     top::FATTY_ACID,
     top::RETENTION_TIME,
+    top::DEAD_TIME,
     top::REGRESSION,
 ];
 
@@ -92,6 +95,11 @@ impl<'a> Regression<'a> {
             (0, top::RETENTION_TIME) => {
                 ui.heading(ui.localize(RETENTION_TIME)).on_hover_ui(|ui| {
                     ui.localize(formatcp!("{RETENTION_TIME}.hover"));
+                });
+            }
+            (0, top::DEAD_TIME) => {
+                ui.heading(ui.localize(DEAD_TIME)).on_hover_ui(|ui| {
+                    ui.localize(formatcp!("{DEAD_TIME}.hover"));
                 });
             }
             (0, top::REGRESSION) => {
@@ -170,30 +178,18 @@ impl<'a> Regression<'a> {
                     .build()
                     .show(ui)?;
             }
+            (row, top::DEAD_TIME) => {
+                let text = self.data_frame[DEAD_TIME].f64()?.get(row).to_widget_text();
+                ui.label(text);
+            }
             (row, top::REGRESSION) => {
                 BooleanArray::builder()
                     .series(self.data_frame[REGRESSION].as_materialized_series())
                     .row(row)
                     .build()
                     .show(ui)?;
-                // let regression = self.data_frame[REGRESSION]
-                //     .bool()?
-                //     .get(row)
-                //     .unwrap_or_default();
-                // if regression {
-                //     ui.visuals_mut().override_text_color = Some(ui.visuals().strong_text_color());
-                // }
-                // ui.label(regression.to_string());
-
-                // Array::builder()
-                //     .series(self.data_frame[REGRESSION].as_materialized_series())
-                //     .row(row)
-                //     .mean(self.settings.mean)
-                //     .standard_deviation(self.settings.standard_deviation)
-                //     .build()
-                //     .show(ui)?;
             }
-            _ => {}
+            _ => unreachable!(),
         }
         Ok(())
     }
@@ -234,7 +230,8 @@ mod top {
     pub(super) const MODE: Range<usize> = INDEX.end..INDEX.end + 2;
     pub(super) const FATTY_ACID: Range<usize> = MODE.end..MODE.end + 1;
     pub(super) const RETENTION_TIME: Range<usize> = FATTY_ACID.end..FATTY_ACID.end + 1;
-    pub(super) const REGRESSION: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
+    pub(super) const DEAD_TIME: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
+    pub(super) const REGRESSION: Range<usize> = DEAD_TIME.end..DEAD_TIME.end + 1;
 }
 
 mod bottom {

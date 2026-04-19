@@ -1,5 +1,6 @@
 #![feature(debug_closure_helpers)]
 #![feature(decl_macro)]
+#![feature(result_option_map_or_default)]
 #![feature(tuple_trait)]
 
 pub use app::App;

@@ -1,5 +1,8 @@
 use crate::{
-    app::{MAX_PRECISION, panes::source::table::NUM_COLUMNS, states::source::ID_SOURCE},
+    app::{
+        MAX_PRECISION, panes::source::table::NUM_COLUMNS, states::source::ID_SOURCE,
+        widgets::fatty_acid::FattyAcidWidget,
+    },
     r#const::{EM_DASH, REGRESSION},
     localization::Text,
     utils::VecExt as _,
@@ -8,8 +11,9 @@ use egui::{
     ComboBox, DragValue, Grid, Popup, PopupCloseBehavior, RichText, Slider, TextWrapMode, Ui,
     Vec2b, Widget, emath::Float as _,
 };
+use egui_dnd::dnd;
 use egui_l20n::prelude::*;
-use egui_phosphor::regular::{BOOKMARK, FUNNEL, FUNNEL_X};
+use egui_phosphor::regular::{BOOKMARK, DOTS_SIX_VERTICAL, FUNNEL, FUNNEL_X, MINUS, PLUS};
 use lipid::prelude::FattyAcid;
 use polars::prelude::*;
 use polars_utils::format_list_truncated;
@@ -80,7 +84,7 @@ impl Settings {
 }
 
 impl Settings {
-    pub(crate) fn show(&mut self, ui: &mut Ui) -> PolarsResult<()> {
+    pub(crate) fn show(&mut self, ui: &mut Ui) {
         ui.visuals_mut().collapsing_header_frame = true;
 
         self.precision(ui);
@@ -127,7 +131,6 @@ impl Settings {
                 });
             },
         );
-        Ok(())
     }
 
     /// Precision
@@ -430,64 +433,71 @@ impl Settings {
 
     /// Regression
     fn regression(&mut self, ui: &mut Ui) {
-        // ui.horizontal(|ui| {
-        //     ui.label(ui.localize(REGRESSION));
-        //     ui.add(DragValue::new(&mut self.regression.start));
-        //     ui.add(
-        //         DoubleSlider::new(
-        //             &mut self.regression.start,
-        //             &mut self.regression.end,
-        //             u8::MIN..=u8::MAX,
-        //         )
-        //         .separation_distance(0),
-        //     );
-        //     ui.add(DragValue::new(&mut self.regression.end));
+        let mut delete = None;
+        let response = dnd(ui, "FattyAcids").show_vec(
+            &mut self.regression.fatty_acids,
+            |ui, fatty_acid, handle, state| {
+                ui.horizontal(|ui| {
+                    handle.ui(ui, |ui| {
+                        ui.label(DOTS_SIX_VERTICAL);
+                    });
+                    delete = delete.or(ui.button(MINUS).clicked().then_some(state.index));
+                    FattyAcidWidget::new(fatty_acid).hover(true).show(ui);
+                });
+            },
+        );
+        if let Some(index) = delete {
+            self.regression.fatty_acids.remove(index);
+        }
+        if response.is_drag_finished() {
+            response.update_vec(&mut self.regression.fatty_acids);
+        }
+        if ui.button(PLUS).clicked() {
+            self.regression.fatty_acids.push(FattyAcid::default());
+        }
+
+        // Grid::new(ui.next_auto_id()).show(ui, |ui| {
+        //     ui.label("START");
+        //     DragValue::new(&mut self.regression.start)
+        //         .clamp_existing_to_range(true)
+        //         .range(1..=self.regression.end)
+        //         .speed(0.1)
+        //         .update_while_editing(false)
+        //         .ui(ui);
+        //     ui.end_row();
+        //     ui.label("END");
+        //     DragValue::new(&mut self.regression.end)
+        //         .clamp_existing_to_range(true)
+        //         .range(self.regression.start + 1..=u8::MAX)
+        //         .speed(0.1)
+        //         .update_while_editing(false)
+        //         .ui(ui);
+        //     ui.end_row();
+        //     // ui.label("START");
+        //     // let response = ui.add(
+        //     //     Slider::new(&mut self.regression.start, 1..=u8::MAX)
+        //     //         .drag_value_speed(0.1)
+        //     //         .smart_aim(false)
+        //     //         .update_while_editing(false),
+        //     // );
+        //     // if response.changed() && self.regression.start > self.regression.end {
+        //     //     self.regression.end = self.regression.start;
+        //     // }
+        //     // ui.end_row();
+        //     // ui.label("END");
+        //     // let response2 = ui.add(
+        //     //     Slider::new(&mut self.regression.end, 1..=u8::MAX)
+        //     //         .drag_value_speed(0.1)
+        //     //         .smart_aim(false)
+        //     //         .update_while_editing(false),
+        //     // );
+        //     // if response2.changed() && self.regression.start > self.regression.end {
+        //     //     self.regression.start = self.regression.end;
+        //     // }
+        //     // ui.end_row();
         // });
-        Grid::new(ui.next_auto_id()).show(ui, |ui| {
-            ui.label("START");
-            DragValue::new(&mut self.regression.start)
-                .clamp_existing_to_range(true)
-                .range(1..=self.regression.end)
-                .speed(0.1)
-                .update_while_editing(false)
-                .ui(ui);
-            ui.end_row();
-
-            ui.label("END");
-            DragValue::new(&mut self.regression.end)
-                .clamp_existing_to_range(true)
-                .range(self.regression.start + 1..=u8::MAX)
-                .speed(0.1)
-                .update_while_editing(false)
-                .ui(ui);
-            ui.end_row();
-
-            // ui.label("START");
-            // let response = ui.add(
-            //     Slider::new(&mut self.regression.start, 1..=u8::MAX)
-            //         .drag_value_speed(0.1)
-            //         .smart_aim(false)
-            //         .update_while_editing(false),
-            // );
-            // if response.changed() && self.regression.start > self.regression.end {
-            //     self.regression.end = self.regression.start;
-            // }
-            // ui.end_row();
-
-            // ui.label("END");
-            // let response2 = ui.add(
-            //     Slider::new(&mut self.regression.end, 1..=u8::MAX)
-            //         .drag_value_speed(0.1)
-            //         .smart_aim(false)
-            //         .update_while_editing(false),
-            // );
-            // if response2.changed() && self.regression.start > self.regression.end {
-            //     self.regression.start = self.regression.end;
-            // }
-            // ui.end_row();
-        });
-        // ui.horizontal(|ui| {});
-        // ui.horizontal(|ui| {});
+        // // ui.horizontal(|ui| {});
+        // // ui.horizontal(|ui| {});
     }
 
     /// Plot
@@ -583,15 +593,16 @@ impl Hash for Cache {
 }
 
 /// Regression
-#[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Hash, PartialEq, Serialize)]
 pub(crate) struct Regression {
-    pub(crate) start: u8,
-    pub(crate) end: u8,
+    pub(crate) fatty_acids: Vec<FattyAcid>,
 }
 
 impl Regression {
     pub(crate) fn new() -> Self {
-        Self { start: 1, end: 1 }
+        Self {
+            fatty_acids: Vec::new(),
+        }
     }
 }
 

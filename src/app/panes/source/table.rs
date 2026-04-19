@@ -5,7 +5,7 @@ use crate::{
         widgets::array::Float64Array,
     },
     r#const::*,
-    utils::polars::SeriesExt as _,
+    utils::{egui::ToWidgetText, polars::SeriesExt as _},
 };
 use const_format::formatcp;
 use egui::{Frame, Grid, Id, Margin, TextStyle, TextWrapMode, Ui};
@@ -27,6 +27,7 @@ const TOP: &[Range<usize>] = &[
     top::MODE,
     top::FATTY_ACID,
     top::RETENTION_TIME,
+    top::DEAD_TIME,
     top::TEMPERATURE,
     top::CHAIN_LENGTH,
     top::MASS,
@@ -101,14 +102,19 @@ impl TableView<'_> {
                     .on_hover_localized(formatcp!("{RETENTION_TIME}.abbreviation"))
                     .on_hover_localized(formatcp!("{RETENTION_TIME}.hover"));
             }
-            (0, top::TEMPERATURE) => {
-                ui.heading(ui.localize(TEMPERATURE))
-                    .on_hover_localized(formatcp!("{TEMPERATURE}.abbreviation"))
-                    .on_hover_localized(formatcp!("{TEMPERATURE}.hover"));
+            (0, top::DEAD_TIME) => {
+                ui.heading(ui.localize(DEAD_TIME))
+                    .on_hover_localized(formatcp!("{DEAD_TIME}.abbreviation"))
+                    .on_hover_localized(formatcp!("{DEAD_TIME}.hover"));
             }
             (0, top::CHAIN_LENGTH) => {
                 ui.heading(ui.localize("ChainLength"))
                     .on_hover_localized("ChainLength.hover");
+            }
+            (0, top::TEMPERATURE) => {
+                ui.heading(ui.localize(TEMPERATURE))
+                    .on_hover_localized(formatcp!("{TEMPERATURE}.abbreviation"))
+                    .on_hover_localized(formatcp!("{TEMPERATURE}.hover"));
             }
             (0, top::MASS) => {
                 ui.heading(ui.localize(MASS))
@@ -173,12 +179,7 @@ impl TableView<'_> {
     ) -> PolarsResult<()> {
         match (row, column) {
             (row, top::INDEX) => {
-                ui.label(row.to_string())
-                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
-                        ui.heading(ui.localize(DEAD_TIME));
-                        ui.label(self.data_frame[DEAD_TIME].get(row)?.str_value());
-                        Ok(())
-                    })?;
+                ui.label(row.to_string());
             }
             (row, bottom::ONSET) => {
                 ui.label(
@@ -243,22 +244,9 @@ impl TableView<'_> {
                     .build()
                     .show(ui)?;
             }
-            (row, top::TEMPERATURE) => {
-                Float64Array::builder()
-                    .series(self.data_frame[TEMPERATURE].as_materialized_series())
-                    .row(row)
-                    .mean(self.settings.mean)
-                    .standard_deviation(self.settings.standard_deviation)
-                    .build()
-                    .show(ui)?
-                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
-                        let onset_temperature = self.onset_temperature(row)?;
-                        let temperature_step = self.temperature_step(row)?;
-                        for retention_time in self.retention_times(row)?.into_no_null_iter() {
-                            ui.label(format!("max({onset_temperature} + {retention_time} * {temperature_step}; 250)"));
-                        }
-                        Ok(())
-                    })?;
+            (row, top::DEAD_TIME) => {
+                let text = self.data_frame[DEAD_TIME].f64()?.get(row).to_widget_text();
+                ui.label(text);
             }
             (row, bottom::ECL) => {
                 Float64Array::builder()
@@ -292,6 +280,23 @@ impl TableView<'_> {
                     .field_by_name(EQUIVALENT_CARBON_NUMBER)?;
                 let text = ecn_series.str_value(row)?;
                 ui.label(text);
+            }
+            (row, top::TEMPERATURE) => {
+                Float64Array::builder()
+                    .series(self.data_frame[TEMPERATURE].as_materialized_series())
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        let onset_temperature = self.onset_temperature(row)?;
+                        let temperature_step = self.temperature_step(row)?;
+                        for retention_time in self.retention_times(row)?.into_no_null_iter() {
+                            ui.label(format!("max({onset_temperature} + {retention_time} * {temperature_step}; 250)"));
+                        }
+                        Ok(())
+                    })?;
             }
             (row, top::MASS) => {
                 let mass = self.data_frame[MASS].struct_()?;
@@ -418,9 +423,10 @@ mod top {
     pub(super) const MODE: Range<usize> = INDEX.end..INDEX.end + 2;
     pub(super) const FATTY_ACID: Range<usize> = MODE.end..MODE.end + 1;
     pub(super) const RETENTION_TIME: Range<usize> = FATTY_ACID.end..FATTY_ACID.end + 3;
-    pub(super) const TEMPERATURE: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
-    pub(super) const CHAIN_LENGTH: Range<usize> = TEMPERATURE.end..TEMPERATURE.end + 3;
-    pub(super) const MASS: Range<usize> = CHAIN_LENGTH.end..CHAIN_LENGTH.end + 1;
+    pub(super) const DEAD_TIME: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
+    pub(super) const CHAIN_LENGTH: Range<usize> = DEAD_TIME.end..DEAD_TIME.end + 3;
+    pub(super) const TEMPERATURE: Range<usize> = CHAIN_LENGTH.end..CHAIN_LENGTH.end + 1;
+    pub(super) const MASS: Range<usize> = TEMPERATURE.end..TEMPERATURE.end + 1;
     pub(super) const DERIVATIVE: Range<usize> = MASS.end..MASS.end + 2;
 }
 

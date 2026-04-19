@@ -31,7 +31,7 @@ use egui::{
     TextStyle, Ui, Widget as _, Window, util::hash,
 };
 use egui_l20n::prelude::*;
-use egui_phosphor::regular::{EXCLUDE, FLOPPY_DISK, SIGMA, SLIDERS_HORIZONTAL, TABLE, TAG, X};
+use egui_phosphor::regular::{FLOPPY_DISK, RULER, SIGMA, SLIDERS_HORIZONTAL, TABLE, TAG, X};
 use egui_tiles::{TileId, UiResponse};
 use lipid::prelude::*;
 use metadata::{egui::MetadataWidget, polars::MetaDataFrame};
@@ -357,7 +357,7 @@ impl Pane {
         if ui
             .add_enabled(
                 state.settings.view == View::Table,
-                Button::new(RichText::new(EXCLUDE).heading()),
+                Button::new(RichText::new(RULER).heading()),
             )
             .clicked()
         {
@@ -417,7 +417,7 @@ impl Pane {
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_settings)
             .show(ui.ctx(), |ui| {
-                let _ = state.settings.show(ui);
+                state.settings.show(ui);
             });
     }
 

@@ -18,7 +18,7 @@ use egui::{
     Ui, Widget as _, Window, util::hash,
 };
 use egui_l20n::prelude::*;
-use egui_phosphor::regular::{EXCLUDE, FLOPPY_DISK, SIGMA, SLIDERS_HORIZONTAL, TAG, X};
+use egui_phosphor::regular::{FLOPPY_DISK, RULER, SIGMA, SLIDERS_HORIZONTAL, TAG, X};
 use egui_tiles::{TileId, UiResponse};
 use metadata::egui::MetadataWidget;
 use polars::prelude::*;
@@ -121,7 +121,7 @@ impl Pane {
 
     fn top(&mut self, ui: &mut Ui, state: &mut State) -> Response {
         ui.visuals_mut().button_frame = false;
-        let mut response = ui.heading(EXCLUDE).on_hover_localized("Distance");
+        let mut response = ui.heading(RULER).on_hover_localized("Distance");
         response |= ui.heading(self.title());
         response = response
             .on_hover_text(format!("{}/{:x}", self.id(), self.calculated.hash))

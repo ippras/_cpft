@@ -7,6 +7,7 @@ use const_format::formatcp;
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;
+use polars_ext::expr::ExprExt;
 use scirs2::stats::regression::linear_regression;
 use scirs2_core::ndarray::{Array1, Array2};
 use std::{iter::zip, sync::LazyLock};
@@ -117,7 +118,7 @@ pub struct Key<'a> {
     pub(crate) frame: &'a HashedDataFrame,
     pub(crate) ddof: u8,
     pub(crate) precision: usize,
-    pub(crate) regression: Regression,
+    pub(crate) regression: &'a Regression,
     pub(crate) significant: bool,
 }
 
@@ -127,7 +128,7 @@ impl<'a> Key<'a> {
             frame,
             ddof: settings.ddof,
             precision: settings.precision,
-            regression: settings.regression,
+            regression: &settings.regression,
             significant: settings.significant,
         }
     }
@@ -138,38 +139,60 @@ type Value = HashedDataFrame;
 
 fn regression<const N: usize>(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     // of observations (2) must be greater than number of predictors
-    let saturated_fatty_acids = df! {
-        FATTY_ACID => (key.regression.start..=key.regression.end)
-            .map(|carbon| {
-                AnyValue::StructOwned(Box::new((
-                    vec![
-                        AnyValue::UInt8(carbon),
-                        AnyValue::List(Series::new_empty(
-                            PlSmallStr::from_static(INDICES),
-                            &data_type!(INDEX),
-                        )),
-                    ],
-                    vec![field!(CARBON), field!(INDICES)],
-                )))
-            }).collect::<Vec<_>>(),
-    }?;
+    // let saturated_fatty_acids = df! {
+    //     FATTY_ACID => (key.regression.start..=key.regression.end)
+    //         .map(|carbon| {
+    //             AnyValue::StructOwned(Box::new((
+    //                 vec![
+    //                     AnyValue::UInt8(carbon),
+    //                     AnyValue::List(Series::new_empty(
+    //                         PlSmallStr::from_static(INDICES),
+    //                         &data_type!(INDEX),
+    //                     )),
+    //                 ],
+    //                 vec![field!(CARBON), field!(INDICES)],
+    //             )))
+    //         }).collect::<Vec<_>>(),
+    // }?;
+    let fatty_acids = key
+        .regression
+        .fatty_acids
+        .iter()
+        .filter(|fatty_acid| fatty_acid.unsaturated.is_empty())
+        .map(|fatty_acid| {
+            AnyValue::StructOwned(Box::new((
+                vec![
+                    AnyValue::UInt8(fatty_acid.carbon),
+                    AnyValue::List(Series::new_empty(
+                        PlSmallStr::from_static(INDICES),
+                        &data_type!(INDEX),
+                    )),
+                ],
+                vec![field!(CARBON), field!(INDICES)],
+            )))
+        })
+        .collect::<Vec<_>>();
     // Сreates frame with unique modes with predictable saturated fatty acids.
     let cross_joined = lazy_frame
         .clone()
         .select([col(MODE)])
         .unique(None, UniqueKeepStrategy::Any)
-        .cross_join(saturated_fatty_acids.lazy(), None);
+        .cross_join(df! { FATTY_ACID => fatty_acids }?.lazy(), None)
+        .with_columns([lit(true).alias(REGRESSION)]);
     // Обединяем фрейм с предсказываемыми и фрейм с наблюдаемыми SFA
-    lazy_frame = cross_joined
+    lazy_frame = lazy_frame
+        .filter(col(FATTY_ACID).fatty_acid().is_saturated())
         .join(
-            lazy_frame.filter(col(FATTY_ACID).fatty_acid().is_saturated()),
+            cross_joined,
             [col(MODE), col(FATTY_ACID)],
             [col(MODE), col(FATTY_ACID)],
-            JoinArgs::new(JoinType::Left),
+            JoinArgs::new(JoinType::Full).with_coalesce(JoinCoalesce::CoalesceColumns),
         )
+        .with_columns([col(RETENTION_TIME).nullify(col(REGRESSION).is_null())])
         .sort([MODE, FATTY_ACID], SortMultipleOptions::new());
     println!("sorted: {}", lazy_frame.clone().collect()?);
 
+    // Observations Predictors
     let regression = lazy_frame.select([
         col(MODE),
         col(FATTY_ACID),

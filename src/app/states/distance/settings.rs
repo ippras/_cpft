@@ -76,7 +76,7 @@ impl Settings {
         }
     }
 
-    pub(crate) fn show(&mut self, ui: &mut Ui) -> PolarsResult<()> {
+    pub(crate) fn show(&mut self, ui: &mut Ui) {
         ui.visuals_mut().collapsing_header_frame = true;
 
         self.precision(ui);
@@ -113,7 +113,6 @@ impl Settings {
                 });
             },
         );
-        Ok(())
     }
 
     /// Precision
