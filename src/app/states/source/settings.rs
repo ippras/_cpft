@@ -8,18 +8,13 @@ use egui::{
     ComboBox, DragValue, Grid, Popup, PopupCloseBehavior, RichText, Slider, TextWrapMode, Ui,
     Vec2b, Widget, emath::Float as _,
 };
-use egui_double_slider::DoubleSlider;
 use egui_l20n::prelude::*;
 use egui_phosphor::regular::{BOOKMARK, FUNNEL, FUNNEL_X};
 use lipid::prelude::FattyAcid;
 use polars::prelude::*;
 use polars_utils::format_list_truncated;
 use serde::{Deserialize, Serialize};
-use std::{
-    cmp::max,
-    collections::BTreeSet,
-    hash::{Hash, Hasher},
-};
+use std::hash::{Hash, Hasher};
 
 const MARGARIC: FattyAcid = FattyAcid {
     carbon: 17,
@@ -34,13 +29,14 @@ pub(crate) struct Settings {
 
     pub(crate) precision: usize,
     pub(crate) significant: bool,
-    pub(crate) mean: bool,
-    pub(crate) standard_deviation: bool,
     pub(crate) sticky: usize,
     pub(crate) truncate: bool,
 
-    pub(crate) view: View,
     pub(crate) ddof: u8,
+    pub(crate) mean: bool,
+    pub(crate) standard_deviation: bool,
+
+    pub(crate) view: View,
     pub(crate) logarithmic: bool,
     pub(crate) relative: Option<FattyAcid>,
     pub(crate) filter: Filter,
@@ -89,9 +85,10 @@ impl Settings {
 
         self.precision(ui);
         self.significant(ui);
-        self.mean_and_standard_deviation(ui);
         self.sticky(ui);
         self.truncate(ui);
+
+        self.mean_and_standard_deviation(ui);
 
         // Calculate
         ui.heading("Calculate");
@@ -114,6 +111,8 @@ impl Settings {
         self.sort(ui);
         self.order(ui);
 
+        ui.separator();
+
         // Regression
         ui.collapsing(RichText::from(ui.localize(REGRESSION)).heading(), |ui| {
             self.regression(ui);
@@ -123,10 +122,9 @@ impl Settings {
         ui.collapsing(
             RichText::from(ui.localize("PlotSettings")).heading(),
             |ui| {
-                if self.view != View::Plot {
-                    ui.disable();
-                }
-                self.plot(ui);
+                ui.add_enabled_ui(self.view == View::Plot, |ui| {
+                    self.plot(ui);
+                });
             },
         );
         Ok(())
