@@ -69,7 +69,6 @@ impl<'a> Key<'a> {
 type Value = HashedDataFrame;
 
 fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
-    lazy_frame = lazy_frame.with_column(col(RETENTION_TIME).list().to_array(3));
     lazy_frame = lazy_frame.with_columns([
         col(RETENTION_TIME).alias(ABSOLUTE),
         relative_retention_time(key)?.alias(RELATIVE),

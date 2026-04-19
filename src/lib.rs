@@ -121,6 +121,18 @@ mod test {
         export::ron::save(&frame, "name.temp.ron")?;
         Ok(())
     }
+
+    #[test]
+    fn schema() -> anyhow::Result<()> {
+        let mut lazy_frame = AGILENT.data.data_frame.clone().lazy();
+        println!("schema: {:#?}", AGILENT.data.data_frame.schema());
+        lazy_frame = lazy_frame.with_columns([col(RETENTION_TIME).list().to_array(3)]);
+        println!("AGILENT: {:?}", lazy_frame.clone().collect().unwrap());
+        let data = lazy_frame.collect()?;
+        let frame = MetaDataFrame::new(AGILENT.meta.clone(), HashedDataFrame::new(data)?);
+        export::ron::save(&frame, "name.temp.ron")?;
+        Ok(())
+    }
 }
 
 // #[cfg(test)]
