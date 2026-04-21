@@ -332,7 +332,7 @@ impl eframe::App for App {
     }
 
     /// Called each time the UI needs repainting, which may be many times per second.
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame) {
         let mut state = State::load(ui, Id::new(ID_SOURCE));
         self.distance(ui);
         // Pre update
