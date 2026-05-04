@@ -1,5 +1,5 @@
 use crate::app::{
-    computers::{distance::plot::Value, plot::IndexKey},
+    computers::{distance::view::plot::Value, plot::IndexKey},
     states::distance::Settings,
 };
 use egui::Ui;
@@ -24,7 +24,7 @@ impl<'a> PlotView<'a> {
 }
 
 impl PlotView<'_> {
-    pub(super) fn show(self, ui: &mut Ui) {
+    pub(crate) fn show(self, ui: &mut Ui) {
         if let Err(error) = self.try_show(ui) {
             error!(%error);
         }

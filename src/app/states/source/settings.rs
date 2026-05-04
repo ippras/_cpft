@@ -1,6 +1,6 @@
 use crate::{
     app::{
-        MAX_PRECISION, panes::source::table::NUM_COLUMNS, states::source::ID_SOURCE,
+        MAX_PRECISION, panes::source::view::table::NUM_COLUMNS, states::source::ID_SOURCE,
         widgets::fatty_acid::FattyAcidWidget,
     },
     r#const::{EM_DASH, REGRESSION},

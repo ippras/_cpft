@@ -202,6 +202,5 @@ fn join(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
 }
 
 // pub(crate) mod filtered;
-pub(crate) mod format;
-pub(crate) mod plot;
 pub(crate) mod sum;
+pub(crate) mod view;

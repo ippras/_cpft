@@ -36,13 +36,13 @@ const TOP: &[Range<usize>] = &[
 
 /// Table view
 #[derive(Debug)]
-pub(super) struct TableView<'a> {
+pub(crate) struct TableView<'a> {
     data_frame: &'a DataFrame,
     settings: &'a mut Settings,
 }
 
 impl<'a> TableView<'a> {
-    pub(super) const fn new(data_frame: &'a DataFrame, settings: &'a mut Settings) -> Self {
+    pub(crate) const fn new(data_frame: &'a DataFrame, settings: &'a mut Settings) -> Self {
         Self {
             data_frame,
             settings,
@@ -51,7 +51,7 @@ impl<'a> TableView<'a> {
 }
 
 impl TableView<'_> {
-    pub(super) fn show(&mut self, ui: &mut Ui) {
+    pub(crate) fn show(&mut self, ui: &mut Ui) {
         let id_salt = Id::new(ID_SOURCE).with("Table");
         if self.settings.reset {
             let id = TableState::id(ui, Id::new(id_salt));
@@ -419,33 +419,33 @@ impl TableDelegate for TableView<'_> {
 mod top {
     use super::*;
 
-    pub(super) const INDEX: Range<usize> = 0..1;
-    pub(super) const MODE: Range<usize> = INDEX.end..INDEX.end + 2;
-    pub(super) const FATTY_ACID: Range<usize> = MODE.end..MODE.end + 1;
-    pub(super) const RETENTION_TIME: Range<usize> = FATTY_ACID.end..FATTY_ACID.end + 3;
-    pub(super) const DEAD_TIME: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
-    pub(super) const CHAIN_LENGTH: Range<usize> = DEAD_TIME.end..DEAD_TIME.end + 3;
-    pub(super) const TEMPERATURE: Range<usize> = CHAIN_LENGTH.end..CHAIN_LENGTH.end + 1;
-    pub(super) const MASS: Range<usize> = TEMPERATURE.end..TEMPERATURE.end + 1;
-    pub(super) const DERIVATIVE: Range<usize> = MASS.end..MASS.end + 2;
+    pub(crate) const INDEX: Range<usize> = 0..1;
+    pub(crate) const MODE: Range<usize> = INDEX.end..INDEX.end + 2;
+    pub(crate) const FATTY_ACID: Range<usize> = MODE.end..MODE.end + 1;
+    pub(crate) const RETENTION_TIME: Range<usize> = FATTY_ACID.end..FATTY_ACID.end + 3;
+    pub(crate) const DEAD_TIME: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
+    pub(crate) const CHAIN_LENGTH: Range<usize> = DEAD_TIME.end..DEAD_TIME.end + 3;
+    pub(crate) const TEMPERATURE: Range<usize> = CHAIN_LENGTH.end..CHAIN_LENGTH.end + 1;
+    pub(crate) const MASS: Range<usize> = TEMPERATURE.end..TEMPERATURE.end + 1;
+    pub(crate) const DERIVATIVE: Range<usize> = MASS.end..MASS.end + 2;
 }
 
 mod bottom {
     use super::*;
 
     // Mode
-    pub(super) const ONSET: Range<usize> = top::MODE.start..top::MODE.start + 1;
-    pub(super) const STEP: Range<usize> = ONSET.end..ONSET.end + 1;
+    pub(crate) const ONSET: Range<usize> = top::MODE.start..top::MODE.start + 1;
+    pub(crate) const STEP: Range<usize> = ONSET.end..ONSET.end + 1;
     // Retention time
-    pub(super) const ABSOLUTE: Range<usize> =
+    pub(crate) const ABSOLUTE: Range<usize> =
         top::RETENTION_TIME.start..top::RETENTION_TIME.start + 1;
-    pub(super) const RELATIVE: Range<usize> = ABSOLUTE.end..ABSOLUTE.end + 1;
-    pub(super) const DELTA: Range<usize> = RELATIVE.end..RELATIVE.end + 1;
+    pub(crate) const RELATIVE: Range<usize> = ABSOLUTE.end..ABSOLUTE.end + 1;
+    pub(crate) const DELTA: Range<usize> = RELATIVE.end..RELATIVE.end + 1;
     // Chain length
-    pub(super) const ECL: Range<usize> = top::CHAIN_LENGTH.start..top::CHAIN_LENGTH.start + 1;
-    pub(super) const FCL: Range<usize> = ECL.end..ECL.end + 1;
-    pub(super) const ECN: Range<usize> = FCL.end..FCL.end + 1;
+    pub(crate) const ECL: Range<usize> = top::CHAIN_LENGTH.start..top::CHAIN_LENGTH.start + 1;
+    pub(crate) const FCL: Range<usize> = ECL.end..ECL.end + 1;
+    pub(crate) const ECN: Range<usize> = FCL.end..FCL.end + 1;
     // Derivative
-    pub(super) const SLOPE: Range<usize> = top::DERIVATIVE.start..top::DERIVATIVE.start + 1;
-    pub(super) const ANGLE: Range<usize> = SLOPE.end..SLOPE.end + 1;
+    pub(crate) const SLOPE: Range<usize> = top::DERIVATIVE.start..top::DERIVATIVE.start + 1;
+    pub(crate) const ANGLE: Range<usize> = SLOPE.end..SLOPE.end + 1;
 }

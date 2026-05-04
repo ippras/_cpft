@@ -1,7 +1,7 @@
 use crate::{
     app::{
         MAX_PRECISION,
-        panes::distance::table::NUM_COLUMNS,
+        panes::distance::view::table::NUM_COLUMNS,
         states::source::{Axis, Filter, Order, PlotSettings, View},
     },
     r#const::{ALPHA, EQUIVALENT_CHAIN_LENGTH, EUCLIDEAN, MAXIMUM, MEAN, MEDIAN, MINIMUM},

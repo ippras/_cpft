@@ -40,7 +40,7 @@ impl<'a> TableView<'a> {
 }
 
 impl TableView<'_> {
-    pub(super) fn show(&mut self, ui: &mut Ui) {
+    pub(crate) fn show(&mut self, ui: &mut Ui) {
         let id_salt = Id::new(ID_SOURCE).with("Table");
         if self.settings.reset_table {
             let id = TableState::id(ui, Id::new(id_salt));

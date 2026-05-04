@@ -1,11 +1,16 @@
-use self::{plot::PlotView, sum::Sum, table::TableView};
+use self::{
+    sum::Sum,
+    view::{plot::PlotView, table::TableView},
+};
 use crate::{
     app::{
         computers::distance::{
             Computed as DistanceComputed, Key as DistanceKey,
-            format::{Computed as FormatComputed, Key as FormatKey},
-            plot::{Computed as PlotComputed, Key as PlotKey},
             sum::{Computed as SumComputed, Key as SumKey},
+            view::{
+                plot::{Computed as PlotComputed, Key as PlotKey},
+                table::{Computed as TableComputed, Key as TableKey},
+            },
         },
         panes::{Behavior, MARGIN},
         states::distance::{Settings, State, View},
@@ -213,8 +218,8 @@ impl Pane {
                 let data_frame = ui.memory_mut(|memory| {
                     memory
                         .caches
-                        .cache::<FormatComputed>()
-                        .get(FormatKey::new(&self.calculated, &state.settings))
+                        .cache::<TableComputed>()
+                        .get(TableKey::new(&self.calculated, &state.settings))
                         .clone()
                 });
                 TableView::new(&data_frame, &mut state.settings).show(ui)
@@ -317,6 +322,5 @@ impl Pane {
     }
 }
 
-pub(crate) mod plot;
 pub(crate) mod sum;
-pub(crate) mod table;
+pub(crate) mod view;

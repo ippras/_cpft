@@ -1,4 +1,4 @@
-use self::{plot::PlotView, table::TableView};
+use self::view::{plot::PlotView, table::TableView};
 use crate::{
     app::{
         computers::source::{
@@ -503,6 +503,5 @@ impl Pane {
     }
 }
 
-pub(crate) mod plot;
 pub(crate) mod sum;
-pub(crate) mod table;
+pub(crate) mod view;
