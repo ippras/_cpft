@@ -404,6 +404,7 @@ impl Pane {
     fn metadata_window(&mut self, ui: &mut Ui, state: &mut State) {
         Window::new(formatcp!("{TAG} Source metadata"))
             .id(ui.auto_id_with(ID_SOURCE).with("Metadata"))
+            .constrain_to(ui.clip_rect())
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_metadata)
             .show(ui.ctx(), |ui| {
@@ -414,6 +415,7 @@ impl Pane {
     fn settings_window(&mut self, ui: &mut Ui, state: &mut State) {
         Window::new(formatcp!("{SLIDERS_HORIZONTAL} Source settings"))
             .id(ui.auto_id_with(ID_SOURCE).with("Settings"))
+            .constrain_to(ui.clip_rect())
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_settings)
             .show(ui.ctx(), |ui| {
@@ -429,6 +431,7 @@ impl Pane {
     fn correlation_window(&mut self, ui: &mut Ui, state: &mut State) {
         Window::new(formatcp!("{SIGMA} {CORRELATION}"))
             .id(ui.auto_id_with(ID_SOURCE).with(CORRELATION))
+            .constrain_to(ui.clip_rect())
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_correlation)
             .resizable(state.settings.resizable)
@@ -465,6 +468,7 @@ impl Pane {
     fn regression_window(&mut self, ui: &mut Ui, state: &mut State) {
         Window::new(formatcp!("{SIGMA} {REGRESSION}"))
             .id(ui.auto_id_with(ID_SOURCE).with(REGRESSION))
+            .constrain_to(ui.clip_rect())
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_regression)
             .resizable(state.settings.resizable)

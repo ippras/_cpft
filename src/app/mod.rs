@@ -71,7 +71,7 @@ impl App {
         cc.egui_ctx.set_fonts(fonts);
         cc.egui_ctx.set_localizations();
 
-        // return Default::default();
+        return Default::default();
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
         cc.storage

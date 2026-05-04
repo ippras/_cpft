@@ -233,6 +233,7 @@ impl Pane {
     fn metadata_window(&mut self, ui: &mut Ui, state: &mut State) {
         Window::new(format!("{TAG} Distance metadata"))
             .id(ui.auto_id_with(ID_SOURCE).with("Metadata"))
+            .constrain_to(ui.clip_rect())
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_metadata)
             .show(ui.ctx(), |ui| {
@@ -273,6 +274,7 @@ impl Pane {
         //     })
         Window::new(format!("{SIGMA} Distance sum"))
             .id(ui.auto_id_with(ID_SOURCE).with("Sum"))
+            .constrain_to(ui.clip_rect())
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_sum)
             .show(ui.ctx(), |ui| {
