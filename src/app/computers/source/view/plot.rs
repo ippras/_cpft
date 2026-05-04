@@ -1,5 +1,10 @@
 use crate::{
-    app::{computers::plot::IndexKey, states::source::Settings},
+    app::{
+        computers::{
+            matches_schema, plot::IndexKey, source::process::OUTPUT_SCHEMA as INPUT_SCHEMA,
+        },
+        states::source::Settings,
+    },
     r#const::{ONSET_TEMPERATURE, *},
     utils::hash::HashedDataFrame,
 };
@@ -24,6 +29,9 @@ pub(crate) struct Computer;
 
 impl Computer {
     fn try_compute(&mut self, key: Key<'_>) -> PolarsResult<Value> {
+        // println!("key.frame.data_frame: {:#?}", key.frame.data_frame.schema());
+        // println!("INPUT_SCHEMA: {:#?}", &*INPUT_SCHEMA);
+        matches_schema(&key.frame.data_frame, &INPUT_SCHEMA)?;
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
         // Filter
         lazy_frame = lazy_frame.filter(col(FILTER));

@@ -1,5 +1,8 @@
 use crate::{
-    app::states::source::Settings,
+    app::{
+        computers::{matches_schema, source::process::OUTPUT_SCHEMA as INPUT_SCHEMA},
+        states::source::Settings,
+    },
     r#const::{
         ABSOLUTE, ANGLE, CHAIN_LENGTH, DEAD_TIME, DELTA, DERIVATIVE, EQUIVALENT_CARBON_NUMBER,
         EQUIVALENT_CHAIN_LENGTH, FILTER, FRACTIONAL_CHAIN_LENGTH, MASS, RELATIVE, RETENTION_TIME,
@@ -21,6 +24,7 @@ pub(crate) struct Computer;
 
 impl Computer {
     fn try_compute(&mut self, key: Key) -> PolarsResult<Value> {
+        matches_schema(&key.frame.data_frame, &INPUT_SCHEMA)?;
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
         // Filter
         lazy_frame = lazy_frame.filter(col(FILTER));

@@ -2,12 +2,14 @@ use self::{plot::PlotView, table::TableView};
 use crate::{
     app::{
         computers::source::{
-            Computed as SourceComputed, Key as SourceKey,
-            format::{Computed as DisplayComputed, Key as DisplayKey},
-            plot::{Computed as PlotComputed, Key as PlotKey},
+            process::{Computed as ProcessComputed, Key as ProcessKey},
             sum::{
                 correlation::{Computed as CorrelationComputed, Key as CorrelationKey},
                 regression::{Computed as RegressionComputed, Key as RegressionKey},
+            },
+            view::{
+                plot::{Computed as PlotComputed, Key as PlotKey},
+                table::{Computed as TableComputed, Key as TableKey},
             },
         },
         panes::{
@@ -125,8 +127,8 @@ impl Pane {
         self.calculated = ui.memory_mut(|memory| {
             memory
                 .caches
-                .cache::<SourceComputed>()
-                .get(SourceKey::new(&self.frame.data, &state.settings))
+                .cache::<ProcessComputed>()
+                .get(ProcessKey::new(&self.frame.data, &state.settings))
                 .clone()
         });
         state.settings.cache.onset_temperatures = self.calculated.data_frame[MODE]
@@ -252,8 +254,8 @@ impl Pane {
         // let data_frame = ui.memory_mut(|memory| {
         //     memory
         //         .caches
-        //         .cache::<DisplayComputed>()
-        //         .get(DisplayKey::new(&self.calculated, &state.settings))
+        //         .cache::<TableComputed>()
+        //         .get(TableKey::new(&self.calculated, &state.settings))
         // });
         // let data = self
         //     .frame
@@ -299,8 +301,8 @@ impl Pane {
         let data_frame = ui.memory_mut(|memory| {
             memory
                 .caches
-                .cache::<DisplayComputed>()
-                .get(DisplayKey::new(&self.calculated, &state.settings))
+                .cache::<TableComputed>()
+                .get(TableKey::new(&self.calculated, &state.settings))
                 .clone()
         });
         let mut data = data_frame
@@ -328,8 +330,8 @@ impl Pane {
         let data_frame = ui.memory_mut(|memory| {
             memory
                 .caches
-                .cache::<DisplayComputed>()
-                .get(DisplayKey::new(&self.calculated, &state.settings))
+                .cache::<TableComputed>()
+                .get(TableKey::new(&self.calculated, &state.settings))
                 .clone()
         });
         let mut data = data_frame
@@ -384,8 +386,8 @@ impl Pane {
                 let data_frame = ui.memory_mut(|memory| {
                     memory
                         .caches
-                        .cache::<DisplayComputed>()
-                        .get(DisplayKey::new(&self.calculated, &state.settings))
+                        .cache::<TableComputed>()
+                        .get(TableKey::new(&self.calculated, &state.settings))
                         .clone()
                 });
                 TableView::new(&data_frame, &mut state.settings).show(ui)

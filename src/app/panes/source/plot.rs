@@ -1,5 +1,5 @@
 use crate::app::{
-    computers::{plot::IndexKey, source::plot::Value},
+    computers::{plot::IndexKey, source::view::plot::Value},
     states::source::Settings,
 };
 use egui::Ui;
