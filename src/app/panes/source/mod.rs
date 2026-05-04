@@ -434,7 +434,6 @@ impl Pane {
             .constrain_to(ui.clip_rect())
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_correlation)
-            .resizable(state.settings.resizable)
             .show(ui.ctx(), |ui| {
                 Panel::top(ui.auto_id_with("Top")).show_inside(ui, |ui| {
                     MenuBar::new()
@@ -471,7 +470,6 @@ impl Pane {
             .constrain_to(ui.clip_rect())
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_regression)
-            .resizable(state.settings.resizable)
             .show(ui.ctx(), |ui| {
                 Panel::top(ui.auto_id_with("Top")).show_inside(ui, |ui| {
                     MenuBar::new()
