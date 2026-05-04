@@ -2,6 +2,7 @@ use self::view::{plot::PlotView, table::TableView};
 use crate::{
     app::{
         computers::source::{
+            export::flat::{Computed as FlatComputed, Key as FlatKey},
             process::{Computed as ProcessComputed, Key as ProcessKey},
             sum::{
                 correlation::{Computed as CorrelationComputed, Key as CorrelationKey},
@@ -235,6 +236,18 @@ impl Pane {
                 let _ = self.save_csv(ui, state, &name);
             }
             if ui
+                .button((FLOPPY_DISK, "MD"))
+                .on_hover_ui(|ui| {
+                    ui.label(ui.localize("Save"));
+                })
+                .on_hover_ui(|ui| {
+                    ui.label(format!("{name}.cpft.md"));
+                })
+                .clicked()
+            {
+                let _ = self.save_md(ui, state, &name);
+            }
+            if ui
                 .button((FLOPPY_DISK, "XLSX"))
                 .on_hover_ui(|ui| {
                     ui.label(ui.localize("Save"));
@@ -322,6 +335,36 @@ impl Pane {
             .with_row_index("Index", None)
             .collect()?;
         export::csv::save(&mut data, &format!("{name}.cpft.csv"))?;
+        Ok(())
+    }
+
+    #[instrument(skip(self, ui, state), err)]
+    fn save_md(&self, ui: &mut Ui, state: &State, name: impl Debug + Display) -> Result<()> {
+        const MID: usize = usize::MIN.midpoint(usize::MAX);
+
+        // unsafe {
+        //     std::env::set_var("POLARS_FMT_TABLE_FORMATTING", "MARKDOWN");
+        //     std::env::set_var("POLARS_FMT_TABLE_HIDE_COLUMN_DATA_TYPES", "1");
+        //     std::env::set_var("POLARS_FMT_TABLE_HIDE_DATAFRAME_SHAPE_INFORMATION", "1");
+        //     std::env::set_var("POLARS_TABLE_WIDTH", "-1");
+        //     std::env::set_var("POLARS_FMT_MAX_COLS", "-1");
+        //     std::env::set_var("POLARS_FMT_MAX_ROWS", "-1");
+        //     std::env::set_var("POLARS_FMT_STR_LEN", MID.to_string());
+        //     std::env::set_var("POLARS_FMT_TABLE_CELL_LIST_LEN", "-1");
+        //     // std::env::set_var("POLARS_FMT_TABLE_DATAFRAME_SHAPE_BELOW", "0");
+        // }
+
+        let meta = &self.frame.meta;
+        let name = format!("{}.cpft.md", meta.format("."));
+        let data = ui.memory_mut(|memory| {
+            memory
+                .caches
+                .cache::<FlatComputed>()
+                .get(FlatKey::new(&self.calculated, &state.settings))
+                .clone()
+        });
+        let frame = MetaDataFrame::new(meta, data);
+        export::md::save(&frame, &name)?;
         Ok(())
     }
 

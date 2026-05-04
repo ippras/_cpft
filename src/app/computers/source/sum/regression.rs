@@ -373,7 +373,7 @@ fn regression_n<const N: usize>(column: Column) -> PolarsResult<Column> {
 fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
     lazy_frame.with_columns([
         col(MODE),
-        col(FATTY_ACID).fatty_acid().format(),
+        col(FATTY_ACID).fatty_acid().display(),
         Array::builder()
             .expr(col(RETENTION_TIME))
             .ddof(key.ddof)

@@ -45,7 +45,7 @@ mod test {
         println!("AGILENT.data: {:?}", AGILENT.data);
         let onset_temperature = 110.0;
         let temperature_step = 6.0;
-        let fa = C18DT9.clone();
+        let fa = C18T9.clone();
         // let value1 = Option::<f64>::None;
         // let value2 = Option::<f64>::None;
         // let value3 = Option::<f64>::None;

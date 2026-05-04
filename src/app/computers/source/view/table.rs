@@ -8,7 +8,7 @@ use crate::{
         EQUIVALENT_CHAIN_LENGTH, FILTER, FRACTIONAL_CHAIN_LENGTH, MASS, RELATIVE, RETENTION_TIME,
         SLOPE, TEMPERATURE,
     },
-    utils::{hash::HashedDataFrame, polars::Array},
+    utils::hash::HashedDataFrame,
 };
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
@@ -65,7 +65,7 @@ type Value = DataFrame;
 
 fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
     lazy_frame.with_columns([
-        col(FATTY_ACID).fatty_acid().format(),
+        col(FATTY_ACID).fatty_acid().display(),
         as_struct(vec![
             mean_and_standard_deviation_and_array(
                 col(RETENTION_TIME).struct_().field_by_name(ABSOLUTE),

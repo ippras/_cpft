@@ -63,12 +63,12 @@ fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
                 .struct_()
                 .field_by_name(FROM)
                 .fatty_acid()
-                .format(),
+                .display(),
             col(FATTY_ACID)
                 .struct_()
                 .field_by_name(TO)
                 .fatty_acid()
-                .format(),
+                .display(),
         ])
         .alias(FATTY_ACID),
         as_struct(vec![

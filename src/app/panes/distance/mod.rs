@@ -5,7 +5,7 @@ use self::{
 use crate::{
     app::{
         computers::distance::{
-            Computed as DistanceComputed, Key as DistanceKey,
+            process::{Computed as ProcessComputed, Key as ProcessKey},
             sum::{Computed as SumComputed, Key as SumKey},
             view::{
                 plot::{Computed as PlotComputed, Key as PlotKey},
@@ -118,8 +118,8 @@ impl Pane {
         self.calculated = ui.memory_mut(|memory| {
             memory
                 .caches
-                .cache::<DistanceComputed>()
-                .get(DistanceKey::new(&self.frame.data, &state.settings))
+                .cache::<ProcessComputed>()
+                .get(ProcessKey::new(&self.frame.data, &state.settings))
                 .clone()
         });
     }
