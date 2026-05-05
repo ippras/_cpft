@@ -4,12 +4,13 @@ use crate::{
         states::source::Settings,
     },
     r#const::{CHAIN_LENGTH, DERIVATIVE, MASS, MODE, RETENTION_TIME},
-    utils::{hash::HashedDataFrame, polars::Array},
+    utils::hash::HashedDataFrame,
 };
 use const_format::formatcp;
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;
+use polars_ext::prelude::*;
 use tracing::instrument;
 
 // let mut data = data_frame
@@ -88,12 +89,20 @@ fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     println!("EXPORT7: {}", lazy_frame.clone().collect()?);
     lazy_frame = lazy_frame.with_columns([
         dtype_col(&DataType::Float64).as_selector().as_expr(),
-        dtype_col(&DataType::Array(Box::new(DataType::Float64), 3))
-            .as_selector()
-            .as_expr(),
-        col(formatcp!(r#"{RETENTION_TIME}\..+"#)),
+        Array::builder()
+            .expr(
+                dtype_col(&DataType::Array(Box::new(DataType::Float64), 3))
+                    .as_selector()
+                    .as_expr(),
+            )
+            .ddof(key.ddof)
+            .precision(key.precision)
+            .significant(key.significant)
+            .unnest(true)
+            .build(),
         col(FATTY_ACID).fatty_acid().display(),
     ]);
+    println!("EXPORT8: {}", lazy_frame.clone().collect()?);
     Ok(lazy_frame)
 }
 

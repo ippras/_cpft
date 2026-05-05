@@ -1,13 +1,11 @@
 use crate::{
     app::states::distance::{Aggregation, Distance, Filter, Order, Priority, Settings, Sort},
     r#const::*,
-    utils::{hash::HashedDataFrame, polars::Array},
+    utils::hash::HashedDataFrame,
 };
-use const_format::formatcp;
 use egui::util::cache::{ComputerMut, FrameCache};
-use lipid::prelude::*;
 use polars::prelude::*;
-use polars_ext::expr::eval_arr;
+use polars_ext::prelude::*;
 
 /// Distance sum computed
 pub(crate) type Computed = FrameCache<Value, Computer>;
@@ -211,5 +209,6 @@ fn mean_and_standard_deviation_and_array(expr: Expr, key: Key) -> Expr {
         .ddof(key.ddof)
         .precision(key.precision)
         .significant(key.significant)
+        .keep_name(true)
         .build()
 }

@@ -1,12 +1,12 @@
 use crate::{
     app::states::distance::Settings,
     r#const::{ALPHA, DELTA, EQUIVALENT_CHAIN_LENGTH, EUCLIDEAN, FROM, RETENTION_TIME, TO},
-    utils::{hash::HashedDataFrame, polars::Array},
+    utils::hash::HashedDataFrame,
 };
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;
-use polars_ext::expr::ExprExt;
+use polars_ext::prelude::*;
 
 /// Distance format computed
 pub(crate) type Computed = FrameCache<Value, Computer>;
@@ -165,5 +165,6 @@ fn mean_and_standard_deviation_and_array(expr: Expr, key: Key) -> Expr {
         .ddof(key.ddof)
         .precision(key.precision)
         .significant(key.significant)
+        .keep_name(true)
         .build()
 }

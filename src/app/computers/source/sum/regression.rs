@@ -1,13 +1,13 @@
 use crate::{
     app::states::source::{Regression, Settings},
     r#const::*,
-    utils::{hash::HashedDataFrame, polars::Array},
+    utils::hash::HashedDataFrame,
 };
 use const_format::formatcp;
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;
-use polars_ext::expr::ExprExt;
+use polars_ext::{expr::ExprExt, prelude::*};
 use scirs2::stats::regression::linear_regression;
 use scirs2_core::ndarray::{Array1, Array2};
 use std::{iter::zip, sync::LazyLock};
@@ -379,6 +379,7 @@ fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
             .ddof(key.ddof)
             .precision(key.precision)
             .significant(key.significant)
+            .keep_name(true)
             .build()
             .alias(RETENTION_TIME),
         as_struct(vec![

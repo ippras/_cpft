@@ -13,7 +13,7 @@ use crate::{
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;
-use polars_ext::expr::ExprExt;
+use polars_ext::prelude::*;
 
 /// Source format computed
 pub(crate) type Computed = FrameCache<Value, Computer>;
@@ -147,5 +147,6 @@ fn mean_and_standard_deviation_and_array(expr: Expr, key: Key) -> Expr {
         .ddof(key.ddof)
         .precision(key.precision)
         .significant(key.significant)
+        .keep_name(true)
         .build()
 }

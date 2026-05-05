@@ -5,7 +5,6 @@ use crate::{
         widgets::array::Float64Array,
     },
     r#const::*,
-    utils::polars::{SeriesExt, format_option},
 };
 use egui::{Frame, Id, Margin, TextStyle, TextWrapMode, Ui};
 use egui_ext::ResponseExt;
@@ -16,7 +15,7 @@ use egui_table::{
 };
 use lipid::prelude::*;
 use polars::prelude::*;
-use std::{fmt::from_fn, iter::zip, ops::Range};
+use std::{iter::zip, ops::Range};
 use tracing::instrument;
 
 pub(crate) const NUM_COLUMNS: usize = top::DISTANCE.end;

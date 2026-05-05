@@ -69,11 +69,11 @@ uom = { version = "0.38.0", features = ["serde"] }
 
 # polars_excel_writer = "0.22.0"
 
-egui_ext = { git = "https://github.com/kgv/egui_ext", branch = "0.6.0" }
+egui_ext = { git = "https://github.com/kgv/egui_ext", branch = "0.6" }
 egui_l20n = { git = "https://github.com/kgv/egui_l20n", branch = "0.5.0", features = [
     "macros",
 ] }
-egui_tiles_ext = { git = "https://github.com/kgv/egui_tiles_ext", branch = "0.3.0" }
+egui_tiles_ext = { git = "https://github.com/kgv/egui_tiles_ext", branch = "0.4" }
 lipid = { git = "https://github.com/ippras/lipid", branch = "bf6a425", features = [
     "serde",
 ] }
@@ -81,7 +81,7 @@ metadata = { git = "https://github.com/ippras/metadata", branch = "bf6a425", fea
     "egui",
     "polars",
 ] }
-polars_ext = { git = "https://github.com/kgv/polars_ext", branch = "bf6a425", features = [
+polars_ext = { git = "https://github.com/kgv/polars_ext", branch = "0.6", features = [
     "array",
     "temporal_conversions",
 ] }

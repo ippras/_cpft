@@ -4,12 +4,12 @@ use crate::{
         states::source::Settings,
     },
     r#const::*,
-    utils::{hash::HashedDataFrame, polars::Array},
+    utils::hash::HashedDataFrame,
 };
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;
-use polars_ext::expr::eval_arr;
+use polars_ext::prelude::*;
 
 /// Correlation computed
 pub(crate) type Computed = FrameCache<Value, Computer>;
@@ -87,6 +87,7 @@ fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
         .ddof(key.ddof)
         .precision(key.precision)
         .significant(key.significant)
+        .keep_name(true)
         .build()
         .alias(CORRELATION)])
 }

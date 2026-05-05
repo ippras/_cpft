@@ -14,7 +14,7 @@ use crate::{
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;
-use polars_ext::expr::{ExprExt, eval_arr};
+use polars_ext::prelude::*;
 use std::sync::LazyLock;
 
 /// Input schema
