@@ -3,7 +3,10 @@ use crate::{
         computers::{matches_schema, source::process::OUTPUT_SCHEMA as INPUT_SCHEMA},
         states::source::Settings,
     },
-    r#const::{CHAIN_LENGTH, DERIVATIVE, MASS, MODE, RETENTION_TIME},
+    r#const::{
+        ABSOLUTE, ARRAY, CHAIN_LENGTH, DERIVATIVE, MASS, MEAN, MODE, RETENTION_TIME,
+        STANDARD_DEVIATION,
+    },
     utils::hash::HashedDataFrame,
 };
 use const_format::formatcp;
@@ -87,19 +90,71 @@ fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
         Some(PlSmallStr::from_static(".")),
     );
     println!("EXPORT7: {}", lazy_frame.clone().collect()?);
+    let array_expr = dtype_col(&DataType::Array(Box::new(DataType::Float64), 3))
+        .as_selector()
+        .as_expr();
+    let struct_expr = array_expr
+        .clone()
+        .arr()
+        .eval(element().precision(key.precision, key.significant), false)
+        .arr()
+        .to_struct(Some(PlanCallback::new(|index| {
+            Ok(format!("{ARRAY}[{index}]"))
+        })));
+    // let expr = col(formatcp!("{RETENTION_TIME}.{ABSOLUTE}"));
     lazy_frame = lazy_frame.with_columns([
         dtype_col(&DataType::Float64).as_selector().as_expr(),
-        Array::builder()
-            .expr(
-                dtype_col(&DataType::Array(Box::new(DataType::Float64), 3))
-                    .as_selector()
-                    .as_expr(),
-            )
-            .ddof(key.ddof)
-            .precision(key.precision)
-            .significant(key.significant)
-            .unnest(true)
-            .build(),
+        as_struct(vec![
+            struct_expr,
+            array_expr
+                .clone()
+                .arr()
+                .mean()
+                .precision(key.precision, key.significant)
+                .alias(MEAN),
+        ]),
+        // as_struct(vec![
+        //     expr.clone()
+        //         .arr()
+        //         .mean()
+        //         .precision(key.precision, key.significant)
+        //         .alias(MEAN),
+        //     expr.clone()
+        //         .arr()
+        //         .std(key.ddof)
+        //         .precision(key.precision, key.significant)
+        //         .alias(STANDARD_DEVIATION),
+        //     expr.clone()
+        //         .arr()
+        //         .eval(element().precision(key.precision, key.significant), false)
+        //         .alias(ARRAY),
+        // ]),
+
+        // .struct_()
+        // .with_fields(vec![
+        //     expr.clone()
+        //         .arr()
+        //         .mean()
+        //         .precision(key.precision, key.significant)
+        //     // .alias(MEAN),
+        //     // value
+        //     //     .expr
+        //     //     .clone()
+        //     //     .arr()
+        //     //     .std(value.ddof)
+        //     //     .percent(value.percent)
+        //     //     .precision(value.precision, value.significant)
+        //     //     .alias(STANDARD_DEVIATION),
+        // ]),
+
+        // Array::builder()
+        //     .expr(expr)
+        //     .ddof(key.ddof)
+        //     .precision(key.precision)
+        //     .significant(key.significant)
+        //     .unnest(true)
+        //     // .keep_name(true)
+        //     .build(),
         col(FATTY_ACID).fatty_acid().display(),
     ]);
     println!("EXPORT8: {}", lazy_frame.clone().collect()?);
