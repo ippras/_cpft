@@ -43,15 +43,15 @@ mod test {
     fn rt() -> anyhow::Result<()> {
         println!("AGILENT.meta: {:?}", AGILENT.meta);
         println!("AGILENT.data: {:?}", AGILENT.data);
-        let onset_temperature = 110.0;
-        let temperature_step = 6.0;
-        let fa = C18T9.clone();
-        // let value1 = Option::<f64>::None;
-        // let value2 = Option::<f64>::None;
-        // let value3 = Option::<f64>::None;
-        let value1 = Some(16.884);
-        let value2 = Some(16.852);
-        let value3 = Some(16.842);
+        let onset_temperature = 70.0;
+        let temperature_step = 10.0;
+        let fa = C10.clone();
+        let value1 = Option::<f64>::None;
+        let value2 = Option::<f64>::None;
+        let value3 = Option::<f64>::None;
+        // let value1 = Some(16.884);
+        let value2 = Some(9.892);
+        let value3 = Some(9.890);
         let mut lazy_frame = AGILENT.data.data_frame.clone().lazy();
         let condition = col("Mode")
             .struct_()
@@ -68,23 +68,27 @@ mod test {
             "before: {:?}",
             lazy_frame
                 .clone()
-                .select([col("RetentionTime").filter(condition.clone())])
+                .select([col(RETENTION_TIME).filter(condition.clone())])
                 .collect()
                 .unwrap()
         );
         lazy_frame = lazy_frame.with_columns([when(condition.clone())
-            .then(concat_list([
-                value1.map_or(col("RetentionTime").list().get(lit(0), true), lit),
-                value2.map_or(col("RetentionTime").list().get(lit(1), true), lit),
-                value3.map_or(col("RetentionTime").list().get(lit(2), true), lit),
-            ])?)
-            .otherwise(col("RetentionTime"))
-            .alias("RetentionTime")]);
+            .then(
+                concat_list(vec![
+                    value1.map_or(col(RETENTION_TIME).arr().get(lit(0), true), lit),
+                    value2.map_or(col(RETENTION_TIME).arr().get(lit(1), true), lit),
+                    value3.map_or(col(RETENTION_TIME).arr().get(lit(2), true), lit),
+                ])?
+                .list()
+                .to_array(3),
+            )
+            .otherwise(col(RETENTION_TIME))
+            .alias(RETENTION_TIME)]);
         println!(
             "after: {:?}",
             lazy_frame
                 .clone()
-                .select([col("RetentionTime").filter(condition.clone())])
+                .select([col(RETENTION_TIME).filter(condition.clone())])
                 .collect()
                 .unwrap()
         );

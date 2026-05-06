@@ -4,8 +4,9 @@ use crate::{
         states::source::Settings,
     },
     r#const::{
-        ABSOLUTE, ARRAY, CHAIN_LENGTH, DERIVATIVE, MASS, MEAN, MODE, RETENTION_TIME,
-        STANDARD_DEVIATION,
+        ABSOLUTE, CHAIN_LENGTH, DEAD_TIME, DERIVATIVE, EQUIVALENT_CHAIN_LENGTH,
+        FRACTIONAL_CHAIN_LENGTH, MASS, MEAN, MODE, RELATIVE, RETENTION_TIME, STANDARD_DEVIATION,
+        TEMPERATURE,
     },
     utils::hash::HashedDataFrame,
 };
@@ -15,23 +16,6 @@ use lipid::prelude::*;
 use polars::prelude::*;
 use polars_ext::prelude::*;
 use tracing::instrument;
-
-// let mut data = data_frame
-//     .lazy()
-//     .select([
-//         col(MODE).struct_().field_by_name("*"),
-//         col(FATTY_ACID),
-//         col(RETENTION_TIME)
-//             .struct_()
-//             .field_by_name(ABSOLUTE)
-//             .struct_()
-//             .field_by_name(MEAN)
-//             .name()
-//             .keep(),
-//         col(DEAD_TIME),
-//     ])
-//     .with_row_index("Index", None)
-//     .collect()?;
 
 /// Flat export calculation computed
 pub(crate) type Computed = FrameCache<Value, Computer>;
@@ -50,7 +34,6 @@ impl Computer {
         lazy_frame = lazy_frame.select([dtype_cols(&[DataType::Float64, DataType::String])
             .as_selector()
             .as_expr()]);
-        // println!("EXPORT 3: {}", lazy_frame.clone().collect()?);
         HashedDataFrame::new(lazy_frame.collect()?)
     }
 }
@@ -85,79 +68,48 @@ impl<'a> Key<'a> {
 type Value = HashedDataFrame;
 
 fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
-    lazy_frame = lazy_frame.unnest(
-        cols([MODE, RETENTION_TIME, CHAIN_LENGTH, MASS, DERIVATIVE]),
-        Some(PlSmallStr::from_static(".")),
-    );
-    println!("EXPORT7: {}", lazy_frame.clone().collect()?);
-    let array_expr = dtype_col(&DataType::Array(Box::new(DataType::Float64), 3))
-        .as_selector()
-        .as_expr();
-    let struct_expr = array_expr
-        .clone()
-        .arr()
-        .eval(element().precision(key.precision, key.significant), false)
-        .arr()
-        .to_struct(Some(PlanCallback::new(|index| {
-            Ok(format!("{ARRAY}[{index}]"))
-        })));
-    // let expr = col(formatcp!("{RETENTION_TIME}.{ABSOLUTE}"));
+    lazy_frame = lazy_frame
+        .unnest(
+            cols([MODE, RETENTION_TIME, CHAIN_LENGTH, MASS, DERIVATIVE]),
+            Some(PlSmallStr::from_static(".")),
+        )
+        .with_columns([
+            col(FATTY_ACID).fatty_acid().display(),
+            cols([DEAD_TIME, formatcp!(r#"^{MASS}\..+$"#)])
+                .as_expr()
+                .precision(key.precision, key.significant),
+        ]);
+    let names = [
+        formatcp!("{RETENTION_TIME}.{ABSOLUTE}"),
+        formatcp!("{RETENTION_TIME}.{RELATIVE}"),
+        formatcp!("{CHAIN_LENGTH}.{EQUIVALENT_CHAIN_LENGTH}"),
+        formatcp!("{CHAIN_LENGTH}.{FRACTIONAL_CHAIN_LENGTH}"),
+        TEMPERATURE,
+    ];
+    lazy_frame = lazy_frame.with_columns(names.map(|name| {
+        Array::builder()
+            .expr(col(name))
+            .ddof(key.ddof)
+            .precision(key.precision)
+            .significant(key.significant)
+            .unnest(true)
+            .build()
+    }));
+    lazy_frame = lazy_frame.unnest(cols(names), Some(PlSmallStr::from_static(".")));
     lazy_frame = lazy_frame.with_columns([
-        dtype_col(&DataType::Float64).as_selector().as_expr(),
-        as_struct(vec![
-            struct_expr,
-            array_expr
-                .clone()
-                .arr()
-                .mean()
-                .precision(key.precision, key.significant)
-                .alias(MEAN),
-        ]),
-        // as_struct(vec![
-        //     expr.clone()
-        //         .arr()
-        //         .mean()
-        //         .precision(key.precision, key.significant)
-        //         .alias(MEAN),
-        //     expr.clone()
-        //         .arr()
-        //         .std(key.ddof)
-        //         .precision(key.precision, key.significant)
-        //         .alias(STANDARD_DEVIATION),
-        //     expr.clone()
-        //         .arr()
-        //         .eval(element().precision(key.precision, key.significant), false)
-        //         .alias(ARRAY),
-        // ]),
-
-        // .struct_()
-        // .with_fields(vec![
-        //     expr.clone()
-        //         .arr()
-        //         .mean()
-        //         .precision(key.precision, key.significant)
-        //     // .alias(MEAN),
-        //     // value
-        //     //     .expr
-        //     //     .clone()
-        //     //     .arr()
-        //     //     .std(value.ddof)
-        //     //     .percent(value.percent)
-        //     //     .precision(value.precision, value.significant)
-        //     //     .alias(STANDARD_DEVIATION),
-        // ]),
-
-        // Array::builder()
-        //     .expr(expr)
-        //     .ddof(key.ddof)
-        //     .precision(key.precision)
-        //     .significant(key.significant)
-        //     .unnest(true)
-        //     // .keep_name(true)
-        //     .build(),
-        col(FATTY_ACID).fatty_acid().display(),
+        (col(formatcp!(
+            "{RETENTION_TIME}.{ABSOLUTE}.{STANDARD_DEVIATION}"
+        )) / col(formatcp!("{RETENTION_TIME}.{ABSOLUTE}.{MEAN}"))
+            * lit(100))
+        .precision(key.precision, key.significant)
+        .alias(formatcp!("{RETENTION_TIME}.{ABSOLUTE}.Percent")),
+        (col(formatcp!(
+            "{RETENTION_TIME}.{RELATIVE}.{STANDARD_DEVIATION}"
+        )) / col(formatcp!("{RETENTION_TIME}.{RELATIVE}.{MEAN}"))
+            * lit(100))
+        .precision(key.precision, key.significant)
+        .alias(formatcp!("{RETENTION_TIME}.{RELATIVE}.Percent")),
     ]);
-    println!("EXPORT8: {}", lazy_frame.clone().collect()?);
     Ok(lazy_frame)
 }
 

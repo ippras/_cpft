@@ -340,7 +340,34 @@ impl Pane {
 
     #[instrument(skip(self, ui, state), err)]
     fn save_md(&self, ui: &mut Ui, state: &State, name: impl Debug + Display) -> Result<()> {
-        const MID: usize = usize::MIN.midpoint(usize::MAX);
+        // const MID: usize = usize::MIN.midpoint(usize::MAX);
+
+        let meta = &self.frame.meta;
+        let name = format!("{}.cpft.md", meta.format("."));
+        let data = ui.memory_mut(|memory| {
+            memory
+                .caches
+                .cache::<FlatComputed>()
+                .get(FlatKey::new(&self.calculated, &state.settings))
+                .clone()
+        });
+        let frame = MetaDataFrame::new(meta, data);
+        temp_env::with_vars(
+            [
+                ("POLARS_FMT_TABLE_FORMATTING", Some("MARKDOWN")),
+                ("POLARS_FMT_TABLE_HIDE_COLUMN_DATA_TYPES", Some("1")),
+                (
+                    "POLARS_FMT_TABLE_HIDE_DATAFRAME_SHAPE_INFORMATION",
+                    Some("1"),
+                ),
+                ("POLARS_TABLE_WIDTH", Some("-1")),
+                ("POLARS_FMT_MAX_COLS", Some("-1")),
+                ("POLARS_FMT_MAX_ROWS", Some("-1")),
+                ("POLARS_FMT_STR_LEN", Some("1024")),
+                ("POLARS_FMT_TABLE_CELL_LIST_LEN", Some("-1")),
+            ],
+            || export::md::save(&frame, &name),
+        )?;
 
         // unsafe {
         //     std::env::set_var("POLARS_FMT_TABLE_FORMATTING", "MARKDOWN");
@@ -354,17 +381,17 @@ impl Pane {
         //     // std::env::set_var("POLARS_FMT_TABLE_DATAFRAME_SHAPE_BELOW", "0");
         // }
 
-        let meta = &self.frame.meta;
-        let name = format!("{}.cpft.md", meta.format("."));
-        let data = ui.memory_mut(|memory| {
-            memory
-                .caches
-                .cache::<FlatComputed>()
-                .get(FlatKey::new(&self.calculated, &state.settings))
-                .clone()
-        });
-        let frame = MetaDataFrame::new(meta, data);
-        export::md::save(&frame, &name)?;
+        // let meta = &self.frame.meta;
+        // let name = format!("{}.cpft.md", meta.format("."));
+        // let data = ui.memory_mut(|memory| {
+        //     memory
+        //         .caches
+        //         .cache::<FlatComputed>()
+        //         .get(FlatKey::new(&self.calculated, &state.settings))
+        //         .clone()
+        // });
+        // let frame = MetaDataFrame::new(meta, data);
+        // export::md::save(&frame, &name)?;
         Ok(())
     }
 

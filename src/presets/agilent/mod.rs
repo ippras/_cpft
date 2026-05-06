@@ -9,7 +9,7 @@ macro ron($name:literal) {
 
 // pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[2.0].2025-12-01.ron");
 // pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[2.14].2026-04-10.ron");
-pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[3.0].2026-04-19.ron");
+pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[3.2].2026-05-06.ron");
 
 // fn parse(bytes: &[u8]) -> Result<HashedMetaDataFrame> {
 //     let frame = ron::de::from_bytes::<MetaDataFrame>(bytes)?;
