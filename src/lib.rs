@@ -43,15 +43,15 @@ mod test {
     fn rt() -> anyhow::Result<()> {
         println!("AGILENT.meta: {:?}", AGILENT.meta);
         println!("AGILENT.data: {:?}", AGILENT.data);
-        let onset_temperature = 70.0;
-        let temperature_step = 10.0;
-        let fa = C10.clone();
+        let onset_temperature = 130.0;
+        let temperature_step = 2.0;
+        let fa = C15.clone(); // 
         let value1 = Option::<f64>::None;
         let value2 = Option::<f64>::None;
         let value3 = Option::<f64>::None;
-        // let value1 = Some(16.884);
-        let value2 = Some(9.892);
-        let value3 = Some(9.890);
+        // let value1 = Some(15.896);
+        // let value2 = Some(12.487);
+        let value3 = Some(15.811);
         let mut lazy_frame = AGILENT.data.data_frame.clone().lazy();
         let condition = col("Mode")
             .struct_()
