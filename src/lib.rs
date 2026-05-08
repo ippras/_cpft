@@ -26,32 +26,19 @@ mod test {
 
     // Ok  Some(Struct({'Carbon': UInt8, 'Indices': List(Struct({'Index': UInt8, 'Triple': Boolean, 'Parity': Boolean}))}))
     // Err Some(Struct({'Carbon': UInt8, 'Indices': List(Struct({'Index': UInt8, 'Parity': Boolean, 'Triple': Boolean}))}))
-    // 2.4: 80.0 5.0 C22DC13
-    // 2.5: 80.0 7.0 C23
-    // 2.6: 90.0 8.0 C22DC13
-    // 2.7: 130.0 9.0 C23
-    // 2.8: 130.0 10.0 C22DC13
-    // 2.9: 130.0 10.0 C23
-    // 2.10: 60.0 3.0 C20DC11
-    // 2.10: 120.0 9.0 C22DC13
-    // 2.11: 60.0 5.0 C18DC9DC12DC15
-    //
-    // 2.12: 100.0 7.0 C18DC9DC12DC15
-    // 2.13: 70.0 8.0 C18DC9DC12
-    // 2.14: 110.0 6.0 C18DT9
     #[test]
     fn rt() -> anyhow::Result<()> {
         println!("AGILENT.meta: {:?}", AGILENT.meta);
         println!("AGILENT.data: {:?}", AGILENT.data);
-        let onset_temperature = 130.0;
+        let onset_temperature = 110.0;
         let temperature_step = 2.0;
-        let fa = C15.clone(); // 
+        let fa = C16C9.clone(); // 16:1Δ9c
         let value1 = Option::<f64>::None;
         let value2 = Option::<f64>::None;
         let value3 = Option::<f64>::None;
-        // let value1 = Some(15.896);
-        // let value2 = Some(12.487);
-        let value3 = Some(15.811);
+        // let value1 = Some(7.387);
+        let value2 = Some(28.502);
+        // let value3 = Some(7.359);
         let mut lazy_frame = AGILENT.data.data_frame.clone().lazy();
         let condition = col("Mode")
             .struct_()
