@@ -212,9 +212,8 @@ impl TableView<'_> {
             (row, top::FATTY_ACID) => {
                 ui.label(
                     self.data_frame[FATTY_ACID]
-                        .str()?
-                        .get(row)
-                        .unwrap_or(EM_DASH),
+                        .as_materialized_series()
+                        .str_value(row)?,
                 );
             }
             (row, bottom::ABSOLUTE) => {
@@ -244,10 +243,11 @@ impl TableView<'_> {
                     .show(ui)?
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
-                        let standard_retention_times = self.standard_retention_times(row)?;
-                        for (retention_time, standard_retention_time) in
-                            zip(&self.retention_times(row)?, &standard_retention_times)
-                        {
+
+                        for (retention_time, standard_retention_time) in zip(
+                            &self.retention_times(row)?,
+                            &self.standard_retention_times(row)?,
+                        ) {
                             let retention_time = retention_time.display();
                             let standard_retention_time = standard_retention_time.display();
                             ui.label(format!("{retention_time:#} / {standard_retention_time:#}"));
@@ -268,6 +268,8 @@ impl TableView<'_> {
                     .build()
                     .show(ui)?
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+
                         let dead_time = self.dead_time(row)?;
                         for retention_time in &self.retention_times(row)? {
                             let retention_time = retention_time.display();
