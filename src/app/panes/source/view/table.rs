@@ -7,7 +7,8 @@ use crate::{
     r#const::{
         ABSOLUTE, ADJUSTED, ANGLE, ARRAY, CHAIN_LENGTH, DEAD_TIME, DERIVATIVE, EM_DASH,
         EQUIVALENT_CARBON_NUMBER, EQUIVALENT_CHAIN_LENGTH, FRACTIONAL_CHAIN_LENGTH, MASS, MODE,
-        ONSET_TEMPERATURE, RELATIVE, RETENTION_TIME, SLOPE, TEMPERATURE, TEMPERATURE_STEP,
+        ONSET_TEMPERATURE, RELATIVE, RETENTION_TIME, SLOPE, STANDARD, TEMPERATURE,
+        TEMPERATURE_STEP,
     },
     utils::{egui::ToWidgetText, polars::SeriesExt as _},
 };
@@ -243,13 +244,13 @@ impl TableView<'_> {
                     .show(ui)?
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
-                        let relative_retention_time = self._relative_retention_time(row)?;
-                        for (retention_time, relative_retention_time) in
-                            zip(&self.retention_times(row)?, &relative_retention_time)
+                        let standard_retention_times = self.standard_retention_times(row)?;
+                        for (retention_time, standard_retention_time) in
+                            zip(&self.retention_times(row)?, &standard_retention_times)
                         {
                             let retention_time = retention_time.display();
-                            let relative_retention_time = relative_retention_time.display();
-                            ui.label(format!("{retention_time:#} / {relative_retention_time:#}"));
+                            let standard_retention_time = standard_retention_time.display();
+                            ui.label(format!("{retention_time:#} / {standard_retention_time:#}"));
                         }
                         Ok(())
                     })?;
@@ -441,16 +442,16 @@ impl TableView<'_> {
         Ok(retention_times.f64()?.clone())
     }
 
-    fn _relative_retention_time(&self, row: usize) -> PolarsResult<Float64Chunked> {
-        let Some(relative_retention_time) = self.data_frame["_"]
+    fn standard_retention_times(&self, row: usize) -> PolarsResult<Float64Chunked> {
+        let Some(standard_retention_time) = self.data_frame["_"]
             .struct_()?
-            .field_by_name(formatcp!("_{RELATIVE}{RETENTION_TIME}"))?
+            .field_by_name(formatcp!("_{STANDARD}{RETENTION_TIME}"))?
             .array()?
             .get_as_series(row)
         else {
-            return Err(polars_err!(NoData: "_._{RELATIVE}{RETENTION_TIME}[{row}]"));
+            return Err(polars_err!(NoData: "_._{STANDARD}{RETENTION_TIME}[{row}]"));
         };
-        Ok(relative_retention_time.f64()?.clone())
+        Ok(standard_retention_time.f64()?.clone())
     }
 
     fn temperature_step(&self, row: usize) -> PolarsResult<f64> {

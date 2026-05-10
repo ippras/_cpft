@@ -27,6 +27,7 @@ pub(crate) const RELATIVE: &str = "Relative";
 pub(crate) const RETENTION_TIME: &str = "RetentionTime";
 pub(crate) const SLOPE: &str = "Slope";
 pub(crate) const STANDARD_DEVIATION: &str = "StandardDeviation";
+pub(crate) const STANDARD: &str = "Standard";
 pub(crate) const TEMPERATURE_STEP: &str = "TemperatureStep";
 pub(crate) const TEMPERATURE: &str = "Temperature";
 pub(crate) const TO: &str = "To";

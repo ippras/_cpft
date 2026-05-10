@@ -6,7 +6,7 @@ use crate::{
     r#const::{
         ABSOLUTE, ADJUSTED, ANGLE, CHAIN_LENGTH, DEAD_TIME, DERIVATIVE, EQUIVALENT_CARBON_NUMBER,
         EQUIVALENT_CHAIN_LENGTH, FILTER, FRACTIONAL_CHAIN_LENGTH, MASS, RELATIVE, RETENTION_TIME,
-        SLOPE, TEMPERATURE,
+        SLOPE, STANDARD, TEMPERATURE,
     },
     utils::hash::HashedDataFrame,
 };
@@ -158,7 +158,7 @@ fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
         as_struct(vec![{
             col("_")
                 .struct_()
-                .field_by_name(formatcp!("_{RELATIVE}{RETENTION_TIME}"))
+                .field_by_name(formatcp!("_{STANDARD}{RETENTION_TIME}"))
                 .arr()
                 .eval(element().precision(key.precision, key.significant), false)
         }])
