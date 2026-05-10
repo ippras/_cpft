@@ -9,7 +9,7 @@ use crate::{
 };
 use const_format::formatcp;
 use egui::{Frame, Grid, Id, Margin, TextStyle, TextWrapMode, Ui};
-use egui_ext::ResponseExt;
+use egui_ext::prelude::*;
 use egui_l20n::prelude::*;
 use egui_phosphor::regular::HASH;
 use egui_table::{
@@ -100,7 +100,13 @@ impl TableView<'_> {
             (0, top::RETENTION_TIME) => {
                 ui.heading(ui.localize(RETENTION_TIME))
                     .on_hover_localized(formatcp!("{RETENTION_TIME}.abbreviation"))
-                    .on_hover_localized(formatcp!("{RETENTION_TIME}.hover"));
+                    .on_hover_localized(formatcp!("{RETENTION_TIME}.hover"))
+                    .on_hover_ui(|ui| {
+                        ui.markdown(include_str!(concat!(
+                            env!("CARGO_MANIFEST_DIR"),
+                            "/doc/en/RetentionFactor.md"
+                        )));
+                    });
             }
             (0, top::DEAD_TIME) => {
                 ui.heading(ui.localize(DEAD_TIME))
