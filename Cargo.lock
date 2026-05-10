@@ -5599,7 +5599,7 @@ dependencies = [
 [[package]]
 name = "polars_ext"
 version = "0.6.2"
-source = "git+https://github.com/kgv/polars_ext?branch=0.6#fb46b6e7b1d83bbec95c0019dee7cda7248085e6"
+source = "git+https://github.com/kgv/polars_ext?branch=0.6#905a58acbabda5ce20e28a172fd4184a20187120"
 dependencies = [
  "ahash",
  "const_format",

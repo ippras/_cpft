@@ -5,17 +5,20 @@ use crate::{
         states::source::{Filter, Order, Settings, Sort},
     },
     r#const::{
-        ABSOLUTE, ANGLE, CHAIN_LENGTH, DEAD_TIME, DELTA, DERIVATIVE, EQUIVALENT_CARBON_NUMBER,
+        ABSOLUTE, ADJUSTED, ANGLE, CHAIN_LENGTH, DEAD_TIME, DERIVATIVE, EQUIVALENT_CARBON_NUMBER,
         EQUIVALENT_CHAIN_LENGTH, FILTER, FRACTIONAL_CHAIN_LENGTH, MASS, MODE, ONSET_TEMPERATURE,
         RELATIVE, RETENTION_TIME, SLOPE, TEMPERATURE, TEMPERATURE_STEP,
     },
     utils::hash::HashedDataFrame,
 };
+use const_format::formatcp;
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;
 use polars_ext::prelude::*;
 use std::sync::LazyLock;
+
+const _RELATIVE_RETENTION_TIME: &str = formatcp!("_{RELATIVE}{RETENTION_TIME}");
 
 /// Input schema
 pub(crate) static INPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
@@ -66,7 +69,7 @@ pub(crate) static OUTPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
                     DataType::Array(Box::new(DataType::Float64), 0),
                 ),
                 Field::new(
-                    PlSmallStr::from_static(DELTA),
+                    PlSmallStr::from_static(ADJUSTED),
                     DataType::Array(Box::new(DataType::Float64), 0),
                 ),
             ]),
@@ -116,6 +119,13 @@ pub(crate) static OUTPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
             ]),
         ),
         Field::new(PlSmallStr::from_static(FILTER), DataType::Boolean),
+        Field::new(
+            PlSmallStr::from_static("_"),
+            DataType::Struct(vec![Field::new(
+                PlSmallStr::from_static(_RELATIVE_RETENTION_TIME),
+                DataType::Array(Box::new(DataType::Float64), 0),
+            )]),
+        ),
     ]))
 });
 
@@ -137,6 +147,20 @@ impl Computer {
         // Interpolate
         // Sort
         lazy_frame = sort(lazy_frame, key)?;
+        // Select
+        lazy_frame = lazy_frame.select([
+            col(MODE),
+            col(FATTY_ACID),
+            col(RETENTION_TIME),
+            col(DEAD_TIME),
+            col(TEMPERATURE),
+            col(CHAIN_LENGTH),
+            col(MASS),
+            col(DERIVATIVE),
+            col(FILTER),
+            // _
+            as_struct(vec![col(_RELATIVE_RETENTION_TIME)]).alias("_"),
+        ]);
         HashedDataFrame::new(lazy_frame.collect()?)
     }
 }
@@ -177,21 +201,23 @@ impl<'a> Key<'a> {
 type Value = HashedDataFrame;
 
 fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
+    lazy_frame = lazy_frame.with_columns([_relative_retention_time(key)?]);
     lazy_frame = lazy_frame.with_columns([
         col(RETENTION_TIME).alias(ABSOLUTE),
-        relative_retention_time(key)?.alias(RELATIVE),
-        delta_retention_time()?.alias(DELTA),
+        (col(RETENTION_TIME) / col(_RELATIVE_RETENTION_TIME)).alias(RELATIVE),
+        // relative_retention_time(key)?.alias(RELATIVE),
+        adjusted_retention_time()?.alias(ADJUSTED),
         temperature()?.alias(TEMPERATURE),
         fcl(key)?.alias(FRACTIONAL_CHAIN_LENGTH),
         ecl(key)?.alias(EQUIVALENT_CHAIN_LENGTH),
         ecn().alias(EQUIVALENT_CARBON_NUMBER),
     ]);
     lazy_frame = lazy_frame.with_columns([slope(key)?.alias(SLOPE)]);
-    lazy_frame = lazy_frame.select([
+    lazy_frame = lazy_frame.with_columns([
         col(MODE),
         col(FATTY_ACID),
         // Retention time
-        as_struct(vec![col(ABSOLUTE), col(RELATIVE), col(DELTA)]).alias(RETENTION_TIME),
+        as_struct(vec![col(ABSOLUTE), col(RELATIVE), col(ADJUSTED)]).alias(RETENTION_TIME),
         // DeadTime
         col(DEAD_TIME),
         // Temperature
@@ -240,6 +266,13 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     Ok(lazy_frame)
 }
 
+// Adjusted retention time
+fn adjusted_retention_time() -> PolarsResult<Expr> {
+    eval_arr(col(RETENTION_TIME), |element| {
+        (element - col(DEAD_TIME)).over([MODE])
+    })
+}
+
 // Relative retention time
 fn relative_retention_time(key: Key) -> PolarsResult<Expr> {
     Ok(match &key.relative {
@@ -260,11 +293,23 @@ fn relative_retention_time(key: Key) -> PolarsResult<Expr> {
     })
 }
 
-// Delta retention time
-fn delta_retention_time() -> PolarsResult<Expr> {
-    eval_arr(col(RETENTION_TIME), |element| {
-        col(FATTY_ACID).fatty_acid().delta(element).over([MODE])
-    })
+fn _relative_retention_time(key: Key) -> PolarsResult<Expr> {
+    Ok(match &key.relative {
+        Some(fatty_acid) => {
+            let fatty_acid = FattyAcidExpr::try_from(fatty_acid)?;
+            eval_arr(col(RETENTION_TIME), |element| {
+                Ok(element
+                    .filter(col(FATTY_ACID).fatty_acid().equal(fatty_acid.clone()))
+                    .first())
+            })?
+            .over([MODE])?
+        }
+        None => lit(Scalar::null(DataType::Array(
+            Box::new(DataType::Float64),
+            3,
+        ))),
+    }
+    .alias(_RELATIVE_RETENTION_TIME))
 }
 
 /// Temperature

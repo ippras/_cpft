@@ -379,7 +379,6 @@ fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
             .ddof(key.ddof)
             .precision(key.precision)
             .significant(key.significant)
-            .keep_name(true)
             .build()
             .alias(RETENTION_TIME),
         as_struct(vec![

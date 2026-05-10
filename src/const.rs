@@ -3,6 +3,7 @@ pub(crate) const NO_BREAK_SPACE: &str = " ";
 
 // pub(crate) const INDEX: &str = "Index";
 pub(crate) const ABSOLUTE: &str = "Absolute";
+pub(crate) const ADJUSTED: &str = "Adjusted";
 pub(crate) const ALPHA: &str = "Alpha";
 pub(crate) const ANGLE: &str = "Angle";
 pub(crate) const ANY: &str = "Any";

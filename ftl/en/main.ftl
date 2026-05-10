@@ -1,5 +1,7 @@
 AbsoluteRetentionTime = Absolute
     .hover = Absolute retention time.
+AdjustedRetentionTime = Adjusted
+    .hover = Adjusted retention time.
 Alpha = Alpha
     .abbreviation = α
     .hover = ?.

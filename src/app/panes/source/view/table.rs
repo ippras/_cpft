@@ -4,7 +4,11 @@ use crate::{
         states::source::{ID_SOURCE, Settings},
         widgets::array::Float64Array,
     },
-    r#const::*,
+    r#const::{
+        ABSOLUTE, ADJUSTED, ANGLE, ARRAY, CHAIN_LENGTH, DEAD_TIME, DERIVATIVE, EM_DASH,
+        EQUIVALENT_CARBON_NUMBER, EQUIVALENT_CHAIN_LENGTH, FRACTIONAL_CHAIN_LENGTH, MASS, MODE,
+        ONSET_TEMPERATURE, RELATIVE, RETENTION_TIME, SLOPE, TEMPERATURE, TEMPERATURE_STEP,
+    },
     utils::{egui::ToWidgetText, polars::SeriesExt as _},
 };
 use const_format::formatcp;
@@ -17,7 +21,8 @@ use egui_table::{
 };
 use lipid::prelude::*;
 use polars::prelude::*;
-use std::{f64, ops::Range};
+use polars_ext::option::DisplayOption;
+use std::{f64, iter::zip, ops::Range};
 use tracing::instrument;
 
 pub(crate) const NUM_COLUMNS: usize = top::DERIVATIVE.end;
@@ -148,9 +153,9 @@ impl TableView<'_> {
                 ui.heading(ui.localize(formatcp!("{RELATIVE}{RETENTION_TIME}")))
                     .on_hover_localized(formatcp!("{RELATIVE}{RETENTION_TIME}.hover"));
             }
-            (1, bottom::DELTA) => {
-                ui.heading(ui.localize("DeltaRetentionTime"))
-                    .on_hover_localized("DeltaRetentionTime.hover");
+            (1, bottom::ADJUSTED) => {
+                ui.heading(ui.localize(formatcp!("{ADJUSTED}{RETENTION_TIME}")))
+                    .on_hover_localized(formatcp!("{ADJUSTED}{RETENTION_TIME}.hover"));
             }
             (1, bottom::ECL) => {
                 ui.heading(ui.localize(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.abbreviation")))
@@ -235,24 +240,44 @@ impl TableView<'_> {
                     .mean(self.settings.mean)
                     .standard_deviation(self.settings.standard_deviation)
                     .build()
-                    .show(ui)?;
+                    .show(ui)?
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+                        let relative_retention_time = self._relative_retention_time(row)?;
+                        for (retention_time, relative_retention_time) in
+                            zip(&self.retention_times(row)?, &relative_retention_time)
+                        {
+                            let retention_time = retention_time.display();
+                            let relative_retention_time = relative_retention_time.display();
+                            ui.label(format!("{retention_time:#} / {relative_retention_time:#}"));
+                        }
+                        Ok(())
+                    })?;
             }
-            (row, bottom::DELTA) => {
+            (row, bottom::ADJUSTED) => {
                 Float64Array::builder()
                     .series(
                         &self.data_frame[RETENTION_TIME]
                             .struct_()?
-                            .field_by_name(DELTA)?,
+                            .field_by_name(ADJUSTED)?,
                     )
                     .row(row)
                     .mean(self.settings.mean)
                     .standard_deviation(self.settings.standard_deviation)
                     .build()
-                    .show(ui)?;
+                    .show(ui)?
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        let dead_time = self.dead_time(row)?;
+                        for retention_time in &self.retention_times(row)? {
+                            let retention_time = retention_time.display();
+                            ui.label(format!("{retention_time:#} - {dead_time}"));
+                        }
+                        Ok(())
+                    })?;
             }
             (row, top::DEAD_TIME) => {
-                let text = self.data_frame[DEAD_TIME].f64()?.get(row).to_widget_text();
-                ui.label(text);
+                let dead_time = self.dead_time(row)?;
+                ui.label(dead_time.to_string());
             }
             (row, bottom::ECL) => {
                 Float64Array::builder()
@@ -265,7 +290,28 @@ impl TableView<'_> {
                     .mean(self.settings.mean)
                     .standard_deviation(self.settings.standard_deviation)
                     .build()
-                    .show(ui)?;
+                    .show(ui)?
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        // let is_saturated =
+                        //     self.data_frame[FATTY_ACID].fatty_acid().is_saturated()?;
+                        // self.data_frame[FATTY_ACID]
+                        //     .filter(&is_saturated)?
+                        //     .fatty_acid()
+                        //     .carbon()?.fill_null_with_values(value);
+                        // let onset_temperature = self.onset_temperature(row)?;
+                        // let temperature_step = self.temperature_step(row)?;
+                        // for retention_time in &self.retention_times(row)? {
+                        //     let retention_time = retention_time.display();
+                        //     // ui.label(format!("max({onset_temperature} + {retention_time:#} * {temperature_step}; 250)"));
+                        // }
+                        Ok(())
+                    })?;
+
+                //         self.clone()
+                // .nullify(self.clone().is_saturated())
+                // .fatty_acid()
+                // .carbon()
+                // .fill_null_with_strategy(FillNullStrategy::Forward(None))
             }
             (row, bottom::FCL) => {
                 Float64Array::builder()
@@ -298,8 +344,9 @@ impl TableView<'_> {
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
                         let onset_temperature = self.onset_temperature(row)?;
                         let temperature_step = self.temperature_step(row)?;
-                        for retention_time in self.retention_times(row)?.into_no_null_iter() {
-                            ui.label(format!("max({onset_temperature} + {retention_time} * {temperature_step}; 250)"));
+                        for retention_time in &self.retention_times(row)? {
+                            let retention_time = retention_time.display();
+                            ui.label(format!("max({onset_temperature} + {retention_time:#} * {temperature_step}; 250)"));
                         }
                         Ok(())
                     })?;
@@ -373,6 +420,13 @@ impl TableView<'_> {
         Ok(onset_temperature)
     }
 
+    fn dead_time(&self, row: usize) -> PolarsResult<f64> {
+        let Some(dead_time) = self.data_frame[DEAD_TIME].f64()?.get(row) else {
+            return Err(polars_err!(NoData: "{DEAD_TIME}[{row}]"));
+        };
+        Ok(dead_time)
+    }
+
     fn retention_times(&self, row: usize) -> PolarsResult<Float64Chunked> {
         let Some(retention_times) = self.data_frame[RETENTION_TIME]
             .struct_()?
@@ -384,7 +438,19 @@ impl TableView<'_> {
         else {
             return Err(polars_err!(NoData: "{RETENTION_TIME}.{ABSOLUTE}.{ARRAY}[{row}]"));
         };
-        retention_times.f64()?.fill_null_with_values(f64::NAN)
+        Ok(retention_times.f64()?.clone())
+    }
+
+    fn _relative_retention_time(&self, row: usize) -> PolarsResult<Float64Chunked> {
+        let Some(relative_retention_time) = self.data_frame["_"]
+            .struct_()?
+            .field_by_name(formatcp!("_{RELATIVE}{RETENTION_TIME}"))?
+            .array()?
+            .get_as_series(row)
+        else {
+            return Err(polars_err!(NoData: "_._{RELATIVE}{RETENTION_TIME}[{row}]"));
+        };
+        Ok(relative_retention_time.f64()?.clone())
     }
 
     fn temperature_step(&self, row: usize) -> PolarsResult<f64> {
@@ -446,7 +512,7 @@ mod bottom {
     pub(crate) const ABSOLUTE: Range<usize> =
         top::RETENTION_TIME.start..top::RETENTION_TIME.start + 1;
     pub(crate) const RELATIVE: Range<usize> = ABSOLUTE.end..ABSOLUTE.end + 1;
-    pub(crate) const DELTA: Range<usize> = RELATIVE.end..RELATIVE.end + 1;
+    pub(crate) const ADJUSTED: Range<usize> = RELATIVE.end..RELATIVE.end + 1;
     // Chain length
     pub(crate) const ECL: Range<usize> = top::CHAIN_LENGTH.start..top::CHAIN_LENGTH.start + 1;
     pub(crate) const FCL: Range<usize> = ECL.end..ECL.end + 1;

@@ -60,6 +60,21 @@ impl Float64Array<'_> {
         }
         let mut response = ui.label(text);
         if response.hovered() {
+            // Array
+            if let Some(array) = self
+                .series
+                .struct_()?
+                .field_by_name(ARRAY)?
+                .array()?
+                .get_as_series(self.row)
+                && array.len() > 1
+            {
+                response = response.on_hover_ui(|ui| {
+                    ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+                    ui.heading(ui.localize(ARRAY));
+                    ui.label(format_list!(array.iter()));
+                });
+            }
             // Mean
             if let Some(mean) = mean {
                 response = response.on_hover_ui(|ui| {
@@ -74,21 +89,6 @@ impl Float64Array<'_> {
                     ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
                     ui.heading(ui.localize(STANDARD_DEVIATION));
                     ui.label(format!("±{standard_deviation}"));
-                });
-            }
-            // Array
-            if let Some(sample) = self
-                .series
-                .struct_()?
-                .field_by_name(ARRAY)?
-                .array()?
-                .get_as_series(self.row)
-                && sample.len() > 1
-            {
-                response = response.on_hover_ui(|ui| {
-                    ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
-                    ui.heading(ui.localize(ARRAY));
-                    ui.label(format_list!(sample.iter()));
                 });
             }
         }

@@ -4,12 +4,13 @@ use crate::{
         states::source::Settings,
     },
     r#const::{
-        ABSOLUTE, ANGLE, CHAIN_LENGTH, DEAD_TIME, DELTA, DERIVATIVE, EQUIVALENT_CARBON_NUMBER,
+        ABSOLUTE, ADJUSTED, ANGLE, CHAIN_LENGTH, DEAD_TIME, DERIVATIVE, EQUIVALENT_CARBON_NUMBER,
         EQUIVALENT_CHAIN_LENGTH, FILTER, FRACTIONAL_CHAIN_LENGTH, MASS, RELATIVE, RETENTION_TIME,
         SLOPE, TEMPERATURE,
     },
     utils::hash::HashedDataFrame,
 };
+use const_format::formatcp;
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;
@@ -67,40 +68,54 @@ fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
     lazy_frame.with_columns([
         col(FATTY_ACID).fatty_acid().display(),
         as_struct(vec![
-            mean_and_standard_deviation_and_array(
-                col(RETENTION_TIME).struct_().field_by_name(ABSOLUTE),
-                key,
-            )
-            .alias(ABSOLUTE),
-            mean_and_standard_deviation_and_array(
-                col(RETENTION_TIME).struct_().field_by_name(RELATIVE),
-                key,
-            )
-            .alias(RELATIVE),
-            mean_and_standard_deviation_and_array(
-                col(RETENTION_TIME).struct_().field_by_name(DELTA),
-                key,
-            )
-            .alias(DELTA),
+            Array::builder()
+                .expr(col(RETENTION_TIME).struct_().field_by_name(ABSOLUTE))
+                .ddof(key.ddof)
+                .precision(key.precision)
+                .significant(key.significant)
+                .build(),
+            Array::builder()
+                .expr(col(RETENTION_TIME).struct_().field_by_name(RELATIVE))
+                .ddof(key.ddof)
+                .precision(key.precision)
+                .significant(key.significant)
+                .build(),
+            Array::builder()
+                .expr(col(RETENTION_TIME).struct_().field_by_name(ADJUSTED))
+                .ddof(key.ddof)
+                .precision(key.precision)
+                .significant(key.significant)
+                .build(),
         ])
         .alias(RETENTION_TIME),
         col(DEAD_TIME).precision(key.precision, key.significant),
-        mean_and_standard_deviation_and_array(col(TEMPERATURE), key).alias(TEMPERATURE),
+        Array::builder()
+            .expr(col(TEMPERATURE))
+            .ddof(key.ddof)
+            .precision(key.precision)
+            .significant(key.significant)
+            .build(),
         as_struct(vec![
-            mean_and_standard_deviation_and_array(
-                col(CHAIN_LENGTH)
-                    .struct_()
-                    .field_by_name(EQUIVALENT_CHAIN_LENGTH),
-                key,
-            )
-            .alias(EQUIVALENT_CHAIN_LENGTH),
-            mean_and_standard_deviation_and_array(
-                col(CHAIN_LENGTH)
-                    .struct_()
-                    .field_by_name(FRACTIONAL_CHAIN_LENGTH),
-                key,
-            )
-            .alias(FRACTIONAL_CHAIN_LENGTH),
+            Array::builder()
+                .expr(
+                    col(CHAIN_LENGTH)
+                        .struct_()
+                        .field_by_name(EQUIVALENT_CHAIN_LENGTH),
+                )
+                .ddof(key.ddof)
+                .precision(key.precision)
+                .significant(key.significant)
+                .build(),
+            Array::builder()
+                .expr(
+                    col(CHAIN_LENGTH)
+                        .struct_()
+                        .field_by_name(FRACTIONAL_CHAIN_LENGTH),
+                )
+                .ddof(key.ddof)
+                .precision(key.precision)
+                .significant(key.significant)
+                .build(),
             col(CHAIN_LENGTH)
                 .struct_()
                 .field_by_name(EQUIVALENT_CARBON_NUMBER),
@@ -126,27 +141,27 @@ fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
         ])
         .alias(MASS),
         as_struct(vec![
-            mean_and_standard_deviation_and_array(
-                col(DERIVATIVE).struct_().field_by_name(ANGLE),
-                key,
-            )
-            .alias(ANGLE),
-            mean_and_standard_deviation_and_array(
-                col(DERIVATIVE).struct_().field_by_name(SLOPE),
-                key,
-            )
-            .alias(SLOPE),
+            Array::builder()
+                .expr(col(DERIVATIVE).struct_().field_by_name(ANGLE))
+                .ddof(key.ddof)
+                .precision(key.precision)
+                .significant(key.significant)
+                .build(),
+            Array::builder()
+                .expr(col(DERIVATIVE).struct_().field_by_name(SLOPE))
+                .ddof(key.ddof)
+                .precision(key.precision)
+                .significant(key.significant)
+                .build(),
         ])
         .alias(DERIVATIVE),
+        as_struct(vec![{
+            col("_")
+                .struct_()
+                .field_by_name(formatcp!("_{RELATIVE}{RETENTION_TIME}"))
+                .arr()
+                .eval(element().precision(key.precision, key.significant), false)
+        }])
+        .alias("_"),
     ])
-}
-
-fn mean_and_standard_deviation_and_array(expr: Expr, key: Key) -> Expr {
-    Array::builder()
-        .expr(expr)
-        .ddof(key.ddof)
-        .precision(key.precision)
-        .significant(key.significant)
-        .keep_name(true)
-        .build()
 }
