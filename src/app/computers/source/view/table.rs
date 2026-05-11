@@ -4,9 +4,9 @@ use crate::{
         states::source::Settings,
     },
     r#const::{
-        ABSOLUTE, ADJUSTED, ANGLE, BACKWARD, CHAIN_LENGTH, DEAD_TIME, DERIVATIVE,
-        EQUIVALENT_CARBON_NUMBER, EQUIVALENT_CHAIN_LENGTH, FILTER, FORWARD,
-        FRACTIONAL_CHAIN_LENGTH, MASS, RELATIVE, RETENTION_TIME, SLOPE, STANDARD, TEMPERATURE,
+        ABSOLUTE, ADJUSTED, BACKWARD, CHAIN_LENGTH, DEAD_TIME, EQUIVALENT_CARBON_NUMBER,
+        EQUIVALENT_CHAIN_LENGTH, FILTER, FORWARD, FRACTIONAL_CHAIN_LENGTH, MASS, RELATIVE,
+        RETENTION_FACTOR, RETENTION_TIME, STANDARD, TEMPERATURE,
     },
     utils::hash::HashedDataFrame,
 };
@@ -88,13 +88,13 @@ fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
                 .build(),
         ])
         .alias(RETENTION_TIME),
-        col(DEAD_TIME).precision(key.precision, key.significant),
         Array::builder()
-            .expr(col(TEMPERATURE))
+            .expr(col(RETENTION_FACTOR))
             .ddof(key.ddof)
             .precision(key.precision)
             .significant(key.significant)
             .build(),
+        col(DEAD_TIME).precision(key.precision, key.significant),
         as_struct(vec![
             Array::builder()
                 .expr(
@@ -121,6 +121,12 @@ fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
                 .field_by_name(EQUIVALENT_CARBON_NUMBER),
         ])
         .alias(CHAIN_LENGTH),
+        Array::builder()
+            .expr(col(TEMPERATURE))
+            .ddof(key.ddof)
+            .precision(key.precision)
+            .significant(key.significant)
+            .build(),
         as_struct(vec![
             col(MASS)
                 .struct_()
@@ -140,21 +146,6 @@ fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
                 .precision(key.precision, key.significant),
         ])
         .alias(MASS),
-        as_struct(vec![
-            Array::builder()
-                .expr(col(DERIVATIVE).struct_().field_by_name(ANGLE))
-                .ddof(key.ddof)
-                .precision(key.precision)
-                .significant(key.significant)
-                .build(),
-            Array::builder()
-                .expr(col(DERIVATIVE).struct_().field_by_name(SLOPE))
-                .ddof(key.ddof)
-                .precision(key.precision)
-                .significant(key.significant)
-                .build(),
-        ])
-        .alias(DERIVATIVE),
         col("_").struct_().with_fields(vec![
             col("_")
                 .struct_()

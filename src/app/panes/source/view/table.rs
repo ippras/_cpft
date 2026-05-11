@@ -5,10 +5,9 @@ use crate::{
         widgets::array::Float64Array,
     },
     r#const::{
-        ABSOLUTE, ADJUSTED, ANGLE, ARRAY, BACKWARD, CHAIN_LENGTH, DEAD_TIME, DERIVATIVE,
-        EQUIVALENT_CARBON_NUMBER, EQUIVALENT_CHAIN_LENGTH, FORWARD, FRACTIONAL_CHAIN_LENGTH, MASS,
-        MODE, ONSET_TEMPERATURE, RELATIVE, RETENTION_TIME, SLOPE, STANDARD, TEMPERATURE,
-        TEMPERATURE_STEP,
+        ABSOLUTE, ADJUSTED, ARRAY, BACKWARD, CHAIN_LENGTH, DEAD_TIME, EQUIVALENT_CARBON_NUMBER,
+        EQUIVALENT_CHAIN_LENGTH, FORWARD, FRACTIONAL_CHAIN_LENGTH, MASS, MODE, ONSET_TEMPERATURE,
+        RELATIVE, RETENTION_FACTOR, RETENTION_TIME, STANDARD, TEMPERATURE, TEMPERATURE_STEP,
     },
     utils::polars::SeriesExt as _,
 };
@@ -26,18 +25,18 @@ use polars_ext::option::DisplayOption;
 use std::{f64, iter::zip, ops::Range};
 use tracing::instrument;
 
-pub(crate) const NUM_COLUMNS: usize = top::DERIVATIVE.end;
+pub(crate) const NUM_COLUMNS: usize = top::MASS.end;
 
 const TOP: &[Range<usize>] = &[
     top::INDEX,
     top::MODE,
     top::FATTY_ACID,
     top::RETENTION_TIME,
+    top::RETENTION_FACTOR,
     top::DEAD_TIME,
     top::TEMPERATURE,
     top::CHAIN_LENGTH,
     top::MASS,
-    top::DERIVATIVE,
 ];
 
 /// Table view
@@ -106,7 +105,11 @@ impl TableView<'_> {
             (0, top::RETENTION_TIME) => {
                 ui.heading(ui.localize(RETENTION_TIME))
                     .on_hover_localized(formatcp!("{RETENTION_TIME}.abbreviation"))
-                    .on_hover_localized(formatcp!("{RETENTION_TIME}.hover"))
+                    .on_hover_localized(formatcp!("{RETENTION_TIME}.hover"));
+            }
+            (0, top::RETENTION_FACTOR) => {
+                ui.heading(ui.localize(RETENTION_FACTOR))
+                    .on_hover_localized(formatcp!("{RETENTION_FACTOR}.hover"))
                     .on_hover_ui(|ui| {
                         ui.markdown(include_str!(concat!(
                             env!("CARGO_MANIFEST_DIR"),
@@ -132,10 +135,6 @@ impl TableView<'_> {
                 ui.heading(ui.localize(MASS))
                     .on_hover_localized(formatcp!("{MASS}.hover"));
             }
-            (0, top::DERIVATIVE) => {
-                ui.heading(ui.localize(DERIVATIVE))
-                    .on_hover_localized(formatcp!("{DERIVATIVE}.hover"));
-            }
             // Bottom
             (1, bottom::ONSET) => {
                 ui.heading(ui.localize(formatcp!("{ONSET_TEMPERATURE}.abbreviation")))
@@ -160,23 +159,27 @@ impl TableView<'_> {
             }
             (1, bottom::ECL) => {
                 ui.heading(ui.localize(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.abbreviation")))
-                    .on_hover_localized(EQUIVALENT_CHAIN_LENGTH);
+                    .on_hover_localized(EQUIVALENT_CHAIN_LENGTH)
+                    .on_hover_ui(|ui| {
+                        ui.markdown(include_str!(concat!(
+                            env!("CARGO_MANIFEST_DIR"),
+                            "/doc/en/EquivalentChainLength.md"
+                        )));
+                    });
             }
             (1, bottom::FCL) => {
                 ui.heading(ui.localize(formatcp!("{FRACTIONAL_CHAIN_LENGTH}.abbreviation")))
-                    .on_hover_localized(FRACTIONAL_CHAIN_LENGTH);
+                    .on_hover_localized(FRACTIONAL_CHAIN_LENGTH)
+                    .on_hover_ui(|ui| {
+                        ui.markdown(include_str!(concat!(
+                            env!("CARGO_MANIFEST_DIR"),
+                            "/doc/en/FractionalChainLength.md"
+                        )));
+                    });
             }
             (1, bottom::ECN) => {
                 ui.heading(ui.localize(formatcp!("{EQUIVALENT_CARBON_NUMBER}.abbreviation")))
                     .on_hover_localized(EQUIVALENT_CARBON_NUMBER);
-            }
-            (1, bottom::SLOPE) => {
-                ui.heading(ui.localize(SLOPE))
-                    .on_hover_localized(formatcp!("{SLOPE}.hover"));
-            }
-            (1, bottom::ANGLE) => {
-                ui.heading(ui.localize(ANGLE))
-                    .on_hover_localized(formatcp!("{ANGLE}.hover"));
             }
             _ => {}
         }
@@ -273,6 +276,37 @@ impl TableView<'_> {
                         for retention_time in &self.retention_times(row)? {
                             let retention_time = retention_time.display();
                             ui.label(format!("{retention_time:#} - {dead_time}"));
+                        }
+                        Ok(())
+                    })?;
+            }
+            (row, top::RETENTION_FACTOR) => {
+                Float64Array::builder()
+                    .series(self.data_frame[RETENTION_FACTOR].as_materialized_series())
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+
+                        let Some(adjusted_retention_times) = self.data_frame[RETENTION_TIME]
+                            .struct_()?
+                            .field_by_name(ADJUSTED)?
+                            .struct_()?
+                            .field_by_name(ARRAY)?
+                            .array()?
+                            .get_as_series(row)
+                        else {
+                            return Err(
+                                polars_err!(NoData: "{RETENTION_TIME}.{ADJUSTED}.{ARRAY}[{row}]"),
+                            );
+                        };
+                        let dead_time = self.dead_time(row)?;
+                        for adjusted_retention_time in adjusted_retention_times.f64()? {
+                            let retention_time = adjusted_retention_time.display();
+                            ui.label(format!("{retention_time:#} / {dead_time}"));
                         }
                         Ok(())
                     })?;
@@ -388,32 +422,6 @@ impl TableView<'_> {
                         })
                         .inner
                 })?;
-            }
-            (row, bottom::SLOPE) => {
-                Float64Array::builder()
-                    .series(
-                        &self.data_frame[DERIVATIVE]
-                            .struct_()?
-                            .field_by_name(SLOPE)?,
-                    )
-                    .row(row)
-                    .mean(self.settings.mean)
-                    .standard_deviation(self.settings.standard_deviation)
-                    .build()
-                    .show(ui)?;
-            }
-            (row, bottom::ANGLE) => {
-                Float64Array::builder()
-                    .series(
-                        &self.data_frame[DERIVATIVE]
-                            .struct_()?
-                            .field_by_name(ANGLE)?,
-                    )
-                    .row(row)
-                    .mean(self.settings.mean)
-                    .standard_deviation(self.settings.standard_deviation)
-                    .build()
-                    .show(ui)?;
             }
             _ => unreachable!(),
         }
@@ -588,11 +596,11 @@ mod top {
     pub(crate) const MODE: Range<usize> = INDEX.end..INDEX.end + 2;
     pub(crate) const FATTY_ACID: Range<usize> = MODE.end..MODE.end + 1;
     pub(crate) const RETENTION_TIME: Range<usize> = FATTY_ACID.end..FATTY_ACID.end + 3;
-    pub(crate) const DEAD_TIME: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
+    pub(crate) const RETENTION_FACTOR: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
+    pub(crate) const DEAD_TIME: Range<usize> = RETENTION_FACTOR.end..RETENTION_FACTOR.end + 1;
     pub(crate) const CHAIN_LENGTH: Range<usize> = DEAD_TIME.end..DEAD_TIME.end + 3;
     pub(crate) const TEMPERATURE: Range<usize> = CHAIN_LENGTH.end..CHAIN_LENGTH.end + 1;
     pub(crate) const MASS: Range<usize> = TEMPERATURE.end..TEMPERATURE.end + 1;
-    pub(crate) const DERIVATIVE: Range<usize> = MASS.end..MASS.end + 2;
 }
 
 mod bottom {
@@ -610,7 +618,4 @@ mod bottom {
     pub(crate) const ECL: Range<usize> = top::CHAIN_LENGTH.start..top::CHAIN_LENGTH.start + 1;
     pub(crate) const FCL: Range<usize> = ECL.end..ECL.end + 1;
     pub(crate) const ECN: Range<usize> = FCL.end..FCL.end + 1;
-    // Derivative
-    pub(crate) const SLOPE: Range<usize> = top::DERIVATIVE.start..top::DERIVATIVE.start + 1;
-    pub(crate) const ANGLE: Range<usize> = SLOPE.end..SLOPE.end + 1;
 }

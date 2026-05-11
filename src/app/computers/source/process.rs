@@ -5,10 +5,10 @@ use crate::{
         states::source::{Filter, Order, Settings, Sort},
     },
     r#const::{
-        ABSOLUTE, ADJUSTED, ANGLE, BACKWARD, CHAIN_LENGTH, DEAD_TIME, DERIVATIVE,
-        EQUIVALENT_CARBON_NUMBER, EQUIVALENT_CHAIN_LENGTH, FILTER, FORWARD,
-        FRACTIONAL_CHAIN_LENGTH, MASS, MODE, ONSET_TEMPERATURE, RELATIVE, RETENTION_TIME, SLOPE,
-        STANDARD, TEMPERATURE, TEMPERATURE_STEP,
+        ABSOLUTE, ADJUSTED, BACKWARD, CHAIN_LENGTH, DEAD_TIME, EQUIVALENT_CARBON_NUMBER,
+        EQUIVALENT_CHAIN_LENGTH, FILTER, FORWARD, FRACTIONAL_CHAIN_LENGTH, MASS, MODE,
+        ONSET_TEMPERATURE, RELATIVE, RETENTION_FACTOR, RETENTION_TIME, STANDARD, TEMPERATURE,
+        TEMPERATURE_STEP,
     },
     utils::hash::HashedDataFrame,
 };
@@ -73,11 +73,11 @@ pub(crate) static OUTPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
                 ),
             ]),
         ),
-        Field::new(PlSmallStr::from_static(DEAD_TIME), DataType::Float64),
         Field::new(
-            PlSmallStr::from_static(TEMPERATURE),
+            PlSmallStr::from_static(RETENTION_FACTOR),
             DataType::Array(Box::new(DataType::Float64), 0),
         ),
+        Field::new(PlSmallStr::from_static(DEAD_TIME), DataType::Float64),
         Field::new(
             PlSmallStr::from_static(CHAIN_LENGTH),
             DataType::Struct(vec![
@@ -96,25 +96,16 @@ pub(crate) static OUTPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
             ]),
         ),
         Field::new(
+            PlSmallStr::from_static(TEMPERATURE),
+            DataType::Array(Box::new(DataType::Float64), 0),
+        ),
+        Field::new(
             PlSmallStr::from_static(MASS),
             DataType::Struct(vec![
                 Field::new(PlSmallStr::from_static("RCO"), DataType::Float64),
                 Field::new(PlSmallStr::from_static("RCOO"), DataType::Float64),
                 Field::new(PlSmallStr::from_static("RCOOH"), DataType::Float64),
                 Field::new(PlSmallStr::from_static("RCOOCH3"), DataType::Float64),
-            ]),
-        ),
-        Field::new(
-            PlSmallStr::from_static(DERIVATIVE),
-            DataType::Struct(vec![
-                Field::new(
-                    PlSmallStr::from_static(SLOPE),
-                    DataType::Array(Box::new(DataType::Float64), 0),
-                ),
-                Field::new(
-                    PlSmallStr::from_static(ANGLE),
-                    DataType::Array(Box::new(DataType::Float64), 0),
-                ),
             ]),
         ),
         Field::new(PlSmallStr::from_static(FILTER), DataType::Boolean),
@@ -184,11 +175,11 @@ impl Computer {
             col(MODE),
             col(FATTY_ACID),
             col(RETENTION_TIME),
+            col(RETENTION_FACTOR),
             col(DEAD_TIME),
-            col(TEMPERATURE),
             col(CHAIN_LENGTH),
+            col(TEMPERATURE),
             col(MASS),
-            col(DERIVATIVE),
             col(FILTER),
             // _
             as_struct(vec![
@@ -244,6 +235,8 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
         relative_retention_time().alias(RELATIVE),
         adjusted_retention_time().alias(ADJUSTED),
     ]);
+    // Retention factor
+    lazy_frame = lazy_frame.with_column(retention_factor().alias(RETENTION_FACTOR));
     // Chain length
     lazy_frame = lazy_frame
         .with_column(_equivalent_chain_length()?)
@@ -253,8 +246,7 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
             fcl().alias(FRACTIONAL_CHAIN_LENGTH),
             ecn().alias(EQUIVALENT_CARBON_NUMBER),
         ]);
-    lazy_frame =
-        lazy_frame.with_columns([temperature()?.alias(TEMPERATURE), slope(key)?.alias(SLOPE)]);
+    lazy_frame = lazy_frame.with_columns([temperature()?.alias(TEMPERATURE)]);
     lazy_frame = lazy_frame.with_columns([
         // Retention time
         as_struct(vec![col(ABSOLUTE), col(RELATIVE), col(ADJUSTED)]).alias(RETENTION_TIME),
@@ -289,15 +281,6 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
                 .alias("RCOOCH3"),
         ])
         .alias(MASS),
-        // Derivative
-        as_struct(vec![
-            col(SLOPE),
-            col(SLOPE)
-                .arr()
-                .eval(element().arctan().degrees(), false)
-                .alias(ANGLE),
-        ])
-        .alias(DERIVATIVE),
     ]);
     Ok(lazy_frame)
 }
@@ -384,6 +367,11 @@ fn relative_retention_time() -> Expr {
         / col(formatcp!("_{RETENTION_TIME}"))
             .struct_()
             .field_by_name(STANDARD)
+}
+
+// Retention factor
+fn retention_factor() -> Expr {
+    col(ADJUSTED) / col(DEAD_TIME)
 }
 
 /// Temperature

@@ -4,9 +4,8 @@ use crate::{
         states::source::Settings,
     },
     r#const::{
-        ABSOLUTE, CHAIN_LENGTH, DEAD_TIME, DERIVATIVE, EQUIVALENT_CHAIN_LENGTH,
-        FRACTIONAL_CHAIN_LENGTH, MASS, MEAN, MODE, RELATIVE, RETENTION_TIME, STANDARD_DEVIATION,
-        TEMPERATURE,
+        ABSOLUTE, CHAIN_LENGTH, DEAD_TIME, EQUIVALENT_CHAIN_LENGTH, FRACTIONAL_CHAIN_LENGTH, MASS,
+        MEAN, MODE, RELATIVE, RETENTION_TIME, STANDARD_DEVIATION, TEMPERATURE,
     },
     utils::hash::HashedDataFrame,
 };
@@ -70,7 +69,7 @@ type Value = HashedDataFrame;
 fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     lazy_frame = lazy_frame
         .unnest(
-            cols([MODE, RETENTION_TIME, CHAIN_LENGTH, MASS, DERIVATIVE]),
+            cols([MODE, RETENTION_TIME, CHAIN_LENGTH, MASS]),
             Some(PlSmallStr::from_static(".")),
         )
         .with_columns([
