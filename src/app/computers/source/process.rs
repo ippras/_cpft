@@ -240,11 +240,11 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     // Chain length
     lazy_frame = lazy_frame
         .with_column(_equivalent_chain_length()?)
-        .with_column(ecl(key).alias(EQUIVALENT_CHAIN_LENGTH))
+        .with_column(equivalent_chain_length(key)?.alias(EQUIVALENT_CHAIN_LENGTH))
         .with_column(_fractional_chain_length()?)
         .with_columns([
-            fcl().alias(FRACTIONAL_CHAIN_LENGTH),
-            ecn().alias(EQUIVALENT_CARBON_NUMBER),
+            fractional_chain_length().alias(FRACTIONAL_CHAIN_LENGTH),
+            equivalent_carbon_number().alias(EQUIVALENT_CARBON_NUMBER),
         ]);
     lazy_frame = lazy_frame.with_columns([temperature()?.alias(TEMPERATURE)]);
     lazy_frame = lazy_frame.with_columns([
@@ -384,7 +384,7 @@ fn temperature() -> PolarsResult<Expr> {
 }
 
 // FCL
-fn fcl() -> Expr {
+fn fractional_chain_length() -> Expr {
     col(EQUIVALENT_CHAIN_LENGTH)
         - col(formatcp!("_{FRACTIONAL_CHAIN_LENGTH}"))
             .struct_()
@@ -392,68 +392,33 @@ fn fcl() -> Expr {
 }
 
 // ECL
-fn ecl(key: Key) -> Expr {
-    // when(col(FATTY_ACID).fatty_acid().is_saturated())
-    //     .then(col(FATTY_ACID).fatty_acid().carbon())
-    //     .otherwise({
-    //         let retention_time = col(RETENTION_TIME);
-    //         let forward_carbon = col(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
-    //             .struct_()
-    //             .field_by_name(formatcp!("{FORWARD}{CARBON}"));
-    //         let backward_carbon = col(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
-    //             .struct_()
-    //             .field_by_name(formatcp!("{BACKWARD}{CARBON}"));
-    //         let forward_retention_time = col(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
-    //             .struct_()
-    //             .field_by_name(formatcp!("{FORWARD}{RETENTION_TIME}"));
-    //         let backward_retention_time = col(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
-    //             .struct_()
-    //             .field_by_name(formatcp!("{BACKWARD}{RETENTION_TIME}"));
-    //         forward_carbon.clone()
-    //             + (backward_carbon - forward_carbon)
-    //                 * (retention_time - forward_retention_time.clone())
-    //                 / (backward_retention_time - forward_retention_time)
-    //     })
-    let retention_time = col(RETENTION_TIME);
-    let forward_carbon = col(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
-        .struct_()
-        .field_by_name(formatcp!("{FORWARD}{CARBON}"));
-    let backward_carbon = col(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
-        .struct_()
-        .field_by_name(formatcp!("{BACKWARD}{CARBON}"));
-    let forward_retention_time = col(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
-        .struct_()
-        .field_by_name(formatcp!("{FORWARD}{RETENTION_TIME}"));
-    let backward_retention_time = col(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
-        .struct_()
-        .field_by_name(formatcp!("{BACKWARD}{RETENTION_TIME}"));
-    forward_carbon.clone()
-        + (backward_carbon - forward_carbon) * (retention_time - forward_retention_time.clone())
-            / (backward_retention_time - forward_retention_time)
+fn equivalent_chain_length(key: Key) -> PolarsResult<Expr> {
+    Ok(when(col(FATTY_ACID).fatty_acid().is_saturated())
+        .then(concat_arr(vec![col(FATTY_ACID).fatty_acid().carbon(); 3])?)
+        .otherwise({
+            let retention_time = col(RETENTION_TIME);
+            let forward_carbon = col(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
+                .struct_()
+                .field_by_name(formatcp!("{FORWARD}{CARBON}"));
+            let backward_carbon = col(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
+                .struct_()
+                .field_by_name(formatcp!("{BACKWARD}{CARBON}"));
+            let forward_retention_time = col(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
+                .struct_()
+                .field_by_name(formatcp!("{FORWARD}{RETENTION_TIME}"));
+            let backward_retention_time = col(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
+                .struct_()
+                .field_by_name(formatcp!("{BACKWARD}{RETENTION_TIME}"));
+            forward_carbon.clone()
+                + (backward_carbon - forward_carbon)
+                    * (retention_time - forward_retention_time.clone())
+                    / (backward_retention_time - forward_retention_time)
+        }))
 }
 
 // ECN
-fn ecn() -> Expr {
+fn equivalent_carbon_number() -> Expr {
     col(FATTY_ACID).fatty_acid().equivalent_carbon_number()
-}
-
-// Slope
-fn slope(key: Key) -> PolarsResult<Expr> {
-    Ok(if key.relative.is_some() {
-        col(FATTY_ACID)
-            .fatty_acid()
-            .slope(col(EQUIVALENT_CHAIN_LENGTH), col(RELATIVE))
-            .over([MODE])?
-            .arr()
-            .eval(element().fill_nan(lit(NULL)), false)
-    } else {
-        col(FATTY_ACID)
-            .fatty_acid()
-            .slope(col(EQUIVALENT_CHAIN_LENGTH), col(ABSOLUTE))
-            .over([MODE])?
-            .arr()
-            .eval(element().fill_nan(lit(NULL)), false)
-    })
 }
 
 fn filter(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
@@ -530,51 +495,4 @@ fn backward(mut expr: Expr, mask: Option<Expr>) -> Expr {
     }
     expr.fill_null_with_strategy(FillNullStrategy::Backward(None))
         .shift(lit(-1))
-}
-
-/// Saturated
-pub trait Saturated {
-    /// Delta
-    fn delta(self, expr: Expr) -> Expr;
-
-    /// Slope
-    fn slope(self, dividend: Expr, divisor: Expr) -> Expr;
-
-    /// Backward saturated
-    fn backward(self, expr: Expr) -> Expr;
-
-    /// Forward saturated
-    fn forward(self, expr: Expr) -> Expr;
-}
-
-impl Saturated for FattyAcidExpr {
-    fn delta(self, expr: Expr) -> Expr {
-        self.clone().backward(expr.clone()) - self.forward(expr)
-    }
-
-    fn slope(self, dividend: Expr, divisor: Expr) -> Expr {
-        // ternary_expr(
-        //     self.clone().is_saturated(),
-        //     self.clone().delta(dividend) / self.clone().delta(divisor),
-        //     self.clone().delta(dividend) / self.delta(divisor),
-        // )
-        self.clone().delta(dividend) / self.delta(divisor)
-    }
-
-    // Следующее по направлению к концу серии
-    fn backward(self, expr: Expr) -> Expr {
-        expr.shift(lit(-1))
-            .nullify(self.is_saturated().shift(lit(-1)))
-            .fill_null_with_strategy(FillNullStrategy::Backward(None))
-        // ternary_expr(self.is_saturated(), expr, lit(NULL))
-        //     .fill_null_with_strategy(FillNullStrategy::Backward(None))
-    }
-
-    // Следующее по направлению к началу серии
-    fn forward(self, expr: Expr) -> Expr {
-        expr.nullify(self.is_saturated())
-            .fill_null_with_strategy(FillNullStrategy::Forward(None))
-        // ternary_expr(self.is_saturated(), expr, lit(NULL))
-        //     .fill_null_with_strategy(FillNullStrategy::Forward(None))
-    }
 }

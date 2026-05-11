@@ -13,9 +13,9 @@ use scirs2_core::ndarray::{Array1, Array2};
 use std::{iter::zip, sync::LazyLock};
 
 const FALSE_REGRESSION: LazyLock<Scalar> =
-    LazyLock::new(|| Scalar::new_array(Series::new(PlSmallStr::EMPTY, &[false, false, false]), 3));
+    LazyLock::new(|| Scalar::new_array(Series::new(PlSmallStr::EMPTY, &[false; 3]), 3));
 const TRUE_REGRESSION: LazyLock<Scalar> =
-    LazyLock::new(|| Scalar::new_array(Series::new(PlSmallStr::EMPTY, &[true, true, true]), 3));
+    LazyLock::new(|| Scalar::new_array(Series::new(PlSmallStr::EMPTY, &[true; 3]), 3));
 
 /// Regression computed
 pub(crate) type Computed = FrameCache<Value, Computer>;
