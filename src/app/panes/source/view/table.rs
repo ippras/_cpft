@@ -5,12 +5,12 @@ use crate::{
         widgets::array::Float64Array,
     },
     r#const::{
-        ABSOLUTE, ADJUSTED, ANGLE, ARRAY, CHAIN_LENGTH, DEAD_TIME, DERIVATIVE, EM_DASH,
-        EQUIVALENT_CARBON_NUMBER, EQUIVALENT_CHAIN_LENGTH, FRACTIONAL_CHAIN_LENGTH, MASS, MODE,
-        ONSET_TEMPERATURE, RELATIVE, RETENTION_TIME, SLOPE, STANDARD, TEMPERATURE,
+        ABSOLUTE, ADJUSTED, ANGLE, ARRAY, BACKWARD, CHAIN_LENGTH, DEAD_TIME, DERIVATIVE,
+        EQUIVALENT_CARBON_NUMBER, EQUIVALENT_CHAIN_LENGTH, FORWARD, FRACTIONAL_CHAIN_LENGTH, MASS,
+        MODE, ONSET_TEMPERATURE, RELATIVE, RETENTION_TIME, SLOPE, STANDARD, TEMPERATURE,
         TEMPERATURE_STEP,
     },
-    utils::{egui::ToWidgetText, polars::SeriesExt as _},
+    utils::polars::SeriesExt as _,
 };
 use const_format::formatcp;
 use egui::{Frame, Grid, Id, Margin, TextStyle, TextWrapMode, Ui};
@@ -244,10 +244,9 @@ impl TableView<'_> {
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
 
-                        for (retention_time, standard_retention_time) in zip(
-                            &self.retention_times(row)?,
-                            &self.standard_retention_times(row)?,
-                        ) {
+                        for (retention_time, standard_retention_time) in
+                            zip(&self.retention_times(row)?, &self._retention_time(row)?)
+                        {
                             let retention_time = retention_time.display();
                             let standard_retention_time = standard_retention_time.display();
                             ui.label(format!("{retention_time:#} / {standard_retention_time:#}"));
@@ -295,26 +294,26 @@ impl TableView<'_> {
                     .build()
                     .show(ui)?
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
-                        // let is_saturated =
-                        //     self.data_frame[FATTY_ACID].fatty_acid().is_saturated()?;
-                        // self.data_frame[FATTY_ACID]
-                        //     .filter(&is_saturated)?
-                        //     .fatty_acid()
-                        //     .carbon()?.fill_null_with_values(value);
-                        // let onset_temperature = self.onset_temperature(row)?;
-                        // let temperature_step = self.temperature_step(row)?;
-                        // for retention_time in &self.retention_times(row)? {
-                        //     let retention_time = retention_time.display();
-                        //     // ui.label(format!("max({onset_temperature} + {retention_time:#} * {temperature_step}; 250)"));
-                        // }
+                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+
+                        let (
+                            forward_carbons,
+                            backward_carbons,
+                            forward_retention_times,
+                            backward_retention_times,
+                        ) = self._equivalent_chain_length(row)?;
+                        for (retention_time, ((forward_carbon, backward_carbon), (forward_retention_time, backward_retention_time))) in
+                            zip(&self.retention_times(row)?, zip(&forward_carbons, &backward_carbons).zip(zip(&forward_retention_times, &backward_retention_times)))
+                        {
+                            let forward_carbon = forward_carbon.display();
+                            let backward_carbon = backward_carbon.display();
+                            let retention_time = retention_time.display();
+                            let forward_retention_time = forward_retention_time.display();
+                            let backward_retention_time = backward_retention_time.display();
+                            ui.label(format!("{forward_carbon:#} + ({backward_carbon:#} - {forward_carbon:#}) * ({retention_time:#} - {forward_retention_time:#}) / ({backward_retention_time:#} - {forward_retention_time:#})"));
+                        }
                         Ok(())
                     })?;
-
-                //         self.clone()
-                // .nullify(self.clone().is_saturated())
-                // .fatty_acid()
-                // .carbon()
-                // .fill_null_with_strategy(FillNullStrategy::Forward(None))
             }
             (row, bottom::FCL) => {
                 Float64Array::builder()
@@ -327,7 +326,17 @@ impl TableView<'_> {
                     .mean(self.settings.mean)
                     .standard_deviation(self.settings.standard_deviation)
                     .build()
-                    .show(ui)?;
+                    .show(ui)?
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+
+                        let carbon = self._fractional_chain_length(row)?;
+                        for equivalent_chain_length in &self.equivalent_chain_lengths(row)? {
+                            let equivalent_chain_length = equivalent_chain_length.display();
+                            ui.label(format!("{equivalent_chain_length:#} - {carbon}"));
+                        }
+                        Ok(())
+                    })?;
             }
             (row, bottom::ECN) => {
                 let ecn_series = self.data_frame[CHAIN_LENGTH]
@@ -431,7 +440,7 @@ impl TableView<'_> {
     }
 
     fn retention_times(&self, row: usize) -> PolarsResult<Float64Chunked> {
-        let Some(retention_times) = self.data_frame[RETENTION_TIME]
+        let Some(retention_time) = self.data_frame[RETENTION_TIME]
             .struct_()?
             .field_by_name(ABSOLUTE)?
             .struct_()?
@@ -441,19 +450,7 @@ impl TableView<'_> {
         else {
             return Err(polars_err!(NoData: "{RETENTION_TIME}.{ABSOLUTE}.{ARRAY}[{row}]"));
         };
-        Ok(retention_times.f64()?.clone())
-    }
-
-    fn standard_retention_times(&self, row: usize) -> PolarsResult<Float64Chunked> {
-        let Some(standard_retention_time) = self.data_frame["_"]
-            .struct_()?
-            .field_by_name(formatcp!("_{STANDARD}{RETENTION_TIME}"))?
-            .array()?
-            .get_as_series(row)
-        else {
-            return Err(polars_err!(NoData: "_._{STANDARD}{RETENTION_TIME}[{row}]"));
-        };
-        Ok(standard_retention_time.f64()?.clone())
+        Ok(retention_time.f64()?.clone())
     }
 
     fn temperature_step(&self, row: usize) -> PolarsResult<f64> {
@@ -466,6 +463,99 @@ impl TableView<'_> {
             return Err(polars_err!(NoData: "{MODE}.{TEMPERATURE_STEP}[{row}]"));
         };
         Ok(temperature_step)
+    }
+
+    fn equivalent_chain_lengths(&self, row: usize) -> PolarsResult<Float64Chunked> {
+        let Some(equivalent_chain_length) = self.data_frame[CHAIN_LENGTH]
+            .struct_()?
+            .field_by_name(EQUIVALENT_CHAIN_LENGTH)?
+            .struct_()?
+            .field_by_name(ARRAY)?
+            .array()?
+            .get_as_series(row)
+        else {
+            return Err(polars_err!(NoData: "_._{CHAIN_LENGTH}{EQUIVALENT_CHAIN_LENGTH}[{row}]"));
+        };
+        Ok(equivalent_chain_length.f64()?.clone())
+    }
+
+    fn _retention_time(&self, row: usize) -> PolarsResult<Float64Chunked> {
+        let Some(standard) = self.data_frame["_"]
+            .struct_()?
+            .field_by_name(formatcp!("_{RETENTION_TIME}"))?
+            .struct_()?
+            .field_by_name(STANDARD)?
+            .array()?
+            .get_as_series(row)
+        else {
+            return Err(polars_err!(NoData: "_{RETENTION_TIME}.{STANDARD}[{row}]"));
+        };
+        Ok(standard.f64()?.clone())
+    }
+
+    fn _equivalent_chain_length(
+        &self,
+        row: usize,
+    ) -> PolarsResult<(UInt8Chunked, UInt8Chunked, Float64Chunked, Float64Chunked)> {
+        let equivalent_chain_length = self.data_frame["_"]
+            .struct_()?
+            .field_by_name(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))?
+            .struct_()?
+            .clone();
+        let Some(forward_carbon) = equivalent_chain_length
+            .field_by_name(formatcp!("{FORWARD}{CARBON}"))?
+            .array()?
+            .get_as_series(row)
+        else {
+            return Err(polars_err!(NoData: "_{EQUIVALENT_CHAIN_LENGTH}.{FORWARD}{CARBON}[{row}]"));
+        };
+        let Some(backward_carbon) = equivalent_chain_length
+            .field_by_name(formatcp!("{BACKWARD}{CARBON}"))?
+            .array()?
+            .get_as_series(row)
+        else {
+            return Err(
+                polars_err!(NoData: "_{EQUIVALENT_CHAIN_LENGTH}.{BACKWARD}{CARBON}[{row}]"),
+            );
+        };
+        let Some(forward_retention_times) = equivalent_chain_length
+            .field_by_name(formatcp!("{FORWARD}{RETENTION_TIME}"))?
+            .array()?
+            .get_as_series(row)
+        else {
+            return Err(
+                polars_err!(NoData: "_{EQUIVALENT_CHAIN_LENGTH}.{FORWARD}{RETENTION_TIME}[{row}]"),
+            );
+        };
+        let Some(backward_retention_times) = equivalent_chain_length
+            .field_by_name(formatcp!("{BACKWARD}{RETENTION_TIME}"))?
+            .array()?
+            .get_as_series(row)
+        else {
+            return Err(
+                polars_err!(NoData: "_{EQUIVALENT_CHAIN_LENGTH}.{BACKWARD}{RETENTION_TIME}[{row}]"),
+            );
+        };
+        Ok((
+            forward_carbon.u8()?.clone(),
+            backward_carbon.u8()?.clone(),
+            forward_retention_times.f64()?.clone(),
+            backward_retention_times.f64()?.clone(),
+        ))
+    }
+
+    fn _fractional_chain_length(&self, row: usize) -> PolarsResult<u8> {
+        let Some(carbon) = self.data_frame["_"]
+            .struct_()?
+            .field_by_name(formatcp!("_{FRACTIONAL_CHAIN_LENGTH}"))?
+            .struct_()?
+            .field_by_name(CARBON)?
+            .u8()?
+            .get(row)
+        else {
+            return Err(polars_err!(NoData: "_{FRACTIONAL_CHAIN_LENGTH}.{CARBON}[{row}]"));
+        };
+        Ok(carbon)
     }
 }
 

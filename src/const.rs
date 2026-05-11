@@ -32,6 +32,9 @@ pub(crate) const TEMPERATURE_STEP: &str = "TemperatureStep";
 pub(crate) const TEMPERATURE: &str = "Temperature";
 pub(crate) const TO: &str = "To";
 
+pub(crate) const BACKWARD: &str = "Backward";
+pub(crate) const FORWARD: &str = "Forward";
+
 pub(crate) const MAXIMUM: &str = "Maximum";
 pub(crate) const MEAN: &str = "Mean";
 pub(crate) const MEDIAN: &str = "Median";

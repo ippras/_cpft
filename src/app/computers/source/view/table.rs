@@ -4,9 +4,9 @@ use crate::{
         states::source::Settings,
     },
     r#const::{
-        ABSOLUTE, ADJUSTED, ANGLE, CHAIN_LENGTH, DEAD_TIME, DERIVATIVE, EQUIVALENT_CARBON_NUMBER,
-        EQUIVALENT_CHAIN_LENGTH, FILTER, FRACTIONAL_CHAIN_LENGTH, MASS, RELATIVE, RETENTION_TIME,
-        SLOPE, STANDARD, TEMPERATURE,
+        ABSOLUTE, ADJUSTED, ANGLE, BACKWARD, CHAIN_LENGTH, DEAD_TIME, DERIVATIVE,
+        EQUIVALENT_CARBON_NUMBER, EQUIVALENT_CHAIN_LENGTH, FILTER, FORWARD,
+        FRACTIONAL_CHAIN_LENGTH, MASS, RELATIVE, RETENTION_TIME, SLOPE, STANDARD, TEMPERATURE,
     },
     utils::hash::HashedDataFrame,
 };
@@ -155,13 +155,40 @@ fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
                 .build(),
         ])
         .alias(DERIVATIVE),
-        as_struct(vec![{
+        col("_").struct_().with_fields(vec![
             col("_")
                 .struct_()
-                .field_by_name(formatcp!("_{STANDARD}{RETENTION_TIME}"))
-                .arr()
-                .eval(element().precision(key.precision, key.significant), false)
-        }])
-        .alias("_"),
+                .field_by_name(formatcp!("_{RETENTION_TIME}"))
+                .struct_()
+                .with_fields(vec![
+                    col("_")
+                        .struct_()
+                        .field_by_name(formatcp!("_{RETENTION_TIME}"))
+                        .struct_()
+                        .field_by_name(STANDARD)
+                        .arr()
+                        .eval(element().precision(key.precision, key.significant), false),
+                ]),
+            col("_")
+                .struct_()
+                .field_by_name(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
+                .struct_()
+                .with_fields(vec![
+                    col("_")
+                        .struct_()
+                        .field_by_name(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
+                        .struct_()
+                        .field_by_name(formatcp!("{FORWARD}{RETENTION_TIME}"))
+                        .arr()
+                        .eval(element().precision(key.precision, key.significant), false),
+                    col("_")
+                        .struct_()
+                        .field_by_name(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
+                        .struct_()
+                        .field_by_name(formatcp!("{BACKWARD}{RETENTION_TIME}"))
+                        .arr()
+                        .eval(element().precision(key.precision, key.significant), false),
+                ]),
+        ]),
     ])
 }
