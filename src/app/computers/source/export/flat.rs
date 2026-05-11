@@ -4,8 +4,9 @@ use crate::{
         states::source::Settings,
     },
     r#const::{
-        ABSOLUTE, CHAIN_LENGTH, DEAD_TIME, EQUIVALENT_CHAIN_LENGTH, FRACTIONAL_CHAIN_LENGTH, MASS,
-        MEAN, MODE, RELATIVE, RETENTION_TIME, STANDARD_DEVIATION, TEMPERATURE,
+        ABSOLUTE, ARRAY, CHAIN_LENGTH, DEAD_TIME, EQUIVALENT_CHAIN_LENGTH, FILTER,
+        FRACTIONAL_CHAIN_LENGTH, MASS, MEAN, MODE, RELATIVE, RETENTION_FACTOR, RETENTION_TIME,
+        STANDARD_DEVIATION, TEMPERATURE,
     },
     utils::hash::HashedDataFrame,
 };
@@ -29,7 +30,7 @@ impl Computer {
         matches_schema(&key.frame.data_frame, &INPUT_SCHEMA)?;
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
         lazy_frame = format(lazy_frame, key)?;
-        lazy_frame = filter_and_sort(lazy_frame, key);
+        lazy_frame = lazy_frame.filter(col(FILTER));
         lazy_frame = lazy_frame.select([dtype_cols(&[DataType::Float64, DataType::String])
             .as_selector()
             .as_expr()]);
@@ -81,18 +82,33 @@ fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     let names = [
         formatcp!("{RETENTION_TIME}.{ABSOLUTE}"),
         formatcp!("{RETENTION_TIME}.{RELATIVE}"),
+        RETENTION_FACTOR,
         formatcp!("{CHAIN_LENGTH}.{EQUIVALENT_CHAIN_LENGTH}"),
         formatcp!("{CHAIN_LENGTH}.{FRACTIONAL_CHAIN_LENGTH}"),
         TEMPERATURE,
     ];
     lazy_frame = lazy_frame.with_columns(names.map(|name| {
-        Array::builder()
+        let array = Array::builder()
             .expr(col(name))
             .ddof(key.ddof)
             .precision(key.precision)
             .significant(key.significant)
-            .unnest(true)
-            .build()
+            .build();
+        as_struct(vec![
+            array
+                .clone()
+                .struct_()
+                .field_by_name(ARRAY)
+                .arr()
+                .to_struct(Some(PlanCallback::new(move |index| {
+                    Ok(format!("{ARRAY}[{index}]"))
+                })))
+                .struct_()
+                .field_by_name("*"),
+            array.clone().struct_().field_by_name(MEAN),
+            array.clone().struct_().field_by_name(STANDARD_DEVIATION),
+        ])
+        .alias(name)
     }));
     lazy_frame = lazy_frame.unnest(cols(names), Some(PlSmallStr::from_static(".")));
     lazy_frame = lazy_frame.with_columns([
@@ -191,20 +207,3 @@ fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
 //     lazy_frame = lazy_frame.with_columns([col(FATTY_ACID).fatty_acid().display()]);
 //     Ok(lazy_frame)
 // }
-
-// Filter and sort threshold (major, minor)
-fn filter_and_sort(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
-    // if key.threshold.filter {
-    //     lazy_frame.filter(col(THRESHOLD))
-    // } else if key.threshold.sort {
-    //     lazy_frame.sort_by_exprs(
-    //         [col(THRESHOLD)],
-    //         SortMultipleOptions::default()
-    //             .with_maintain_order(true)
-    //             .with_order_reversed(),
-    //     )
-    // } else {
-    //     lazy_frame
-    // }
-    lazy_frame
-}

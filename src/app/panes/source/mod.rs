@@ -340,8 +340,6 @@ impl Pane {
 
     #[instrument(skip(self, ui, state), err)]
     fn save_md(&self, ui: &mut Ui, state: &State, name: impl Debug + Display) -> Result<()> {
-        // const MID: usize = usize::MIN.midpoint(usize::MAX);
-
         let meta = &self.frame.meta;
         let name = format!("{}.cpft.md", meta.format("."));
         let data = ui.memory_mut(|memory| {
@@ -368,59 +366,22 @@ impl Pane {
             ],
             || export::md::save(&frame, &name),
         )?;
-
-        // unsafe {
-        //     std::env::set_var("POLARS_FMT_TABLE_FORMATTING", "MARKDOWN");
-        //     std::env::set_var("POLARS_FMT_TABLE_HIDE_COLUMN_DATA_TYPES", "1");
-        //     std::env::set_var("POLARS_FMT_TABLE_HIDE_DATAFRAME_SHAPE_INFORMATION", "1");
-        //     std::env::set_var("POLARS_TABLE_WIDTH", "-1");
-        //     std::env::set_var("POLARS_FMT_MAX_COLS", "-1");
-        //     std::env::set_var("POLARS_FMT_MAX_ROWS", "-1");
-        //     std::env::set_var("POLARS_FMT_STR_LEN", MID.to_string());
-        //     std::env::set_var("POLARS_FMT_TABLE_CELL_LIST_LEN", "-1");
-        //     // std::env::set_var("POLARS_FMT_TABLE_DATAFRAME_SHAPE_BELOW", "0");
-        // }
-
-        // let meta = &self.frame.meta;
-        // let name = format!("{}.cpft.md", meta.format("."));
-        // let data = ui.memory_mut(|memory| {
-        //     memory
-        //         .caches
-        //         .cache::<FlatComputed>()
-        //         .get(FlatKey::new(&self.calculated, &state.settings))
-        //         .clone()
-        // });
-        // let frame = MetaDataFrame::new(meta, data);
-        // export::md::save(&frame, &name)?;
         Ok(())
     }
 
     #[instrument(skip(self, ui, state), err)]
     fn save_xlsx(&self, ui: &mut Ui, state: &State, name: impl Debug + Display) -> Result<()> {
-        let data_frame = ui.memory_mut(|memory| {
+        let meta = &self.frame.meta;
+        let name = format!("{}.cpft.xlsx", meta.format("."));
+        let data = ui.memory_mut(|memory| {
             memory
                 .caches
-                .cache::<TableComputed>()
-                .get(TableKey::new(&self.calculated, &state.settings))
+                .cache::<FlatComputed>()
+                .get(FlatKey::new(&self.calculated, &state.settings))
                 .clone()
         });
-        let mut data = data_frame
-            .lazy()
-            .select([
-                col(MODE).struct_().field_by_name("*"),
-                col(FATTY_ACID),
-                col(RETENTION_TIME)
-                    .struct_()
-                    .field_by_name(ABSOLUTE)
-                    .struct_()
-                    .field_by_name(MEAN)
-                    .name()
-                    .keep(),
-                col(DEAD_TIME),
-            ])
-            .with_row_index("Index", None)
-            .collect()?;
-        // export::xlsx::save(&mut data, &format!("{name}.cpft.xlsx"))?;
+        let frame = MetaDataFrame::new(meta, data);
+        export::xlsx::save(&frame, &name)?;
         Ok(())
     }
 

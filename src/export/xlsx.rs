@@ -1,7 +1,5 @@
 use anyhow::Result;
-use polars::prelude::*;
 use polars_excel_writer::PolarsExcelWriter;
-use polars_ext::prelude::*;
 use tracing::instrument;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -12,13 +10,21 @@ pub use self::web::save;
 #[cfg(not(target_arch = "wasm32"))]
 mod native {
     use super::*;
+    use crate::utils::hash::HashedDataFrame;
+    use metadata::{Metadata, polars::MetaDataFrame};
+    use std::borrow::Borrow;
 
-    #[cfg(not(target_arch = "wasm32"))]
-    #[instrument(err)]
-    pub fn save(data_frame: &DataFrame, name: &str) -> Result<()> {
-        let mut writer = PolarsExcelWriter::new();
-        writer.write_dataframe(data_frame)?;
-        writer.save(name)?;
+    #[instrument(skip(frame), err)]
+    pub fn save(
+        frame: &MetaDataFrame<impl Borrow<Metadata>, impl Borrow<HashedDataFrame>>,
+        name: &str,
+    ) -> Result<()> {
+        // Create a new Excel writer.
+        let mut excel_writer = PolarsExcelWriter::new();
+        // Write the dataframe to Excel.
+        excel_writer.write_dataframe(frame.data.borrow())?;
+        // Save the file to disk.
+        excel_writer.save(name)?;
         Ok(())
     }
 }
@@ -39,97 +45,4 @@ mod web {
         }
         Ok(())
     }
-}
-
-fn write(data_frame: &DataFrame, worksheet: &mut Worksheet) -> Result<()> {
-    let mut names = vec![];
-    // Iterate through the dataframe column by column.
-    for (index, series) in data_frame.iter().enumerate() {
-        let col = index as u16;
-
-        // Store the column names for use as table headers.
-        names.push(series.name().to_string());
-
-        // Write the row data for each column/type.
-        for (index, value) in series.iter().enumerate() {
-            let row = 1 + index as u32;
-            // Map the Polars Series AnyValue types to Excel/rust_xlsxwriter
-            // types.
-            match value {
-                AnyValue::Int8(value) => {
-                    worksheet.write_number(row, col, value)?;
-                }
-                AnyValue::UInt8(value) => {
-                    worksheet.write_number(row, col, value)?;
-                }
-                AnyValue::Int16(value) => {
-                    worksheet.write_number(row, col, value)?;
-                }
-                AnyValue::UInt16(value) => {
-                    worksheet.write_number(row, col, value)?;
-                }
-                AnyValue::Int32(value) => {
-                    worksheet.write_number(row, col, value)?;
-                }
-                AnyValue::UInt32(value) => {
-                    worksheet.write_number(row, col, value)?;
-                }
-                AnyValue::Int64(value) => {
-                    worksheet.write_string(row, col, format!("{value:x}"))?;
-                }
-                AnyValue::UInt64(value) => {
-                    worksheet.write_string(row, col, format!("{value:x}"))?;
-                }
-                AnyValue::Float32(value) => {
-                    worksheet.write_number(row, col, value)?;
-                }
-                AnyValue::Float64(value) => {
-                    worksheet.write_number(row, col, value)?;
-                }
-                AnyValue::String(value) => {
-                    worksheet.write_string(row, col, value)?;
-                }
-                AnyValue::Boolean(value) => {
-                    worksheet.write_boolean(row, col, value)?;
-                }
-                AnyValue::Null => {
-                    // Treat Null as blank for now.
-                }
-                AnyValue::Datetime(value, time_units, _) => {
-                    let datetime = match time_units {
-                        TimeUnit::Nanoseconds => timestamp_ns_to_datetime(value),
-                        TimeUnit::Microseconds => timestamp_us_to_datetime(value),
-                        TimeUnit::Milliseconds => timestamp_ms_to_datetime(value),
-                    };
-                    let format = Format::new().set_num_format("yyyy\\-mm\\-dd\\ hh:mm:ss");
-                    worksheet.write_datetime_with_format(row, col, &datetime, &format)?;
-                    worksheet.set_column_width(col, 18)?;
-                }
-                value => {
-                    worksheet.write_string(row, col, value.to_string())?;
-                }
-                _ => {
-                    println!(
-                        "WARNING: AnyValue data type '{}' is not supported",
-                        value.dtype()
-                    );
-                    break;
-                }
-            }
-        }
-    }
-
-    // Create a table for the dataframe range.
-    let (rows, cols) = data_frame.shape();
-    let mut table = Table::new();
-    let columns: Vec<_> = names
-        .into_iter()
-        .map(|caption| TableColumn::new().set_header(caption))
-        .collect();
-    table = table.set_columns(&columns);
-    // Add the table to the worksheet.
-    worksheet.add_table(0, 0, rows as u32, cols as u16 - 1, &table)?;
-    // Autofit the columns.
-    worksheet.autofit();
-    Ok(())
 }
