@@ -29,8 +29,11 @@ impl Computer {
     fn try_compute(&mut self, key: Key) -> PolarsResult<Value> {
         matches_schema(&key.frame.data_frame, &INPUT_SCHEMA)?;
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
-        lazy_frame = format(lazy_frame, key)?;
+        // Filter
         lazy_frame = lazy_frame.filter(col(FILTER));
+        // Format
+        lazy_frame = format(lazy_frame, key)?;
+        // Select
         lazy_frame = lazy_frame.select([dtype_cols(&[DataType::Float64, DataType::String])
             .as_selector()
             .as_expr()]);

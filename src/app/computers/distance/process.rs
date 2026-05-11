@@ -1,6 +1,16 @@
-use crate::{app::states::distance::Settings, r#const::*, utils::hash::HashedDataFrame};
+use crate::{
+    app::{
+        computers::{matches_schema, source::process::OUTPUT_SCHEMA as INPUT_SCHEMA},
+        states::distance::Settings,
+    },
+    r#const::{
+        ABSOLUTE, ALPHA, CHAIN_LENGTH, DEAD_TIME, DELTA, EQUIVALENT_CHAIN_LENGTH, EUCLIDEAN,
+        FILTER, FROM, MODE, RETENTION_TIME, TO,
+    },
+    utils::hash::HashedDataFrame,
+};
 use egui::util::cache::{ComputerMut, FrameCache};
-use lipid::prelude::FATTY_ACID;
+use lipid::prelude::*;
 use polars::prelude::*;
 
 /// Distance computed
@@ -12,20 +22,7 @@ pub(crate) struct Computer;
 
 impl Computer {
     fn try_compute(&mut self, key: Key<'_>) -> PolarsResult<Value> {
-        // Schema {
-        //     fields: {
-        //         "Mode": Struct({'OnsetTemperature': Float64, 'TemperatureStep': Float64}),
-        //         "FattyAcid": Struct({'Carbon': UInt8, 'Indices': List(Struct({'Index': UInt8, 'Triple': Boolean, 'Parity': Boolean}))}),
-        //         "RetentionTime": Struct({'Absolute': Array(Float64, 3), 'Relative': Array(Float64, 3), 'Delta': Array(Float64, 3)}),
-        //         "DeadTime": Float64,
-        //         "Temperature": Array(Float64, 3),
-        //         "ChainLength": Struct({'EquivalentChainLength': Array(Float64, 3), 'FractionalChainLength': Array(Float64, 3), 'EquivalentCarbonNumber': UInt8}),
-        //         "Mass": Struct({'RCO': Float64, 'RCOO': Float64, 'RCOOH': Float64, 'RCOOCH3': Float64}),
-        //         "Derivative": Struct({'Slope': Array(Float64, 3), 'Angle': Array(Float64, 3)}),
-        //         "Filter": Boolean,
-        //     },
-        //     metadata: (),
-        // }
+        matches_schema(&key.frame.data_frame, &INPUT_SCHEMA)?;
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
         // Filter
         lazy_frame = lazy_frame.filter(col(FILTER));
