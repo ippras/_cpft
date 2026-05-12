@@ -1,7 +1,7 @@
 use crate::{
     app::{computers::plot::IndexKey, states::distance::Settings},
     r#const::{
-        ALPHA, DELTA, EQUIVALENT_CHAIN_LENGTH, FROM, MODE, ONSET_TEMPERATURE, TEMPERATURE_STEP, TO,
+        SELECTIVITY_FACTOR, DELTA, EQUIVALENT_CHAIN_LENGTH, FROM, MODE, ONSET_TEMPERATURE, TEMPERATURE_STEP, TO,
     },
     utils::hash::HashedDataFrame,
 };
@@ -87,7 +87,7 @@ fn equivalent_chain_length_alpha(mut lazy_frame: LazyFrame) -> PolarsResult<Valu
             col(MODE).struct_().field_by_name("*"),
             concat_arr(vec![
                 col(EQUIVALENT_CHAIN_LENGTH).struct_().field_by_name(DELTA),
-                col(ALPHA),
+                col(SELECTIVITY_FACTOR),
             ])?
             .alias(COORDINATES),
         ])
@@ -147,7 +147,7 @@ fn temperature_step_alpha(mut lazy_frame: LazyFrame) -> PolarsResult<Value> {
         col(MODE).struct_().field_by_name(ONSET_TEMPERATURE),
         concat_arr(vec![
             col(MODE).struct_().field_by_name(TEMPERATURE_STEP),
-            col(ALPHA),
+            col(SELECTIVITY_FACTOR),
         ])?
         .alias(COORDINATES),
     ]);
@@ -189,7 +189,7 @@ fn temperature_step_alpha(mut lazy_frame: LazyFrame) -> PolarsResult<Value> {
         let entry = value.index.entry(IndexKey(point)).or_default();
         entry.insert(ONSET_TEMPERATURE, onset_temperature);
         entry.insert(TEMPERATURE_STEP, temperature_step);
-        entry.insert(ALPHA, alpha);
+        entry.insert(SELECTIVITY_FACTOR, alpha);
 
         // let mut points = Vec::new();
         // for coordinates in coordinates.array()?.into_no_null_iter() {

@@ -4,9 +4,10 @@ use crate::{
         panes::distance::view::table::NUM_COLUMNS,
         states::source::{Axis, Filter, Order, PlotSettings, View},
     },
-    r#const::{ALPHA, EQUIVALENT_CHAIN_LENGTH, EUCLIDEAN, MAXIMUM, MEAN, MEDIAN, MINIMUM},
+    r#const::{EQUIVALENT_CHAIN_LENGTH, MAXIMUM, MEAN, MEDIAN, MINIMUM, SELECTIVITY_FACTOR},
     localization::Text,
 };
+use const_format::formatcp;
 use egui::{ComboBox, RichText, Slider, Ui, Widget as _};
 use egui_l20n::prelude::*;
 use egui_phosphor::regular::BOOKMARK;
@@ -20,11 +21,7 @@ const AGGREGATIONS: [Aggregation; 4] = [
     Aggregation::Minimum,
 ];
 
-const DISTANCES: [Distance; 3] = [
-    Distance::Alpha,
-    Distance::EquivalentChainLength,
-    Distance::Euclidean,
-];
+const DISTANCES: [Distance; 2] = [Distance::EquivalentChainLength, Distance::SelectivityFactor];
 
 /// Settings
 #[derive(Clone, Debug, Deserialize, Hash, PartialEq, Serialize)]
@@ -323,8 +320,8 @@ impl Settings {
                 ComboBox::from_id_salt(ui.next_auto_id())
                     .selected_text(ui.localize(axis.text()))
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(axis, Axis::Alpha, ui.localize(Axis::Alpha.text()))
-                            .on_hover_localized(Axis::Alpha.hover_text());
+                        ui.selectable_value(axis, Axis::SelectivityFactor, ui.localize(Axis::SelectivityFactor.text()))
+                            .on_hover_localized(Axis::SelectivityFactor.hover_text());
                         ui.selectable_value(
                             axis,
                             Axis::EquivalentChainLength,
@@ -391,7 +388,7 @@ impl Priority {
     fn new() -> Self {
         Self {
             aggregation: Aggregation::Median,
-            distance: Distance::Alpha,
+            distance: Distance::SelectivityFactor,
         }
     }
 }
@@ -439,17 +436,15 @@ impl Text for Aggregation {
 /// Distance
 #[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
 pub(crate) enum Distance {
-    Alpha,
     EquivalentChainLength,
-    Euclidean,
+    SelectivityFactor,
 }
 
 impl Distance {
     pub(crate) const fn id(&self) -> &'static str {
         match self {
-            Self::Alpha => ALPHA,
             Self::EquivalentChainLength => EQUIVALENT_CHAIN_LENGTH,
-            Self::Euclidean => EUCLIDEAN,
+            Self::SelectivityFactor => SELECTIVITY_FACTOR,
         }
     }
 }
@@ -457,17 +452,15 @@ impl Distance {
 impl Text for Distance {
     fn text(&self) -> &'static str {
         match self {
-            Self::Alpha => "Alpha",
-            Self::EquivalentChainLength => "EquivalentChainLength",
-            Self::Euclidean => "Euclidean",
+            Self::EquivalentChainLength => EQUIVALENT_CHAIN_LENGTH,
+            Self::SelectivityFactor => SELECTIVITY_FACTOR,
         }
     }
 
     fn hover_text(&self) -> &'static str {
         match self {
-            Self::Alpha => "Alpha.hover",
-            Self::EquivalentChainLength => "EquivalentChainLength.hover",
-            Self::Euclidean => "Euclidean.hover",
+            Self::EquivalentChainLength => formatcp!("{EQUIVALENT_CHAIN_LENGTH}.hover"),
+            Self::SelectivityFactor => formatcp!("{SELECTIVITY_FACTOR}.hover"),
         }
     }
 }

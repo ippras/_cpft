@@ -675,7 +675,7 @@ impl PlotSettings {
             legend: true,
             axes: Axes {
                 x: Axis::TemperatureStep,
-                y: Axis::Alpha,
+                y: Axis::SelectivityFactor,
             },
         }
     }
@@ -691,7 +691,7 @@ pub(crate) struct Axes {
 /// Plot axis
 #[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
 pub(crate) enum Axis {
-    Alpha,
+    SelectivityFactor,
     EquivalentChainLength,
     OnsetTemperature,
     TemperatureStep,
@@ -700,7 +700,7 @@ pub(crate) enum Axis {
 impl Text for Axis {
     fn text(&self) -> &'static str {
         match self {
-            Self::Alpha => "Alpha",
+            Self::SelectivityFactor => "SelectivityFactor",
             Self::EquivalentChainLength => "EquivalentChainLength",
             Self::OnsetTemperature => "OnsetTemperature",
             Self::TemperatureStep => "TemperatureStep",
@@ -709,7 +709,7 @@ impl Text for Axis {
 
     fn hover_text(&self) -> &'static str {
         match self {
-            Self::Alpha => "Alpha.hover",
+            Self::SelectivityFactor => "SelectivityFactor.hover",
             Self::EquivalentChainLength => "EquivalentChainLength.hover",
             Self::OnsetTemperature => "OnsetTemperature.hover",
             Self::TemperatureStep => "TemperatureStep.hover",

@@ -70,48 +70,19 @@ type Value = HashedDataFrame;
 
 /// Group
 fn group(lazy_frame: LazyFrame) -> PolarsResult<LazyFrame> {
-    Ok(lazy_frame.group_by([col(MODE)]).agg([
-        as_struct(vec![
-            eval_arr(col(ALPHA), |element| Ok(element.abs().max()))?.alias(MAXIMUM),
-            eval_arr(col(ALPHA), |element| Ok(element.abs().mean()))?.alias(MEAN),
-            eval_arr(col(ALPHA), |element| Ok(element.abs().median()))?.alias(MEDIAN),
-            eval_arr(col(ALPHA), |element| Ok(element.abs().min()))?.alias(MINIMUM),
-        ])
-        .name()
-        .keep(),
-        as_struct(vec![
-            eval_arr(
-                col(EQUIVALENT_CHAIN_LENGTH).struct_().field_by_name(DELTA),
-                |element| Ok(element.abs().max()),
-            )?
-            .alias(MAXIMUM),
-            eval_arr(
-                col(EQUIVALENT_CHAIN_LENGTH).struct_().field_by_name(DELTA),
-                |element| Ok(element.abs().mean()),
-            )?
-            .alias(MEAN),
-            eval_arr(
-                col(EQUIVALENT_CHAIN_LENGTH).struct_().field_by_name(DELTA),
-                |element| Ok(element.abs().median()),
-            )?
-            .alias(MEDIAN),
-            eval_arr(
-                col(EQUIVALENT_CHAIN_LENGTH).struct_().field_by_name(DELTA),
-                |element| Ok(element.abs().min()),
-            )?
-            .alias(MINIMUM),
-        ])
-        .name()
-        .keep(),
-        as_struct(vec![
-            eval_arr(col(EUCLIDEAN), |element| Ok(element.abs().max()))?.alias(MAXIMUM),
-            eval_arr(col(EUCLIDEAN), |element| Ok(element.abs().mean()))?.alias(MEAN),
-            eval_arr(col(EUCLIDEAN), |element| Ok(element.abs().median()))?.alias(MEDIAN),
-            eval_arr(col(EUCLIDEAN), |element| Ok(element.abs().min()))?.alias(MINIMUM),
-        ])
-        .name()
-        .keep(),
-    ]))
+    Ok(lazy_frame
+        .group_by([col(MODE)])
+        .agg([group_column(SELECTIVITY_FACTOR)?, group_column(EQUIVALENT_CHAIN_LENGTH)?]))
+}
+
+fn group_column(name: &str) -> PolarsResult<Expr> {
+    Ok(as_struct(vec![
+        eval_arr(col(name), |element| Ok(element.abs().max()))?.alias(MAXIMUM),
+        eval_arr(col(name), |element| Ok(element.abs().mean()))?.alias(MEAN),
+        eval_arr(col(name), |element| Ok(element.abs().median()))?.alias(MEDIAN),
+        eval_arr(col(name), |element| Ok(element.abs().min()))?.alias(MINIMUM),
+    ])
+    .alias(name))
 }
 
 /// Sort
@@ -136,74 +107,22 @@ fn sort(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
 /// Format
 fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
     lazy_frame.with_columns([
-        as_struct(vec![
-            mean_and_standard_deviation_and_array(col(ALPHA).struct_().field_by_name(MAXIMUM), key)
-                .alias(MAXIMUM),
-            mean_and_standard_deviation_and_array(col(ALPHA).struct_().field_by_name(MEAN), key)
-                .alias(MEAN),
-            mean_and_standard_deviation_and_array(col(ALPHA).struct_().field_by_name(MEDIAN), key)
-                .alias(MEDIAN),
-            mean_and_standard_deviation_and_array(col(ALPHA).struct_().field_by_name(MINIMUM), key)
-                .alias(MINIMUM),
-        ])
-        .name()
-        .keep(),
-        as_struct(vec![
-            mean_and_standard_deviation_and_array(
-                col(EQUIVALENT_CHAIN_LENGTH)
-                    .struct_()
-                    .field_by_name(MAXIMUM),
-                key,
-            )
-            .alias(MAXIMUM),
-            mean_and_standard_deviation_and_array(
-                col(EQUIVALENT_CHAIN_LENGTH).struct_().field_by_name(MEAN),
-                key,
-            )
-            .alias(MEAN),
-            mean_and_standard_deviation_and_array(
-                col(EQUIVALENT_CHAIN_LENGTH).struct_().field_by_name(MEDIAN),
-                key,
-            )
-            .alias(MEDIAN),
-            mean_and_standard_deviation_and_array(
-                col(EQUIVALENT_CHAIN_LENGTH)
-                    .struct_()
-                    .field_by_name(MINIMUM),
-                key,
-            )
-            .alias(MINIMUM),
-        ])
-        .name()
-        .keep(),
-        as_struct(vec![
-            mean_and_standard_deviation_and_array(
-                col(EUCLIDEAN).struct_().field_by_name(MAXIMUM),
-                key,
-            )
-            .alias(MAXIMUM),
-            mean_and_standard_deviation_and_array(
-                col(EUCLIDEAN).struct_().field_by_name(MEAN),
-                key,
-            )
-            .alias(MEAN),
-            mean_and_standard_deviation_and_array(
-                col(EUCLIDEAN).struct_().field_by_name(MEDIAN),
-                key,
-            )
-            .alias(MEDIAN),
-            mean_and_standard_deviation_and_array(
-                col(EUCLIDEAN).struct_().field_by_name(MINIMUM),
-                key,
-            )
-            .alias(MINIMUM),
-        ])
-        .name()
-        .keep(),
+        format_struct(EQUIVALENT_CHAIN_LENGTH, key),
+        format_struct(SELECTIVITY_FACTOR, key),
     ])
 }
 
-fn mean_and_standard_deviation_and_array(expr: Expr, key: Key) -> Expr {
+fn format_struct(name: &str, key: Key) -> Expr {
+    as_struct(vec![
+        format_array(col(name).struct_().field_by_name(MAXIMUM), key),
+        format_array(col(name).struct_().field_by_name(MEAN), key),
+        format_array(col(name).struct_().field_by_name(MEDIAN), key),
+        format_array(col(name).struct_().field_by_name(MINIMUM), key),
+    ])
+    .alias(name)
+}
+
+fn format_array(expr: Expr, key: Key) -> Expr {
     Array::builder()
         .expr(expr)
         .ddof(key.ddof)

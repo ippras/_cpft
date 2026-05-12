@@ -4,78 +4,14 @@ use crate::{
         states::distance::Settings,
     },
     r#const::{
-        ABSOLUTE, SELECTIVITY_FACTOR, CHAIN_LENGTH, DEAD_TIME, DELTA, EQUIVALENT_CHAIN_LENGTH, FILTER, FROM,
-        MODE, ONSET_TEMPERATURE, RETENTION_TIME, TEMPERATURE_STEP, TO,
+        ABSOLUTE, ALPHA, CHAIN_LENGTH, DEAD_TIME, DELTA, EQUIVALENT_CHAIN_LENGTH, EUCLIDEAN,
+        FILTER, FROM, MODE, RETENTION_TIME, TO,
     },
     utils::hash::HashedDataFrame,
 };
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;
-use std::sync::LazyLock;
-
-/// Output schema
-pub(crate) static OUTPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
-    Arc::new(Schema::from_iter([
-        Field::new(
-            PlSmallStr::from_static(MODE),
-            DataType::Struct(vec![
-                Field::new(
-                    PlSmallStr::from_static(ONSET_TEMPERATURE),
-                    DataType::Float64,
-                ),
-                Field::new(PlSmallStr::from_static(TEMPERATURE_STEP), DataType::Float64),
-            ]),
-        ),
-        Field::new(
-            PlSmallStr::from_static(FATTY_ACID),
-            DataType::Struct(vec![
-                Field::new(PlSmallStr::from_static(FROM), data_type!(FATTY_ACID)),
-                Field::new(PlSmallStr::from_static(TO), data_type!(FATTY_ACID)),
-            ]),
-        ),
-        Field::new(PlSmallStr::from_static(DEAD_TIME), DataType::Float64),
-        Field::new(
-            PlSmallStr::from_static(RETENTION_TIME),
-            DataType::Struct(vec![
-                Field::new(
-                    PlSmallStr::from_static(FROM),
-                    DataType::Array(Box::new(DataType::Float64), 0),
-                ),
-                Field::new(
-                    PlSmallStr::from_static(TO),
-                    DataType::Array(Box::new(DataType::Float64), 0),
-                ),
-            ]),
-        ),
-        Field::new(
-            PlSmallStr::from_static(EQUIVALENT_CHAIN_LENGTH),
-            DataType::Struct(vec![
-                Field::new(
-                    PlSmallStr::from_static(FROM),
-                    DataType::Array(Box::new(DataType::Float64), 0),
-                ),
-                Field::new(
-                    PlSmallStr::from_static(TO),
-                    DataType::Array(Box::new(DataType::Float64), 0),
-                ),
-            ]),
-        ),
-        Field::new(
-            PlSmallStr::from_static(SELECTIVITY_FACTOR),
-            DataType::Struct(vec![
-                Field::new(
-                    PlSmallStr::from_static(FROM),
-                    DataType::Array(Box::new(DataType::Float64), 0),
-                ),
-                Field::new(
-                    PlSmallStr::from_static(TO),
-                    DataType::Array(Box::new(DataType::Float64), 0),
-                ),
-            ]),
-        ),
-    ]))
-});
 
 /// Distance computed
 pub(crate) type Computed = FrameCache<Value, Computer>;
@@ -176,11 +112,11 @@ fn join(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
             .struct_()
             .field_by_name(EQUIVALENT_CHAIN_LENGTH),
     ]);
-    // // ВАЖНО: Сортируем данные, чтобы гарантировать последовательность по времени удерживания
-    // lazy_frame = lazy_frame.sort_by_exprs(
-    //     vec![col(MODE), retention_time.arr().mean()],
-    //     SortMultipleOptions::default().with_maintain_order(true),
-    // );
+    // ВАЖНО: Сортируем данные, чтобы гарантировать последовательность по времени удерживания
+    lazy_frame = lazy_frame.sort_by_exprs(
+        vec![col(MODE), retention_time.arr().mean()],
+        SortMultipleOptions::default(),
+    );
     lazy_frame = lazy_frame.select([
         col(MODE),
         col(DEAD_TIME),
@@ -196,51 +132,68 @@ fn join(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     lazy_frame = lazy_frame.filter(col(TO).is_not_null());
     println!("!!!!!!!!!1: {}", lazy_frame.clone().collect().unwrap());
     // Restructure
-    lazy_frame = lazy_frame.select([
-        col(MODE),
-        as_struct(vec![
-            col(FROM).struct_().field_by_name(FATTY_ACID).name().keep(),
-            col(TO).struct_().field_by_name(FATTY_ACID).name().keep(),
+    lazy_frame = lazy_frame
+        .select([
+            col(MODE),
+            col(DEAD_TIME),
+            as_struct(vec![
+                col(FROM).struct_().field_by_name(FATTY_ACID).name().keep(),
+                col(TO).struct_().field_by_name(FATTY_ACID).name().keep(),
+            ])
+            .alias(FATTY_ACID),
+            as_struct(vec![
+                col(FROM)
+                    .struct_()
+                    .field_by_name(RETENTION_TIME)
+                    .name()
+                    .keep(),
+                col(TO)
+                    .struct_()
+                    .field_by_name(RETENTION_TIME)
+                    .name()
+                    .keep(),
+                (col(TO).struct_().field_by_name(RETENTION_TIME)
+                    - col(FROM).struct_().field_by_name(RETENTION_TIME))
+                .over([MODE])?
+                .alias(DELTA),
+            ])
+            .alias(RETENTION_TIME),
+            as_struct(vec![
+                col(FROM)
+                    .struct_()
+                    .field_by_name(EQUIVALENT_CHAIN_LENGTH)
+                    .name()
+                    .keep(),
+                col(TO)
+                    .struct_()
+                    .field_by_name(EQUIVALENT_CHAIN_LENGTH)
+                    .name()
+                    .keep(),
+                (col(TO).struct_().field_by_name(EQUIVALENT_CHAIN_LENGTH)
+                    - col(FROM).struct_().field_by_name(EQUIVALENT_CHAIN_LENGTH))
+                .over([MODE])?
+                .alias(DELTA),
+            ])
+            .alias(EQUIVALENT_CHAIN_LENGTH),
+            ((col(FROM).struct_().field_by_name(RETENTION_TIME) - col(DEAD_TIME))
+                / (col(TO).struct_().field_by_name(RETENTION_TIME) - col(DEAD_TIME))
+                    .over([MODE])?)
+            .alias(ALPHA),
         ])
-        .alias(FATTY_ACID),
-        col(DEAD_TIME),
-        as_struct(vec![
-            col(FROM)
+        .with_column(
+            (col(RETENTION_TIME)
                 .struct_()
-                .field_by_name(RETENTION_TIME)
-                .name()
-                .keep(),
-            col(TO)
-                .struct_()
-                .field_by_name(RETENTION_TIME)
-                .name()
-                .keep(),
-            (col(TO).struct_().field_by_name(RETENTION_TIME)
-                - col(FROM).struct_().field_by_name(RETENTION_TIME))
-            .over([MODE])?
-            .alias(DELTA),
-        ])
-        .alias(RETENTION_TIME),
-        as_struct(vec![
-            col(FROM)
-                .struct_()
-                .field_by_name(EQUIVALENT_CHAIN_LENGTH)
-                .name()
-                .keep(),
-            col(TO)
-                .struct_()
-                .field_by_name(EQUIVALENT_CHAIN_LENGTH)
-                .name()
-                .keep(),
-            (col(TO).struct_().field_by_name(EQUIVALENT_CHAIN_LENGTH)
-                - col(FROM).struct_().field_by_name(EQUIVALENT_CHAIN_LENGTH))
-            .over([MODE])?
-            .alias(DELTA),
-        ])
-        .alias(EQUIVALENT_CHAIN_LENGTH),
-        ((col(FROM).struct_().field_by_name(RETENTION_TIME) - col(DEAD_TIME))
-            / (col(TO).struct_().field_by_name(RETENTION_TIME) - col(DEAD_TIME)).over([MODE])?)
-        .alias(SELECTIVITY_FACTOR),
-    ]);
+                .field_by_name(DELTA)
+                .arr()
+                .eval(element().pow(2), false)
+                + col(EQUIVALENT_CHAIN_LENGTH)
+                    .struct_()
+                    .field_by_name(DELTA)
+                    .arr()
+                    .eval(element().pow(2), false))
+            .arr()
+            .eval(element().sqrt(), false)
+            .alias(EUCLIDEAN),
+        );
     Ok(lazy_frame)
 }

@@ -5,8 +5,8 @@ use crate::{
         widgets::array::Float64Array,
     },
     r#const::{
-        ALPHA, EQUIVALENT_CHAIN_LENGTH, EUCLIDEAN, MAXIMUM, MEAN, MEDIAN, MINIMUM, MODE,
-        ONSET_TEMPERATURE, TEMPERATURE_STEP,
+        EQUIVALENT_CHAIN_LENGTH, MAXIMUM, MEAN, MEDIAN, MINIMUM, MODE, ONSET_TEMPERATURE,
+        SELECTIVITY_FACTOR, TEMPERATURE_STEP,
     },
 };
 use const_format::formatcp;
@@ -19,13 +19,12 @@ use polars::prelude::*;
 use std::ops::Range;
 use tracing::instrument;
 
-const NUM_COLUMNS: usize = top::EUCLIDEAN.end;
+const NUM_COLUMNS: usize = top::SELECTIVITY_FACTOR.end;
 
 const TOP: &[Range<usize>] = &[
     top::MODE,
-    top::ALPHA,
     top::EQUIVALENT_CHAIN_LENGTH,
-    top::EUCLIDEAN,
+    top::SELECTIVITY_FACTOR,
 ];
 
 /// Sum widget
@@ -82,21 +81,16 @@ impl<'a> Sum<'a> {
                     ui.localize(formatcp!("{MODE}.hover"));
                 });
             }
-            (0, top::ALPHA) => {
-                ui.heading(ui.localize(ALPHA)).on_hover_ui(|ui| {
-                    ui.localize(formatcp!("{ALPHA}.hover"));
-                });
+            (0, top::SELECTIVITY_FACTOR) => {
+                ui.heading(ui.localize(SELECTIVITY_FACTOR))
+                    .on_hover_ui(|ui| {
+                        ui.localize(formatcp!("{SELECTIVITY_FACTOR}.hover"));
+                    });
             }
             (0, top::EQUIVALENT_CHAIN_LENGTH) => {
                 ui.heading(ui.localize(EQUIVALENT_CHAIN_LENGTH))
                     .on_hover_ui(|ui| {
                         ui.localize(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.hover"));
-                    });
-            }
-            (0, top::EUCLIDEAN) => {
-                ui.heading(ui.localize("EuclideanDistance"))
-                    .on_hover_ui(|ui| {
-                        ui.localize("EuclideanDistance.hover");
                     });
             }
             // Bottom
@@ -112,38 +106,22 @@ impl<'a> Sum<'a> {
                         ui.localize(formatcp!("{TEMPERATURE_STEP}.hover"));
                     });
             }
-            (
-                1,
-                bottom::alpha::MAX | bottom::equivalent_chain_length::MAX | bottom::euclidean::MAX,
-            ) => {
+            (1, bottom::selectivity_factor::MAX | bottom::equivalent_chain_length::MAX) => {
                 ui.heading(ui.localize(MAXIMUM)).on_hover_ui(|ui| {
                     ui.localize(formatcp!("{MAXIMUM}.hover"));
                 });
             }
-            (
-                1,
-                bottom::alpha::MEAN
-                | bottom::equivalent_chain_length::MEAN
-                | bottom::euclidean::MEAN,
-            ) => {
+            (1, bottom::selectivity_factor::MEAN | bottom::equivalent_chain_length::MEAN) => {
                 ui.heading(ui.localize(MEAN)).on_hover_ui(|ui| {
                     ui.localize(formatcp!("{MEAN}.hover"));
                 });
             }
-            (
-                1,
-                bottom::alpha::MEDIAN
-                | bottom::equivalent_chain_length::MEDIAN
-                | bottom::euclidean::MEDIAN,
-            ) => {
+            (1, bottom::selectivity_factor::MEDIAN | bottom::equivalent_chain_length::MEDIAN) => {
                 ui.heading(ui.localize(MEDIAN)).on_hover_ui(|ui| {
                     ui.localize(formatcp!("{MEDIAN}.hover"));
                 });
             }
-            (
-                1,
-                bottom::alpha::MIN | bottom::equivalent_chain_length::MIN | bottom::euclidean::MIN,
-            ) => {
+            (1, bottom::selectivity_factor::MIN | bottom::equivalent_chain_length::MIN) => {
                 ui.heading(ui.localize(MINIMUM)).on_hover_ui(|ui| {
                     ui.localize(formatcp!("{MINIMUM}.hover"));
                 });
@@ -178,36 +156,52 @@ impl<'a> Sum<'a> {
                         .str_value(),
                 );
             }
-            (row, bottom::alpha::MAX) => {
+            (row, bottom::selectivity_factor::MAX) => {
                 Float64Array::builder()
-                    .series(&self.data_frame[ALPHA].struct_()?.field_by_name(MAXIMUM)?)
+                    .series(
+                        &self.data_frame[SELECTIVITY_FACTOR]
+                            .struct_()?
+                            .field_by_name(MAXIMUM)?,
+                    )
                     .row(row)
                     .mean(self.settings.mean)
                     .standard_deviation(self.settings.standard_deviation)
                     .build()
                     .show(ui)?;
             }
-            (row, bottom::alpha::MEAN) => {
+            (row, bottom::selectivity_factor::MEAN) => {
                 Float64Array::builder()
-                    .series(&self.data_frame[ALPHA].struct_()?.field_by_name(MEAN)?)
+                    .series(
+                        &self.data_frame[SELECTIVITY_FACTOR]
+                            .struct_()?
+                            .field_by_name(MEAN)?,
+                    )
                     .row(row)
                     .mean(self.settings.mean)
                     .standard_deviation(self.settings.standard_deviation)
                     .build()
                     .show(ui)?;
             }
-            (row, bottom::alpha::MEDIAN) => {
+            (row, bottom::selectivity_factor::MEDIAN) => {
                 Float64Array::builder()
-                    .series(&self.data_frame[ALPHA].struct_()?.field_by_name(MEDIAN)?)
+                    .series(
+                        &self.data_frame[SELECTIVITY_FACTOR]
+                            .struct_()?
+                            .field_by_name(MEDIAN)?,
+                    )
                     .row(row)
                     .mean(self.settings.mean)
                     .standard_deviation(self.settings.standard_deviation)
                     .build()
                     .show(ui)?;
             }
-            (row, bottom::alpha::MIN) => {
+            (row, bottom::selectivity_factor::MIN) => {
                 Float64Array::builder()
-                    .series(&self.data_frame[ALPHA].struct_()?.field_by_name(MINIMUM)?)
+                    .series(
+                        &self.data_frame[SELECTIVITY_FACTOR]
+                            .struct_()?
+                            .field_by_name(MINIMUM)?,
+                    )
                     .row(row)
                     .mean(self.settings.mean)
                     .standard_deviation(self.settings.standard_deviation)
@@ -266,54 +260,6 @@ impl<'a> Sum<'a> {
                     .build()
                     .show(ui)?;
             }
-            (row, bottom::euclidean::MAX) => {
-                Float64Array::builder()
-                    .series(
-                        &self.data_frame[EUCLIDEAN]
-                            .struct_()?
-                            .field_by_name(MAXIMUM)?,
-                    )
-                    .row(row)
-                    .mean(self.settings.mean)
-                    .standard_deviation(self.settings.standard_deviation)
-                    .build()
-                    .show(ui)?;
-            }
-            (row, bottom::euclidean::MEAN) => {
-                Float64Array::builder()
-                    .series(&self.data_frame[EUCLIDEAN].struct_()?.field_by_name(MEAN)?)
-                    .row(row)
-                    .mean(self.settings.mean)
-                    .standard_deviation(self.settings.standard_deviation)
-                    .build()
-                    .show(ui)?;
-            }
-            (row, bottom::euclidean::MEDIAN) => {
-                Float64Array::builder()
-                    .series(
-                        &self.data_frame[EUCLIDEAN]
-                            .struct_()?
-                            .field_by_name(MEDIAN)?,
-                    )
-                    .row(row)
-                    .mean(self.settings.mean)
-                    .standard_deviation(self.settings.standard_deviation)
-                    .build()
-                    .show(ui)?;
-            }
-            (row, bottom::euclidean::MIN) => {
-                Float64Array::builder()
-                    .series(
-                        &self.data_frame[EUCLIDEAN]
-                            .struct_()?
-                            .field_by_name(MINIMUM)?,
-                    )
-                    .row(row)
-                    .mean(self.settings.mean)
-                    .standard_deviation(self.settings.standard_deviation)
-                    .build()
-                    .show(ui)?;
-            }
             _ => {}
         }
         Ok(())
@@ -352,16 +298,14 @@ mod top {
     use super::*;
 
     pub(super) const MODE: Range<usize> = 0..2;
-    pub(super) const ALPHA: Range<usize> = MODE.end..MODE.end + 4;
-    pub(super) const EQUIVALENT_CHAIN_LENGTH: Range<usize> = ALPHA.end..ALPHA.end + 4;
-    pub(super) const EUCLIDEAN: Range<usize> =
+    pub(super) const EQUIVALENT_CHAIN_LENGTH: Range<usize> = MODE.end..MODE.end + 4;
+    pub(super) const SELECTIVITY_FACTOR: Range<usize> =
         EQUIVALENT_CHAIN_LENGTH.end..EQUIVALENT_CHAIN_LENGTH.end + 4;
 }
 
 mod bottom {
     use super::*;
 
-    // MODE
     pub(super) mod mode {
         use super::*;
 
@@ -371,19 +315,6 @@ mod bottom {
         pub(in super::super) const STEP: Range<usize> = ONSET.end..ONSET.end + 1;
     }
 
-    // ALPHA
-    pub(super) mod alpha {
-        use super::*;
-
-        const TOP: Range<usize> = top::ALPHA;
-
-        pub(in super::super) const MAX: Range<usize> = TOP.start..TOP.start + 1;
-        pub(in super::super) const MEAN: Range<usize> = MAX.end..MAX.end + 1;
-        pub(in super::super) const MEDIAN: Range<usize> = MEAN.end..MEAN.end + 1;
-        pub(in super::super) const MIN: Range<usize> = MEDIAN.end..MEDIAN.end + 1;
-    }
-
-    // EQUIVALENT_CHAIN_LENGTH
     pub(super) mod equivalent_chain_length {
         use super::*;
 
@@ -395,11 +326,10 @@ mod bottom {
         pub(in super::super) const MIN: Range<usize> = MEDIAN.end..MEDIAN.end + 1;
     }
 
-    // EUCLIDEAN_DISTANCE
-    pub(super) mod euclidean {
+    pub(super) mod selectivity_factor {
         use super::*;
 
-        const TOP: Range<usize> = top::EUCLIDEAN;
+        const TOP: Range<usize> = top::SELECTIVITY_FACTOR;
 
         pub(in super::super) const MAX: Range<usize> = TOP.start..TOP.start + 1;
         pub(in super::super) const MEAN: Range<usize> = MAX.end..MAX.end + 1;

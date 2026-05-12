@@ -6,6 +6,7 @@ use crate::{
     },
     r#const::*,
 };
+use const_format::formatcp;
 use egui::{Frame, Id, Margin, TextStyle, TextWrapMode, Ui};
 use egui_ext::ResponseExt;
 use egui_l20n::prelude::*;
@@ -78,25 +79,25 @@ impl TableView<'_> {
                 ui.heading(HASH).on_hover_localized("Index");
             }
             (0, top::MODE) => {
-                ui.heading(ui.localize("Mode"))
-                    .on_hover_localized("Mode.hover");
+                ui.heading(ui.localize(MODE))
+                    .on_hover_localized(formatcp!("{MODE}.hover"));
             }
             (0, top::FATTY_ACID) => {
-                ui.heading(ui.localize("FattyAcid"))
-                    .on_hover_localized("FattyAcid.abbreviation");
+                ui.heading(ui.localize(FATTY_ACID))
+                    .on_hover_localized(formatcp!("{FATTY_ACID}.abbreviation"));
             }
             (0, top::DISTANCE) => {
                 ui.heading(ui.localize("Distance"));
             }
             // Bottom
             (1, bottom::ONSET) => {
-                ui.heading(ui.localize("OnsetTemperature.abbreviation"))
-                    .on_hover_localized("OnsetTemperature");
+                ui.heading(ui.localize(formatcp!("{ONSET_TEMPERATURE}.abbreviation")))
+                    .on_hover_localized(ONSET_TEMPERATURE);
             }
             (1, bottom::STEP) => {
-                ui.heading(ui.localize("TemperatureStep.abbreviation"))
-                    .on_hover_localized("TemperatureStep")
-                    .on_hover_localized("TemperatureStep.hover");
+                ui.heading(ui.localize(formatcp!("{TEMPERATURE_STEP}.abbreviation")))
+                    .on_hover_localized(TEMPERATURE_STEP)
+                    .on_hover_localized(formatcp!("{TEMPERATURE_STEP}.hover"));
             }
             (1, bottom::FROM) => {
                 ui.heading(ui.localize("From"))
@@ -106,24 +107,19 @@ impl TableView<'_> {
                 ui.heading(ui.localize("To")).on_hover_localized("To.hover");
             }
             (1, bottom::RETENTION_TIME) => {
-                ui.heading(ui.localize("RetentionTimeDistance.abbreviation"))
-                    .on_hover_localized("RetentionTimeDistance")
-                    .on_hover_localized("RetentionTimeDistance.hover");
+                ui.heading(ui.localize(formatcp!("{RETENTION_TIME}.abbreviation")))
+                    .on_hover_localized(RETENTION_TIME)
+                    .on_hover_localized(formatcp!("{RETENTION_TIME}.hover"));
             }
             (1, bottom::EQUIVALENT_CHAIN_LENGTH) => {
-                ui.heading(ui.localize("EquivalentChainLengthDistance.abbreviation"))
-                    .on_hover_localized("EquivalentChainLengthDistance")
-                    .on_hover_localized("EquivalentChainLengthDistance.hover");
+                ui.heading(ui.localize(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.abbreviation")))
+                    .on_hover_localized(EQUIVALENT_CHAIN_LENGTH)
+                    .on_hover_localized(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.hover"));
             }
-            (1, bottom::ALPHA) => {
-                ui.heading(ui.localize("Alpha.abbreviation"))
-                    .on_hover_localized("Alpha")
-                    .on_hover_localized("Alpha.hover");
-            }
-            (1, bottom::EUCLIDEAN) => {
-                ui.heading(ui.localize("EuclideanDistance.abbreviation"))
-                    .on_hover_localized("EuclideanDistance")
-                    .on_hover_localized("EuclideanDistance.hover");
+            (1, bottom::SELECTIVITY_FACTOR) => {
+                ui.heading(ui.localize(formatcp!("{SELECTIVITY_FACTOR}.abbreviation")))
+                    .on_hover_localized(SELECTIVITY_FACTOR)
+                    .on_hover_localized(formatcp!("{SELECTIVITY_FACTOR}.hover"));
             }
             _ => {}
         }
@@ -220,9 +216,9 @@ impl TableView<'_> {
                         Ok(())
                     })?;
             }
-            (row, bottom::ALPHA) => {
+            (row, bottom::SELECTIVITY_FACTOR) => {
                 Float64Array::builder()
-                    .series(self.data_frame[ALPHA].as_materialized_series())
+                    .series(self.data_frame[SELECTIVITY_FACTOR].as_materialized_series())
                     .row(row)
                     .mean(self.settings.mean)
                     .standard_deviation(self.settings.standard_deviation)
@@ -238,34 +234,7 @@ impl TableView<'_> {
                         Ok(())
                     })?;
             }
-            (row, bottom::EUCLIDEAN) => {
-                Float64Array::builder()
-                    .series(self.data_frame[EUCLIDEAN].as_materialized_series())
-                    .row(row)
-                    .mean(self.settings.mean)
-                    .standard_deviation(self.settings.standard_deviation)
-                    .build()
-                    .show(ui)?
-                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
-                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
-                        let retention_times = self.retention_times(row)?;
-                        let equivalent_chain_lengths = self.equivalent_chain_lengths(row)?;
-                        for (retention_time, equivalent_chain_length) in zip(
-                            retention_times.into_no_null_iter()?,
-                            equivalent_chain_lengths.into_no_null_iter()?,
-                        ) {
-                            ui.label(format!(
-                                "√(({} - {})^2 + ({} - {})^2)",
-                                retention_time.to,
-                                retention_time.from,
-                                equivalent_chain_length.to,
-                                equivalent_chain_length.from
-                            ));
-                        }
-                        Ok(())
-                    })?;
-            }
-            _ => unreachable!(),
+            _ => {} // _ => unreachable!(),
         }
         Ok(())
     }
@@ -385,7 +354,6 @@ mod bottom {
     pub(super) const RETENTION_TIME: Range<usize> = TO.end..TO.end + 1;
     pub(super) const EQUIVALENT_CHAIN_LENGTH: Range<usize> =
         RETENTION_TIME.end..RETENTION_TIME.end + 1;
-    pub(super) const ALPHA: Range<usize> =
+    pub(super) const SELECTIVITY_FACTOR: Range<usize> =
         EQUIVALENT_CHAIN_LENGTH.end..EQUIVALENT_CHAIN_LENGTH.end + 1;
-    pub(super) const EUCLIDEAN: Range<usize> = ALPHA.end..ALPHA.end + 1;
 }

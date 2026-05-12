@@ -1,6 +1,6 @@
 use crate::{
     app::states::distance::Settings,
-    r#const::{ALPHA, DELTA, EQUIVALENT_CHAIN_LENGTH, EUCLIDEAN, FROM, RETENTION_TIME, TO},
+    r#const::{SELECTIVITY_FACTOR, DELTA, EQUIVALENT_CHAIN_LENGTH, FROM, RETENTION_TIME, TO},
     utils::hash::HashedDataFrame,
 };
 use egui::util::cache::{ComputerMut, FrameCache};
@@ -71,60 +71,10 @@ fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
                 .display(),
         ])
         .alias(FATTY_ACID),
-        as_struct(vec![
-            mean_and_standard_deviation_and_array(
-                col(RETENTION_TIME).struct_().field_by_name(FROM),
-                key,
-            )
-            .alias(FROM),
-            mean_and_standard_deviation_and_array(
-                col(RETENTION_TIME).struct_().field_by_name(TO),
-                key,
-            )
-            .alias(TO),
-            mean_and_standard_deviation_and_array(
-                col(RETENTION_TIME).struct_().field_by_name(DELTA),
-                key,
-            )
-            .alias(DELTA),
-        ])
-        .alias(RETENTION_TIME),
-        as_struct(vec![
-            mean_and_standard_deviation_and_array(
-                col(EQUIVALENT_CHAIN_LENGTH).struct_().field_by_name(FROM),
-                key,
-            )
-            .alias(FROM),
-            mean_and_standard_deviation_and_array(
-                col(EQUIVALENT_CHAIN_LENGTH).struct_().field_by_name(TO),
-                key,
-            )
-            .alias(TO),
-            mean_and_standard_deviation_and_array(
-                col(EQUIVALENT_CHAIN_LENGTH).struct_().field_by_name(DELTA),
-                key,
-            )
-            .alias(DELTA),
-        ])
-        .alias(EQUIVALENT_CHAIN_LENGTH),
-        mean_and_standard_deviation_and_array(col(ALPHA), key),
-        mean_and_standard_deviation_and_array(col(EUCLIDEAN), key),
+        format_struct(RETENTION_TIME, key),
+        format_struct(EQUIVALENT_CHAIN_LENGTH, key),
+        format_array(col(SELECTIVITY_FACTOR), key),
         // col(TEMPERATURE).precision(key.precision, key.significant),
-        // as_struct(vec![
-        //     col(CHAIN_LENGTH)
-        //         .struct_()
-        //         .field_by_name(EQUIVALENT_CHAIN_LENGTH)
-        //         .precision(key.precision, key.significant),
-        //     col(CHAIN_LENGTH)
-        //         .struct_()
-        //         .field_by_name(FRACTIONAL_CHAIN_LENGTH)
-        //         .precision(key.precision, key.significant),
-        //     col(CHAIN_LENGTH)
-        //         .struct_()
-        //         .field_by_name(EQUIVALENT_CARBON_NUMBER)
-        //         .precision(key.precision, key.significant),
-        // ])
-        // .alias(CHAIN_LENGTH),
         // as_struct(vec![
         //     col(MASS)
         //         .struct_()
@@ -144,22 +94,20 @@ fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
         //         .precision(key.precision, key.significant),
         // ])
         // .alias(MASS),
-        // as_struct(vec![
-        //     col(DERIVATIVE)
-        //         .struct_()
-        //         .field_by_name(ANGLE)
-        //         .precision(key.precision, key.significant),
-        //     col(DERIVATIVE)
-        //         .struct_()
-        //         .field_by_name(SLOPE)
-        //         .precision(key.precision, key.significant),
-        // ])
-        // .alias(DERIVATIVE),
     ]);
     Ok(lazy_frame)
 }
 
-fn mean_and_standard_deviation_and_array(expr: Expr, key: Key) -> Expr {
+fn format_struct(name: &str, key: Key) -> Expr {
+    as_struct(vec![
+        format_array(col(name).struct_().field_by_name(FROM), key),
+        format_array(col(name).struct_().field_by_name(TO), key),
+        format_array(col(name).struct_().field_by_name(DELTA), key),
+    ])
+    .alias(name)
+}
+
+fn format_array(expr: Expr, key: Key) -> Expr {
     Array::builder()
         .expr(expr)
         .ddof(key.ddof)
