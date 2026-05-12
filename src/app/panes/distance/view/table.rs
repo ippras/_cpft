@@ -108,18 +108,15 @@ impl TableView<'_> {
             }
             (1, bottom::RETENTION_TIME) => {
                 ui.heading(ui.localize(formatcp!("{RETENTION_TIME}.abbreviation")))
-                    .on_hover_localized(RETENTION_TIME)
-                    .on_hover_localized(formatcp!("{RETENTION_TIME}.hover"));
+                    .on_hover_localized(RETENTION_TIME);
             }
             (1, bottom::EQUIVALENT_CHAIN_LENGTH) => {
                 ui.heading(ui.localize(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.abbreviation")))
-                    .on_hover_localized(EQUIVALENT_CHAIN_LENGTH)
-                    .on_hover_localized(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.hover"));
+                    .on_hover_localized(EQUIVALENT_CHAIN_LENGTH);
             }
             (1, bottom::SELECTIVITY_FACTOR) => {
                 ui.heading(ui.localize(formatcp!("{SELECTIVITY_FACTOR}.abbreviation")))
-                    .on_hover_localized(SELECTIVITY_FACTOR)
-                    .on_hover_localized(formatcp!("{SELECTIVITY_FACTOR}.hover"));
+                    .on_hover_localized(SELECTIVITY_FACTOR);
             }
             _ => {}
         }
@@ -234,7 +231,7 @@ impl TableView<'_> {
                         Ok(())
                     })?;
             }
-            _ => {} // _ => unreachable!(),
+            _ => unreachable!(),
         }
         Ok(())
     }
@@ -338,7 +335,7 @@ mod top {
     pub(super) const INDEX: Range<usize> = 0..1;
     pub(super) const MODE: Range<usize> = INDEX.end..INDEX.end + 2;
     pub(super) const FATTY_ACID: Range<usize> = MODE.end..MODE.end + 2;
-    pub(super) const DISTANCE: Range<usize> = FATTY_ACID.end..FATTY_ACID.end + 4;
+    pub(super) const DISTANCE: Range<usize> = FATTY_ACID.end..FATTY_ACID.end + 3;
 }
 
 mod bottom {
