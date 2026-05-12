@@ -31,11 +31,11 @@ const TOP: &[Range<usize>] = &[
     top::INDEX,
     top::MODE,
     top::FATTY_ACID,
+    top::DEAD_TIME,
     top::RETENTION_TIME,
     top::RETENTION_FACTOR,
-    top::DEAD_TIME,
-    top::TEMPERATURE,
     top::CHAIN_LENGTH,
+    top::TEMPERATURE,
     top::MASS,
 ];
 
@@ -102,6 +102,11 @@ impl TableView<'_> {
                 ui.heading(ui.localize(FATTY_ACID))
                     .on_hover_localized(formatcp!("{FATTY_ACID}.abbreviation"));
             }
+            (0, top::DEAD_TIME) => {
+                ui.heading(ui.localize(DEAD_TIME))
+                    .on_hover_localized(formatcp!("{DEAD_TIME}.abbreviation"))
+                    .on_hover_localized(formatcp!("{DEAD_TIME}.hover"));
+            }
             (0, top::RETENTION_TIME) => {
                 ui.heading(ui.localize(RETENTION_TIME))
                     .on_hover_localized(formatcp!("{RETENTION_TIME}.abbreviation"))
@@ -116,11 +121,6 @@ impl TableView<'_> {
                             "/doc/en/RetentionFactor.md"
                         )));
                     });
-            }
-            (0, top::DEAD_TIME) => {
-                ui.heading(ui.localize(DEAD_TIME))
-                    .on_hover_localized(formatcp!("{DEAD_TIME}.abbreviation"))
-                    .on_hover_localized(formatcp!("{DEAD_TIME}.hover"));
             }
             (0, top::CHAIN_LENGTH) => {
                 ui.heading(ui.localize("ChainLength"))
@@ -219,6 +219,10 @@ impl TableView<'_> {
                         .str_value(row)?,
                 );
             }
+            (row, top::DEAD_TIME) => {
+                let dead_time = self.dead_time(row)?;
+                ui.label(dead_time.to_string());
+            }
             (row, bottom::ABSOLUTE) => {
                 Float64Array::builder()
                     .series(
@@ -291,29 +295,13 @@ impl TableView<'_> {
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
 
-                        let Some(adjusted_retention_times) = self.data_frame[RETENTION_TIME]
-                            .struct_()?
-                            .field_by_name(ADJUSTED)?
-                            .struct_()?
-                            .field_by_name(ARRAY)?
-                            .array()?
-                            .get_as_series(row)
-                        else {
-                            return Err(
-                                polars_err!(NoData: "{RETENTION_TIME}.{ADJUSTED}.{ARRAY}[{row}]"),
-                            );
-                        };
                         let dead_time = self.dead_time(row)?;
-                        for adjusted_retention_time in adjusted_retention_times.f64()? {
-                            let retention_time = adjusted_retention_time.display();
-                            ui.label(format!("{retention_time:#} / {dead_time}"));
+                        for retention_time in &self.retention_times(row)? {
+                            let retention_time = retention_time.display();
+                            ui.label(format!("({retention_time:#} - {dead_time}) / {dead_time}"));
                         }
                         Ok(())
                     })?;
-            }
-            (row, top::DEAD_TIME) => {
-                let dead_time = self.dead_time(row)?;
-                ui.label(dead_time.to_string());
             }
             (row, bottom::ECL) => {
                 Float64Array::builder()
@@ -595,10 +583,10 @@ mod top {
     pub(crate) const INDEX: Range<usize> = 0..1;
     pub(crate) const MODE: Range<usize> = INDEX.end..INDEX.end + 2;
     pub(crate) const FATTY_ACID: Range<usize> = MODE.end..MODE.end + 1;
-    pub(crate) const RETENTION_TIME: Range<usize> = FATTY_ACID.end..FATTY_ACID.end + 3;
+    pub(crate) const DEAD_TIME: Range<usize> = FATTY_ACID.end..FATTY_ACID.end + 1;
+    pub(crate) const RETENTION_TIME: Range<usize> = DEAD_TIME.end..DEAD_TIME.end + 3;
     pub(crate) const RETENTION_FACTOR: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
-    pub(crate) const DEAD_TIME: Range<usize> = RETENTION_FACTOR.end..RETENTION_FACTOR.end + 1;
-    pub(crate) const CHAIN_LENGTH: Range<usize> = DEAD_TIME.end..DEAD_TIME.end + 3;
+    pub(crate) const CHAIN_LENGTH: Range<usize> = RETENTION_FACTOR.end..RETENTION_FACTOR.end + 3;
     pub(crate) const TEMPERATURE: Range<usize> = CHAIN_LENGTH.end..CHAIN_LENGTH.end + 1;
     pub(crate) const MASS: Range<usize> = TEMPERATURE.end..TEMPERATURE.end + 1;
 }

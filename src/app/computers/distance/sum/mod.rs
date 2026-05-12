@@ -1,6 +1,11 @@
 use crate::{
-    app::states::distance::{Aggregation, Distance, Filter, Order, Priority, Settings, Sort},
-    r#const::*,
+    app::{
+        computers::{distance::process::OUTPUT_SCHEMA as INPUT_SCHEMA, matches_schema},
+        states::distance::{Aggregation, Distance, Filter, Order, Priority, Settings, Sort},
+    },
+    r#const::{
+        DISTANCE, EQUIVALENT_CHAIN_LENGTH, MAXIMUM, MEAN, MEDIAN, MINIMUM, MODE, SELECTIVITY_FACTOR,
+    },
     utils::hash::HashedDataFrame,
 };
 use egui::util::cache::{ComputerMut, FrameCache};
@@ -16,6 +21,8 @@ pub(crate) struct Computer;
 
 impl Computer {
     fn try_compute(&mut self, key: Key) -> PolarsResult<Value> {
+        println!("lazy_frame DD: {:#?}", key.frame.data_frame.schema());
+        matches_schema(&key.frame.data_frame, &INPUT_SCHEMA)?;
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
         println!("lazy_frame SUM 0: {}", lazy_frame.clone().collect()?);
         // Group
@@ -70,19 +77,21 @@ type Value = HashedDataFrame;
 
 /// Group
 fn group(lazy_frame: LazyFrame) -> PolarsResult<LazyFrame> {
-    Ok(lazy_frame
-        .group_by([col(MODE)])
-        .agg([group_column(SELECTIVITY_FACTOR)?, group_column(EQUIVALENT_CHAIN_LENGTH)?]))
+    Ok(lazy_frame.group_by([col(MODE)]).agg([
+        group_column(col(SELECTIVITY_FACTOR))?,
+        group_column(col(EQUIVALENT_CHAIN_LENGTH).struct_().field_by_name(DISTANCE))?,
+    ]))
 }
 
-fn group_column(name: &str) -> PolarsResult<Expr> {
+fn group_column(expr: Expr) -> PolarsResult<Expr> {
     Ok(as_struct(vec![
-        eval_arr(col(name), |element| Ok(element.abs().max()))?.alias(MAXIMUM),
-        eval_arr(col(name), |element| Ok(element.abs().mean()))?.alias(MEAN),
-        eval_arr(col(name), |element| Ok(element.abs().median()))?.alias(MEDIAN),
-        eval_arr(col(name), |element| Ok(element.abs().min()))?.alias(MINIMUM),
+        eval_arr(expr.clone(), |element| Ok(element.abs().max()))?.alias(MAXIMUM),
+        eval_arr(expr.clone(), |element| Ok(element.abs().mean()))?.alias(MEAN),
+        eval_arr(expr.clone(), |element| Ok(element.abs().median()))?.alias(MEDIAN),
+        eval_arr(expr.clone(), |element| Ok(element.abs().min()))?.alias(MINIMUM),
     ])
-    .alias(name))
+    .name()
+    .keep())
 }
 
 /// Sort
@@ -107,19 +116,20 @@ fn sort(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
 /// Format
 fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
     lazy_frame.with_columns([
-        format_struct(EQUIVALENT_CHAIN_LENGTH, key),
-        format_struct(SELECTIVITY_FACTOR, key),
+        format_struct(col(EQUIVALENT_CHAIN_LENGTH), key),
+        format_struct(col(SELECTIVITY_FACTOR), key),
     ])
 }
 
-fn format_struct(name: &str, key: Key) -> Expr {
+fn format_struct(expr: Expr, key: Key) -> Expr {
     as_struct(vec![
-        format_array(col(name).struct_().field_by_name(MAXIMUM), key),
-        format_array(col(name).struct_().field_by_name(MEAN), key),
-        format_array(col(name).struct_().field_by_name(MEDIAN), key),
-        format_array(col(name).struct_().field_by_name(MINIMUM), key),
+        format_array(expr.clone().struct_().field_by_name(MAXIMUM), key),
+        format_array(expr.clone().struct_().field_by_name(MEAN), key),
+        format_array(expr.clone().struct_().field_by_name(MEDIAN), key),
+        format_array(expr.clone().struct_().field_by_name(MINIMUM), key),
     ])
-    .alias(name)
+    .name()
+    .keep()
 }
 
 fn format_array(expr: Expr, key: Key) -> Expr {

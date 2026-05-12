@@ -14,14 +14,27 @@ use egui_phosphor::regular::HASH;
 use egui_table::{
     AutoSizeMode, CellInfo, Column, HeaderCellInfo, HeaderRow, Table, TableDelegate, TableState,
 };
+use itertools::Itertools;
 use lipid::prelude::*;
 use polars::prelude::*;
-use std::{iter::zip, ops::Range};
+use polars_ext::option::DisplayOption;
+use polars_utils::format_list;
+use std::{
+    fmt::{Display, Formatter},
+    iter::zip,
+    ops::Range,
+};
 use tracing::instrument;
 
 pub(crate) const NUM_COLUMNS: usize = top::DISTANCE.end;
 
-const TOP: &[Range<usize>] = &[top::INDEX, top::MODE, top::FATTY_ACID, top::DISTANCE];
+const TOP: &[Range<usize>] = &[
+    top::INDEX,
+    top::MODE,
+    top::FATTY_ACID,
+    top::DEAD_TIME,
+    top::DISTANCE,
+];
 
 /// Table view
 #[derive(Debug)]
@@ -86,8 +99,13 @@ impl TableView<'_> {
                 ui.heading(ui.localize(FATTY_ACID))
                     .on_hover_localized(formatcp!("{FATTY_ACID}.abbreviation"));
             }
+            (0, top::DEAD_TIME) => {
+                ui.heading(ui.localize(DEAD_TIME))
+                    .on_hover_localized(formatcp!("{DEAD_TIME}.abbreviation"))
+                    .on_hover_localized(formatcp!("{DEAD_TIME}.hover"));
+            }
             (0, top::DISTANCE) => {
-                ui.heading(ui.localize("Distance"));
+                ui.heading(ui.localize(DISTANCE));
             }
             // Bottom
             (1, bottom::ONSET) => {
@@ -131,12 +149,7 @@ impl TableView<'_> {
     ) -> PolarsResult<()> {
         match (row, column) {
             (row, top::INDEX) => {
-                ui.label(row.to_string())
-                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
-                        ui.heading(ui.localize(DEAD_TIME));
-                        ui.label(self.data_frame[DEAD_TIME].get(row)?.str_value());
-                        Ok(())
-                    })?;
+                ui.label(row.to_string());
             }
             (row, bottom::ONSET) => {
                 ui.label(
@@ -154,6 +167,10 @@ impl TableView<'_> {
                         .str_value(row)?,
                 );
             }
+            (row, top::DEAD_TIME) => {
+                let dead_time = self.dead_time(row)?;
+                ui.label(dead_time.to_string());
+            }
             (row, bottom::FROM) => {
                 ui.label(
                     self.data_frame[FATTY_ACID]
@@ -162,7 +179,21 @@ impl TableView<'_> {
                         .str()?
                         .get(row)
                         .ok_or(polars_err!(NoData: "{FATTY_ACID}.{FROM}[{row}]"))?,
-                );
+                )
+                .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                    ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+                    ui.heading(ui.localize(RETENTION_TIME));
+                    let text = format_array(&self.float64(row, RETENTION_TIME, FROM)?);
+                    ui.label(text);
+                    Ok(())
+                })?
+                .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                    ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+                    ui.heading(ui.localize(EQUIVALENT_CHAIN_LENGTH));
+                    let text = format_array(&self.float64(row, EQUIVALENT_CHAIN_LENGTH, FROM)?);
+                    ui.label(text);
+                    Ok(())
+                })?;
             }
             (row, bottom::TO) => {
                 ui.label(
@@ -172,12 +203,26 @@ impl TableView<'_> {
                         .str()?
                         .get(row)
                         .ok_or(polars_err!(NoData: "{FATTY_ACID}.{TO}[{row}]"))?,
-                );
+                )
+                .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                    ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+                    ui.heading(ui.localize(RETENTION_TIME));
+                    let text = format_array(&self.float64(row, RETENTION_TIME, TO)?);
+                    ui.label(text);
+                    Ok(())
+                })?
+                .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                    ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+                    ui.heading(ui.localize(EQUIVALENT_CHAIN_LENGTH));
+                    let text = format_array(&self.float64(row, EQUIVALENT_CHAIN_LENGTH, TO)?);
+                    ui.label(text);
+                    Ok(())
+                })?;
             }
             (row, bottom::RETENTION_TIME) => {
                 let retention_time = &self.data_frame[RETENTION_TIME];
                 Float64Array::builder()
-                    .series(&retention_time.struct_()?.field_by_name(DELTA)?)
+                    .series(&retention_time.struct_()?.field_by_name(DISTANCE)?)
                     .row(row)
                     .mean(self.settings.mean)
                     .standard_deviation(self.settings.standard_deviation)
@@ -185,8 +230,12 @@ impl TableView<'_> {
                     .show(ui)?
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
-                        let retention_times = self.retention_times(row)?;
-                        for FromTo { from, to } in retention_times.into_no_null_iter()? {
+                        for (from, to) in zip(
+                            &self.float64(row, RETENTION_TIME, FROM)?,
+                            &self.float64(row, RETENTION_TIME, TO)?,
+                        ) {
+                            let to = to.display();
+                            let from = from.display();
                             ui.label(format!("{to} - {from}"));
                         }
                         Ok(())
@@ -197,7 +246,7 @@ impl TableView<'_> {
                     .series(
                         &self.data_frame[EQUIVALENT_CHAIN_LENGTH]
                             .struct_()?
-                            .field_by_name(DELTA)?,
+                            .field_by_name(DISTANCE)?,
                     )
                     .row(row)
                     .mean(self.settings.mean)
@@ -206,8 +255,12 @@ impl TableView<'_> {
                     .show(ui)?
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
-                        let equivalent_chain_lengths = self.equivalent_chain_lengths(row)?;
-                        for FromTo { from, to } in equivalent_chain_lengths.into_no_null_iter()? {
+                        for (from, to) in zip(
+                            &self.float64(row, EQUIVALENT_CHAIN_LENGTH, FROM)?,
+                            &self.float64(row, EQUIVALENT_CHAIN_LENGTH, TO)?,
+                        ) {
+                            let to = to.display();
+                            let from = from.display();
                             ui.label(format!("{to} - {from}",));
                         }
                         Ok(())
@@ -223,9 +276,13 @@ impl TableView<'_> {
                     .show(ui)?
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
-                        let retention_times = self.retention_times(row)?;
                         let dead_time = self.data_frame[DEAD_TIME].get(row)?.str_value();
-                        for FromTo { from, to } in retention_times.into_no_null_iter()? {
+                        for (from, to) in zip(
+                            &self.float64(row, RETENTION_TIME, FROM)?,
+                            &self.float64(row, RETENTION_TIME, TO)?,
+                        ) {
+                            let to = to.display();
+                            let from = from.display();
                             ui.label(format!("({to} - {dead_time}) / ({from} - {dead_time})"));
                         }
                         Ok(())
@@ -236,60 +293,25 @@ impl TableView<'_> {
         Ok(())
     }
 
-    fn equivalent_chain_lengths(&self, row: usize) -> PolarsResult<FromTo<Float64Chunked>> {
-        self.array(row, EQUIVALENT_CHAIN_LENGTH)
+    fn dead_time(&self, row: usize) -> PolarsResult<f64> {
+        let Some(dead_time) = self.data_frame[DEAD_TIME].f64()?.get(row) else {
+            return Err(polars_err!(NoData: "{DEAD_TIME}[{row}]"));
+        };
+        Ok(dead_time)
     }
 
-    fn retention_times(&self, row: usize) -> PolarsResult<FromTo<Float64Chunked>> {
-        let r#struct = self.data_frame[RETENTION_TIME].struct_()?;
-        let Some(to) = r#struct
-            .field_by_name(TO)?
+    fn float64(&self, row: usize, column: &str, field: &str) -> PolarsResult<Float64Chunked> {
+        let Some(series) = self.data_frame[column]
+            .struct_()?
+            .field_by_name(field)?
             .struct_()?
             .field_by_name(ARRAY)?
             .array()?
             .get_as_series(row)
         else {
-            return Err(polars_err!(NoData: "{RETENTION_TIME}.{TO}.{ARRAY}[{row}]"));
+            return Err(polars_err!(NoData: "{column}.{field}.{ARRAY}[{row}]"));
         };
-        let Some(from) = r#struct
-            .field_by_name(FROM)?
-            .struct_()?
-            .field_by_name(ARRAY)?
-            .array()?
-            .get_as_series(row)
-        else {
-            return Err(polars_err!(NoData: "{RETENTION_TIME}.{FROM}.{ARRAY}[{row}]"));
-        };
-        Ok(FromTo {
-            from: from.f64()?.fill_null_with_values(f64::NAN)?,
-            to: to.f64()?.fill_null_with_values(f64::NAN)?,
-        })
-    }
-
-    fn array(&self, row: usize, name: &str) -> PolarsResult<FromTo<Float64Chunked>> {
-        let r#struct = self.data_frame[name].struct_()?;
-        let Some(to) = r#struct
-            .field_by_name(TO)?
-            .struct_()?
-            .field_by_name(ARRAY)?
-            .array()?
-            .get_as_series(row)
-        else {
-            return Err(polars_err!(NoData: "{name}.{TO}.{ARRAY}[{row}]"));
-        };
-        let Some(from) = r#struct
-            .field_by_name(FROM)?
-            .struct_()?
-            .field_by_name(ARRAY)?
-            .array()?
-            .get_as_series(row)
-        else {
-            return Err(polars_err!(NoData: "{name}.{FROM}.{ARRAY}[{row}]"));
-        };
-        Ok(FromTo {
-            from: from.f64()?.fill_null_with_values(f64::NAN)?,
-            to: to.f64()?.fill_null_with_values(f64::NAN)?,
-        })
+        Ok(series.f64()?.clone())
     }
 }
 
@@ -315,18 +337,13 @@ impl TableDelegate for TableView<'_> {
     }
 }
 
-struct FromTo<T> {
-    from: T,
-    to: T,
-}
-
-impl FromTo<Float64Chunked> {
-    fn into_no_null_iter(&self) -> PolarsResult<impl Iterator<Item = FromTo<f64>>> {
-        Ok(
-            zip(self.from.into_no_null_iter(), self.to.into_no_null_iter())
-                .map(|(from, to)| FromTo { from, to }),
-        )
-    }
+fn format_array(array: impl IntoIterator<Item = Option<impl Display>>) -> String {
+    format!(
+        "[{}]",
+        array
+            .into_iter()
+            .format_with(", ", |item, f| f(&item.display()))
+    )
 }
 
 mod top {
@@ -335,7 +352,8 @@ mod top {
     pub(super) const INDEX: Range<usize> = 0..1;
     pub(super) const MODE: Range<usize> = INDEX.end..INDEX.end + 2;
     pub(super) const FATTY_ACID: Range<usize> = MODE.end..MODE.end + 2;
-    pub(super) const DISTANCE: Range<usize> = FATTY_ACID.end..FATTY_ACID.end + 3;
+    pub(super) const DEAD_TIME: Range<usize> = FATTY_ACID.end..FATTY_ACID.end + 1;
+    pub(super) const DISTANCE: Range<usize> = DEAD_TIME.end..DEAD_TIME.end + 3;
 }
 
 mod bottom {
@@ -345,10 +363,10 @@ mod bottom {
     pub(super) const ONSET: Range<usize> = top::MODE.start..top::MODE.start + 1;
     pub(super) const STEP: Range<usize> = ONSET.end..ONSET.end + 1;
     // FATTY_ACID
-    pub(super) const FROM: Range<usize> = STEP.end..STEP.end + 1;
+    pub(super) const FROM: Range<usize> = top::FATTY_ACID.start..top::FATTY_ACID.start + 1;
     pub(super) const TO: Range<usize> = FROM.end..FROM.end + 1;
     // DISTANCE
-    pub(super) const RETENTION_TIME: Range<usize> = TO.end..TO.end + 1;
+    pub(super) const RETENTION_TIME: Range<usize> = top::DISTANCE.start..top::DISTANCE.start + 1;
     pub(super) const EQUIVALENT_CHAIN_LENGTH: Range<usize> =
         RETENTION_TIME.end..RETENTION_TIME.end + 1;
     pub(super) const SELECTIVITY_FACTOR: Range<usize> =

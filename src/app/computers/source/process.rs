@@ -56,6 +56,7 @@ pub(crate) static OUTPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
             ]),
         ),
         field!(FATTY_ACID),
+        Field::new(PlSmallStr::from_static(DEAD_TIME), DataType::Float64),
         Field::new(
             PlSmallStr::from_static(RETENTION_TIME),
             DataType::Struct(vec![
@@ -77,7 +78,6 @@ pub(crate) static OUTPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
             PlSmallStr::from_static(RETENTION_FACTOR),
             DataType::Array(Box::new(DataType::Float64), 0),
         ),
-        Field::new(PlSmallStr::from_static(DEAD_TIME), DataType::Float64),
         Field::new(
             PlSmallStr::from_static(CHAIN_LENGTH),
             DataType::Struct(vec![
@@ -174,9 +174,9 @@ impl Computer {
         lazy_frame = lazy_frame.select([
             col(MODE),
             col(FATTY_ACID),
+            col(DEAD_TIME),
             col(RETENTION_TIME),
             col(RETENTION_FACTOR),
-            col(DEAD_TIME),
             col(CHAIN_LENGTH),
             col(TEMPERATURE),
             col(MASS),

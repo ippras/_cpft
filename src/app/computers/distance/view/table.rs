@@ -1,6 +1,11 @@
 use crate::{
-    app::states::distance::Settings,
-    r#const::{SELECTIVITY_FACTOR, DELTA, EQUIVALENT_CHAIN_LENGTH, FROM, RETENTION_TIME, TO},
+    app::{
+        computers::{distance::process::OUTPUT_SCHEMA as INPUT_SCHEMA, matches_schema},
+        states::distance::Settings,
+    },
+    r#const::{
+        DEAD_TIME, DISTANCE, EQUIVALENT_CHAIN_LENGTH, FROM, RETENTION_TIME, SELECTIVITY_FACTOR, TO,
+    },
     utils::hash::HashedDataFrame,
 };
 use egui::util::cache::{ComputerMut, FrameCache};
@@ -17,6 +22,7 @@ pub(crate) struct Computer;
 
 impl Computer {
     fn try_compute(&mut self, key: Key) -> PolarsResult<Value> {
+        matches_schema(&key.frame.data_frame, &INPUT_SCHEMA)?;
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
         lazy_frame = format(lazy_frame, key)?;
         lazy_frame.collect()
@@ -53,7 +59,6 @@ impl<'a> Key<'a> {
 type Value = DataFrame;
 
 fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
-    println!("lazy_frame DD: {}", lazy_frame.clone().collect()?);
     // Filter
     // lazy_frame = lazy_frame.filter(col(FILTER));
     // Compute
@@ -71,8 +76,9 @@ fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
                 .display(),
         ])
         .alias(FATTY_ACID),
-        format_struct(RETENTION_TIME, key),
-        format_struct(EQUIVALENT_CHAIN_LENGTH, key),
+        col(DEAD_TIME).precision(key.precision, key.significant),
+        format_struct(col(RETENTION_TIME), key),
+        format_struct(col(EQUIVALENT_CHAIN_LENGTH), key),
         format_array(col(SELECTIVITY_FACTOR), key),
         // col(TEMPERATURE).precision(key.precision, key.significant),
         // as_struct(vec![
@@ -98,13 +104,14 @@ fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     Ok(lazy_frame)
 }
 
-fn format_struct(name: &str, key: Key) -> Expr {
+fn format_struct(expr: Expr, key: Key) -> Expr {
     as_struct(vec![
-        format_array(col(name).struct_().field_by_name(FROM), key),
-        format_array(col(name).struct_().field_by_name(TO), key),
-        format_array(col(name).struct_().field_by_name(DELTA), key),
+        format_array(expr.clone().struct_().field_by_name(FROM), key),
+        format_array(expr.clone().struct_().field_by_name(TO), key),
+        format_array(expr.clone().struct_().field_by_name(DISTANCE), key),
     ])
-    .alias(name)
+    .name()
+    .keep()
 }
 
 fn format_array(expr: Expr, key: Key) -> Expr {

@@ -4,8 +4,8 @@ use crate::{
         states::distance::Settings,
     },
     r#const::{
-        ABSOLUTE, SELECTIVITY_FACTOR, CHAIN_LENGTH, DEAD_TIME, DELTA, EQUIVALENT_CHAIN_LENGTH, FILTER, FROM,
-        MODE, ONSET_TEMPERATURE, RETENTION_TIME, TEMPERATURE_STEP, TO,
+        ABSOLUTE, CHAIN_LENGTH, DEAD_TIME, DISTANCE, EQUIVALENT_CHAIN_LENGTH, FILTER, FROM, MODE,
+        ONSET_TEMPERATURE, RETENTION_TIME, SELECTIVITY_FACTOR, TEMPERATURE_STEP, TO,
     },
     utils::hash::HashedDataFrame,
 };
@@ -46,6 +46,10 @@ pub(crate) static OUTPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
                     PlSmallStr::from_static(TO),
                     DataType::Array(Box::new(DataType::Float64), 0),
                 ),
+                Field::new(
+                    PlSmallStr::from_static(DISTANCE),
+                    DataType::Array(Box::new(DataType::Float64), 0),
+                ),
             ]),
         ),
         Field::new(
@@ -59,20 +63,15 @@ pub(crate) static OUTPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
                     PlSmallStr::from_static(TO),
                     DataType::Array(Box::new(DataType::Float64), 0),
                 ),
+                Field::new(
+                    PlSmallStr::from_static(DISTANCE),
+                    DataType::Array(Box::new(DataType::Float64), 0),
+                ),
             ]),
         ),
         Field::new(
             PlSmallStr::from_static(SELECTIVITY_FACTOR),
-            DataType::Struct(vec![
-                Field::new(
-                    PlSmallStr::from_static(FROM),
-                    DataType::Array(Box::new(DataType::Float64), 0),
-                ),
-                Field::new(
-                    PlSmallStr::from_static(TO),
-                    DataType::Array(Box::new(DataType::Float64), 0),
-                ),
-            ]),
+            DataType::Array(Box::new(DataType::Float64), 0),
         ),
     ]))
 });
@@ -89,6 +88,7 @@ impl Computer {
         matches_schema(&key.frame.data_frame, &INPUT_SCHEMA)?;
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
         // Filter
+        // Фильтруем до расчетов дистанций, чтоб считать только необходимые дистанции между жирными кислотами
         lazy_frame = lazy_frame.filter(col(FILTER));
         // Join
         lazy_frame = join(lazy_frame, key)?;
@@ -218,7 +218,7 @@ fn join(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
             (col(TO).struct_().field_by_name(RETENTION_TIME)
                 - col(FROM).struct_().field_by_name(RETENTION_TIME))
             .over([MODE])?
-            .alias(DELTA),
+            .alias(DISTANCE),
         ])
         .alias(RETENTION_TIME),
         as_struct(vec![
@@ -235,7 +235,7 @@ fn join(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
             (col(TO).struct_().field_by_name(EQUIVALENT_CHAIN_LENGTH)
                 - col(FROM).struct_().field_by_name(EQUIVALENT_CHAIN_LENGTH))
             .over([MODE])?
-            .alias(DELTA),
+            .alias(DISTANCE),
         ])
         .alias(EQUIVALENT_CHAIN_LENGTH),
         ((col(FROM).struct_().field_by_name(RETENTION_TIME) - col(DEAD_TIME))

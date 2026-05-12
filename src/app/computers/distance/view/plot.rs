@@ -1,7 +1,7 @@
 use crate::{
     app::{computers::plot::IndexKey, states::distance::Settings},
     r#const::{
-        SELECTIVITY_FACTOR, DELTA, EQUIVALENT_CHAIN_LENGTH, FROM, MODE, ONSET_TEMPERATURE, TEMPERATURE_STEP, TO,
+        SELECTIVITY_FACTOR, DISTANCE, EQUIVALENT_CHAIN_LENGTH, FROM, MODE, ONSET_TEMPERATURE, TEMPERATURE_STEP, TO,
     },
     utils::hash::HashedDataFrame,
 };
@@ -86,7 +86,7 @@ fn equivalent_chain_length_alpha(mut lazy_frame: LazyFrame) -> PolarsResult<Valu
             col(FATTY_ACID),
             col(MODE).struct_().field_by_name("*"),
             concat_arr(vec![
-                col(EQUIVALENT_CHAIN_LENGTH).struct_().field_by_name(DELTA),
+                col(EQUIVALENT_CHAIN_LENGTH).struct_().field_by_name(DISTANCE),
                 col(SELECTIVITY_FACTOR),
             ])?
             .alias(COORDINATES),
