@@ -8,7 +8,7 @@ use crate::{
         VerticalButton,
     },
     localization::ContextExt as _,
-    presets::AGILENT,
+    presets::{AGILENT, AGILENT_3_14},
 };
 use anyhow::Result;
 use data::Data;
@@ -266,6 +266,16 @@ impl App {
             if response.clicked() {
                 self.tree
                     .insert_pane::<VERTICAL>(Pane::source(AGILENT.clone()));
+            }
+
+            let mut response =
+                ui.button(RichText::new(format!("{DATABASE} IPPRAS/Agilent 3.14")).heading());
+            response = response.on_hover_ui(|ui| {
+                MetadataWidget::new(&AGILENT_3_14.meta).show(ui);
+            });
+            if response.clicked() {
+                self.tree
+                    .insert_pane::<VERTICAL>(Pane::source(AGILENT_3_14.clone()));
             }
         })
         .response

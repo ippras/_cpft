@@ -22,6 +22,7 @@ use std::sync::LazyLock;
 /// Input schema
 pub(crate) static INPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
     Arc::new(Schema::from_iter([
+        // Индекс порядка элюирования
         Field::new(PlSmallStr::from_static(INDEX), DataType::UInt32),
         Field::new(
             PlSmallStr::from_static(MODE),
@@ -45,6 +46,7 @@ pub(crate) static INPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
 /// Output schema
 pub(crate) static OUTPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
     Arc::new(Schema::from_iter([
+        Field::new(PlSmallStr::from_static(INDEX), DataType::UInt32),
         Field::new(
             PlSmallStr::from_static(MODE),
             DataType::Struct(vec![
@@ -172,6 +174,7 @@ impl Computer {
         lazy_frame = sort(lazy_frame, key)?;
         // Select
         lazy_frame = lazy_frame.select([
+            col(INDEX),
             col(MODE),
             col(FATTY_ACID),
             col(DEAD_TIME),
@@ -452,10 +455,8 @@ fn filter(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
 }
 
 fn sort(lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
-    let sort_options = SortMultipleOptions::new()
-        .with_maintain_order(true)
-        .with_nulls_last(false)
-        .with_order_descending(key.order == Order::Descending);
+    let sort_options =
+        SortMultipleOptions::new().with_order_descending(key.order == Order::Descending);
     Ok(match key.sort {
         Sort::FattyAcid => lazy_frame.sort_by_exprs(
             [
@@ -466,17 +467,7 @@ fn sort(lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
             ],
             sort_options,
         ),
-        Sort::RetentionTime => lazy_frame.sort([MODE], sort_options.clone()).select([all()
-            .as_expr()
-            .sort_by(
-                &[col(RETENTION_TIME)
-                    .struct_()
-                    .field_by_name(ABSOLUTE)
-                    .arr()
-                    .mean()],
-                sort_options,
-            )
-            .over([MODE])?]),
+        Sort::RetentionTime => lazy_frame.sort([MODE, INDEX], sort_options.clone()),
     })
 }
 
