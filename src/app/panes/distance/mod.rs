@@ -249,6 +249,7 @@ impl Pane {
     fn settings_window(&mut self, ui: &mut Ui, state: &mut State) {
         Window::new(format!("{SLIDERS_HORIZONTAL} Distance settings"))
             .id(ui.auto_id_with(ID_SOURCE).with("Settings"))
+            .constrain_to(ui.clip_rect())
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_settings)
             .show(ui.ctx(), |ui| {
