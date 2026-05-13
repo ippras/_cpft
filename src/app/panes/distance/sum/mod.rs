@@ -58,7 +58,7 @@ impl<'a> Sum<'a> {
                 Column::default().resizable(self.settings.resizable);
                 num_columns
             ])
-            .num_sticky_cols(2)
+            .num_sticky_cols(self.settings.sticky)
             .headers([
                 HeaderRow {
                     height,

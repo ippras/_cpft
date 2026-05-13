@@ -8,9 +8,10 @@ use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;
 use polars_ext::{expr::ExprExt, prelude::*};
-use scirs2::stats::regression::linear_regression;
-use scirs2_core::ndarray::{Array1, Array2};
 use std::{iter::zip, sync::LazyLock};
+
+// use scirs2::stats::regression::linear_regression;
+// use scirs2_core::ndarray::{Array1, Array2};
 
 const FALSE_REGRESSION: LazyLock<Scalar> =
     LazyLock::new(|| Scalar::new_array(Series::new(PlSmallStr::EMPTY, &[false; 3]), 3));
@@ -208,9 +209,9 @@ fn regression<const N: usize>(mut lazy_frame: LazyFrame, key: Key) -> PolarsResu
                     .struct_()
                     .field_by_name("*"),
             ])
-            .apply(regression_n::<N>, |_schema, field| {
-                Ok(Field::new(PlSmallStr::EMPTY, field.dtype.clone()))
-            })
+            // .apply(regression_n::<N>, |_schema, field| {
+            //     Ok(Field::new(PlSmallStr::EMPTY, field.dtype.clone()))
+            // })
             .struct_()
             .field_by_name(r#"^field_\d+$"#),
         ])?
@@ -225,149 +226,149 @@ fn regression<const N: usize>(mut lazy_frame: LazyFrame, key: Key) -> PolarsResu
     Ok(regression)
 }
 
-fn x<const N: usize>(values: impl ExactSizeIterator<Item = f64>) -> PolarsResult<Array2<f64>> {
-    let mut v: Vec<f64> = Vec::with_capacity(values.len() * N);
-    for value in values {
-        for n in 0..N {
-            v.push(value.powi(n as _)); // x^n
-        }
-    }
-    Array2::from_shape_vec((v.len() / N, N), v)
-        .map_err(|error| polars_err!(ShapeMismatch: error.to_string()))
-}
+// fn x<const N: usize>(values: impl ExactSizeIterator<Item = f64>) -> PolarsResult<Array2<f64>> {
+//     let mut v: Vec<f64> = Vec::with_capacity(values.len() * N);
+//     for value in values {
+//         for n in 0..N {
+//             v.push(value.powi(n as _)); // x^n
+//         }
+//     }
+//     Array2::from_shape_vec((v.len() / N, N), v)
+//         .map_err(|error| polars_err!(ShapeMismatch: error.to_string()))
+// }
 
-fn regression0<const N: usize>(column: Column) -> PolarsResult<Column> {
-    let fields = column.struct_()?.fields_as_series();
-    let carbon_series = &fields[0];
-    let retention_times_series = &fields[1..];
-    let mut fields = Vec::with_capacity(fields.len());
-    fields.push(carbon_series.clone());
-    for retention_time_series in retention_times_series {
-        let is_not_null = retention_time_series.is_not_null();
-        let is_null = retention_time_series.is_null();
+// fn regression0<const N: usize>(column: Column) -> PolarsResult<Column> {
+//     let fields = column.struct_()?.fields_as_series();
+//     let carbon_series = &fields[0];
+//     let retention_times_series = &fields[1..];
+//     let mut fields = Vec::with_capacity(fields.len());
+//     fields.push(carbon_series.clone());
+//     for retention_time_series in retention_times_series {
+//         let is_not_null = retention_time_series.is_not_null();
+//         let is_null = retention_time_series.is_null();
 
-        // Training
-        let mut carbons = Vec::new();
-        let mut retention_times = Vec::new();
-        for (carbon, retention_time) in zip(
-            carbon_series
-                .filter(&is_not_null)?
-                .f64()?
-                .into_no_null_iter(),
-            retention_time_series
-                .filter(&is_not_null)?
-                .f64()?
-                .into_no_null_iter(),
-        ) {
-            for n in 0..N {
-                carbons.push(carbon.powi(n as _)); // x^n
-            }
-            retention_times.push(retention_time); // y
-        }
-        let results = {
-            let x = Array2::from_shape_vec((carbons.len() / N, N), carbons)
-                .map_err(|error| polars_err!(ShapeMismatch: error.to_string()))?;
-            let y = Array1::from_vec(retention_times);
-            linear_regression(&x.view(), &y.view(), None)
-                .map_err(|error| polars_err!(ComputeError: error.to_string()))?
-        };
-        // println!("Summary: {}", results.summary());
+//         // Training
+//         let mut carbons = Vec::new();
+//         let mut retention_times = Vec::new();
+//         for (carbon, retention_time) in zip(
+//             carbon_series
+//                 .filter(&is_not_null)?
+//                 .f64()?
+//                 .into_no_null_iter(),
+//             retention_time_series
+//                 .filter(&is_not_null)?
+//                 .f64()?
+//                 .into_no_null_iter(),
+//         ) {
+//             for n in 0..N {
+//                 carbons.push(carbon.powi(n as _)); // x^n
+//             }
+//             retention_times.push(retention_time); // y
+//         }
+//         let results = {
+//             let x = Array2::from_shape_vec((carbons.len() / N, N), carbons)
+//                 .map_err(|error| polars_err!(ShapeMismatch: error.to_string()))?;
+//             let y = Array1::from_vec(retention_times);
+//             linear_regression(&x.view(), &y.view(), None)
+//                 .map_err(|error| polars_err!(ComputeError: error.to_string()))?
+//         };
+//         // println!("Summary: {}", results.summary());
 
-        // Predict
-        let x = x::<N>(carbon_series.filter(&is_null)?.f64()?.into_no_null_iter())?;
-        let y = results
-            .predict(&x.view())
-            .map_err(|error| polars_err!(ComputeError: error.to_string()))?;
-        let null_indices =
-            IdxCa::from_iter_values(PlSmallStr::EMPTY, 0..(carbon_series.len() as _))
-                .filter(&is_null)?
-                .into_no_null_iter()
-                .collect::<Vec<_>>();
-        let values = Float64Chunked::new(PlSmallStr::EMPTY, y.to_vec());
-        let retention_time = retention_time_series
-            .f64()?
-            .clone()
-            .scatter(&null_indices, &values)?;
-        fields.push(retention_time)
-    }
-    let r#struct = StructChunked::from_series(column.name().clone(), column.len(), fields.iter())?;
-    Ok(r#struct.into_column())
-}
+//         // Predict
+//         let x = x::<N>(carbon_series.filter(&is_null)?.f64()?.into_no_null_iter())?;
+//         let y = results
+//             .predict(&x.view())
+//             .map_err(|error| polars_err!(ComputeError: error.to_string()))?;
+//         let null_indices =
+//             IdxCa::from_iter_values(PlSmallStr::EMPTY, 0..(carbon_series.len() as _))
+//                 .filter(&is_null)?
+//                 .into_no_null_iter()
+//                 .collect::<Vec<_>>();
+//         let values = Float64Chunked::new(PlSmallStr::EMPTY, y.to_vec());
+//         let retention_time = retention_time_series
+//             .f64()?
+//             .clone()
+//             .scatter(&null_indices, &values)?;
+//         fields.push(retention_time)
+//     }
+//     let r#struct = StructChunked::from_series(column.name().clone(), column.len(), fields.iter())?;
+//     Ok(r#struct.into_column())
+// }
 
-fn regression_n<const N: usize>(column: Column) -> PolarsResult<Column> {
-    let fields = column.struct_()?.fields_as_series();
-    let carbon_series = &fields[0];
-    let retention_times_series = &fields[1..];
-    let mut fields = Vec::with_capacity(fields.len());
-    fields.push(carbon_series.clone());
-    for retention_time_series in retention_times_series {
-        let is_not_null = retention_time_series.is_not_null();
-        let is_null = retention_time_series.is_null();
+// fn regression_n<const N: usize>(column: Column) -> PolarsResult<Column> {
+//     let fields = column.struct_()?.fields_as_series();
+//     let carbon_series = &fields[0];
+//     let retention_times_series = &fields[1..];
+//     let mut fields = Vec::with_capacity(fields.len());
+//     fields.push(carbon_series.clone());
+//     for retention_time_series in retention_times_series {
+//         let is_not_null = retention_time_series.is_not_null();
+//         let is_null = retention_time_series.is_null();
 
-        // println!(
-        //     "carbons (is_not_null): {:?}",
-        //     carbon_series
-        //         .filter(&is_not_null)?
-        //         .f64()?
-        //         .into_no_null_iter()
-        //         .collect::<Vec<_>>()
-        // );
-        // println!(
-        //     "carbons (is_null): {:?}",
-        //     carbon_series
-        //         .filter(&is_null)?
-        //         .f64()?
-        //         .into_no_null_iter()
-        //         .collect::<Vec<_>>()
-        // );
+//         // println!(
+//         //     "carbons (is_not_null): {:?}",
+//         //     carbon_series
+//         //         .filter(&is_not_null)?
+//         //         .f64()?
+//         //         .into_no_null_iter()
+//         //         .collect::<Vec<_>>()
+//         // );
+//         // println!(
+//         //     "carbons (is_null): {:?}",
+//         //     carbon_series
+//         //         .filter(&is_null)?
+//         //         .f64()?
+//         //         .into_no_null_iter()
+//         //         .collect::<Vec<_>>()
+//         // );
 
-        // Training
-        let mut carbons = Vec::new();
-        let mut retention_times = Vec::new();
-        for (carbon, retention_time) in zip(
-            carbon_series
-                .filter(&is_not_null)?
-                .f64()?
-                .into_no_null_iter(),
-            retention_time_series
-                .filter(&is_not_null)?
-                .f64()?
-                .into_no_null_iter(),
-        ) {
-            for n in 0..N {
-                carbons.push(carbon.powi(n as _)); // x^n
-            }
-            retention_times.push(retention_time); // y
-        }
-        let results = {
-            let x = Array2::from_shape_vec((carbons.len() / N, N), carbons)
-                .map_err(|error| polars_err!(ShapeMismatch: error.to_string()))?;
-            let y = Array1::from_vec(retention_times);
-            linear_regression(&x.view(), &y.view(), None)
-                .map_err(|error| polars_err!(ComputeError: error.to_string()))?
-        };
-        // println!("Summary: {}", results.summary());
+//         // Training
+//         let mut carbons = Vec::new();
+//         let mut retention_times = Vec::new();
+//         for (carbon, retention_time) in zip(
+//             carbon_series
+//                 .filter(&is_not_null)?
+//                 .f64()?
+//                 .into_no_null_iter(),
+//             retention_time_series
+//                 .filter(&is_not_null)?
+//                 .f64()?
+//                 .into_no_null_iter(),
+//         ) {
+//             for n in 0..N {
+//                 carbons.push(carbon.powi(n as _)); // x^n
+//             }
+//             retention_times.push(retention_time); // y
+//         }
+//         let results = {
+//             let x = Array2::from_shape_vec((carbons.len() / N, N), carbons)
+//                 .map_err(|error| polars_err!(ShapeMismatch: error.to_string()))?;
+//             let y = Array1::from_vec(retention_times);
+//             linear_regression(&x.view(), &y.view(), None)
+//                 .map_err(|error| polars_err!(ComputeError: error.to_string()))?
+//         };
+//         // println!("Summary: {}", results.summary());
 
-        // Predict
-        let x = x::<N>(carbon_series.filter(&is_null)?.f64()?.into_no_null_iter())?;
-        let y = results
-            .predict(&x.view())
-            .map_err(|error| polars_err!(ComputeError: error.to_string()))?;
-        let null_indices =
-            IdxCa::from_iter_values(PlSmallStr::EMPTY, 0..(carbon_series.len() as _))
-                .filter(&is_null)?
-                .into_no_null_iter()
-                .collect::<Vec<_>>();
-        let values = Float64Chunked::new(PlSmallStr::EMPTY, y.to_vec());
-        let retention_time = retention_time_series
-            .f64()?
-            .clone()
-            .scatter(&null_indices, &values)?;
-        fields.push(retention_time)
-    }
-    let r#struct = StructChunked::from_series(column.name().clone(), column.len(), fields.iter())?;
-    Ok(r#struct.into_column())
-}
+//         // Predict
+//         let x = x::<N>(carbon_series.filter(&is_null)?.f64()?.into_no_null_iter())?;
+//         let y = results
+//             .predict(&x.view())
+//             .map_err(|error| polars_err!(ComputeError: error.to_string()))?;
+//         let null_indices =
+//             IdxCa::from_iter_values(PlSmallStr::EMPTY, 0..(carbon_series.len() as _))
+//                 .filter(&is_null)?
+//                 .into_no_null_iter()
+//                 .collect::<Vec<_>>();
+//         let values = Float64Chunked::new(PlSmallStr::EMPTY, y.to_vec());
+//         let retention_time = retention_time_series
+//             .f64()?
+//             .clone()
+//             .scatter(&null_indices, &values)?;
+//         fields.push(retention_time)
+//     }
+//     let r#struct = StructChunked::from_series(column.name().clone(), column.len(), fields.iter())?;
+//     Ok(r#struct.into_column())
+// }
 
 /// Format
 fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {

@@ -60,13 +60,14 @@ polars = { git = "https://github.com/pola-rs/polars", rev = "bf6a425", default-f
 ] }
 polars-utils = { version = "0.53.0", features = ["nightly"] }
 ron = "0.12.1"
-scirs2 = "0.4.3"
-scirs2-core = { version = "0.4.3", features = ["arrow"] }
 serde = { version = "1.0.228", features = ["derive"] }
 temp-env = "0.3.6"
 tracing = "0.1.44"
 typed-builder = "0.23.2"
 uom = { version = "0.38.0", features = ["serde"] }
+
+# scirs2 = "0.4.3"
+# scirs2-core = { version = "0.4.3", features = ["arrow"] }
 
 egui_ext = { git = "https://github.com/kgv/egui_ext", branch = "0.6", features = [
     "markdown",
