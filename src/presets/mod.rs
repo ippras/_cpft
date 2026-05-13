@@ -1,3 +1,3 @@
-pub(crate) use self::agilent::{AGILENT, AGILENT_3_14};
+pub(crate) use self::agilent::AGILENT;
 
 mod agilent;

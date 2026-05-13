@@ -14,6 +14,8 @@ mod utils;
 
 #[cfg(test)]
 mod test {
+    use std::str::FromStr;
+
     use super::*;
     use crate::{
         r#const::{
@@ -24,8 +26,9 @@ mod test {
         utils::hash::{HashedDataFrame, HashedMetaDataFrame},
     };
     use lipid::{expr::ExprExt, prelude::*, r#trait::Atomic};
-    use metadata::{Metadata, polars::MetaDataFrame};
+    use metadata::{Metadata, VERSION, polars::MetaDataFrame};
     use polars::prelude::*;
+    use semver::Version;
 
     // Ok  Some(Struct({'Carbon': UInt8, 'Indices': List(Struct({'Index': UInt8, 'Triple': Boolean, 'Parity': Boolean}))}))
     // Err Some(Struct({'Carbon': UInt8, 'Indices': List(Struct({'Index': UInt8, 'Parity': Boolean, 'Triple': Boolean}))}))
@@ -33,27 +36,28 @@ mod test {
     fn rt() -> anyhow::Result<()> {
         println!("AGILENT.meta: {:?}", AGILENT.meta);
         println!("AGILENT.data: {:?}", AGILENT.data);
-        let onset_temperature = 70.0;
-        let temperature_step = 10.0;
-        let fa = C20C5C8C11C14.clone(); // 20:4Δ5c,8c,11c,14c
+        // let onset_temperature = 70.0;
+        // let temperature_step = 10.0;
+        // let fa = C20C5C8C11C14.clone(); // 20:4Δ5c,8c,11c,14c
+        // let condition = col("Mode")
+        //     .struct_()
+        //     .field_by_name("OnsetTemperature")
+        //     .eq(lit(onset_temperature))
+        //     .and(
+        //         col("Mode")
+        //             .struct_()
+        //             .field_by_name("TemperatureStep")
+        //             .eq(lit(temperature_step)),
+        //     )
+        //     .and(col("FattyAcid").fatty_acid().equal(fa));
+        let condition = col(INDEX).eq(2468);
         let value1 = Option::<f64>::None;
         let value2 = Option::<f64>::None;
         let value3 = Option::<f64>::None;
-        let value1 = Some(18.805);
-        let value2 = Some(18.779);
-        // let value3 = Some(7.359);
+        let value1 = Some(13.163);
+        let value2 = Some(13.146);
+        let value3 = Some(13.138);
         let mut lazy_frame = AGILENT.data.data_frame.clone().lazy();
-        let condition = col("Mode")
-            .struct_()
-            .field_by_name("OnsetTemperature")
-            .eq(lit(onset_temperature))
-            .and(
-                col("Mode")
-                    .struct_()
-                    .field_by_name("TemperatureStep")
-                    .eq(lit(temperature_step)),
-            )
-            .and(col("FattyAcid").fatty_acid().equal(fa));
         println!(
             "before: {:?}",
             lazy_frame
@@ -82,10 +86,15 @@ mod test {
                 .collect()
                 .unwrap()
         );
-        println!("AGILENT: {:?}", lazy_frame.clone().collect().unwrap());
+
         let data = lazy_frame.collect()?;
-        let frame = MetaDataFrame::new(AGILENT.meta.clone(), HashedDataFrame::new(data)?);
-        export::ron::save(&frame, "name.ron")?;
+        let mut meta = AGILENT.meta.clone();
+        let mut version = meta[VERSION].parse::<Version>()?;
+        version.patch += 1;
+        meta.insert(VERSION.to_owned(), version.to_string());
+        let name = format!("{}.ron", meta.format("."));
+        let frame = MetaDataFrame::new(meta, HashedDataFrame::new(data)?);
+        export::ron::save(&frame, &name)?;
         Ok(())
     }
 
@@ -96,21 +105,11 @@ mod test {
         unsafe { std::env::set_var("POLARS_FMT_MAX_ROWS", "1024") };
 
         println!("AGILENT.meta: {:?}", AGILENT.meta);
-        println!("AGILENT.data: {:?}", AGILENT.data);
         let mut lazy_frame = AGILENT.data.data_frame.clone().lazy();
 
-        let i = 277;
-        let j = 278;
-        let predicate = col(MODE)
-            .struct_()
-            .field_by_name(ONSET_TEMPERATURE)
-            .eq(lit(60))
-            .and(
-                col(MODE)
-                    .struct_()
-                    .field_by_name(TEMPERATURE_STEP)
-                    .eq(lit(8)),
-            );
+        let i = 3148;
+        let j = 3149;
+        let predicate = col(INDEX).eq(i).or(col(INDEX).eq(j));
         println!(
             "before: {:?}",
             lazy_frame
@@ -131,50 +130,15 @@ mod test {
             "after: {:?}",
             lazy_frame.clone().filter(predicate).collect().unwrap()
         );
-        let data = lazy_frame.collect()?;
-        let frame = MetaDataFrame::new(AGILENT.meta.clone(), HashedDataFrame::new(data)?);
-        export::ron::save(&frame, "name.ron")?;
-        Ok(())
-    }
 
-    // (10.969+10.966)/2=10.9675
-    // (10.967+10.944+10.941)/3=10.950666666666666667
-    #[test]
-    fn sort() -> anyhow::Result<()> {
-        unsafe { std::env::set_var("POLARS_FMT_STR_LEN", "256") };
-        unsafe { std::env::set_var("POLARS_TABLE_WIDTH", "256") };
-        unsafe { std::env::set_var("POLARS_FMT_MAX_ROWS", "1024") };
-
-        println!("AGILENT.meta: {:?}", AGILENT.meta);
-        println!("AGILENT.data: {:?}", AGILENT.data);
-        let sort_options = SortMultipleOptions::new()
-            .with_maintain_order(true)
-            .with_nulls_last(false)
-            .with_order_descending(false);
-        let mut lazy_frame = AGILENT.data.data_frame.clone().lazy();
-        println!("before: {:?}", lazy_frame.clone().collect().unwrap());
-        lazy_frame = lazy_frame.sort([MODE], sort_options.clone()).select([all()
-            .as_expr()
-            .sort_by(&[col(RETENTION_TIME)], sort_options)
-            .over([col(MODE)])?]);
-        let predicate = col(MODE)
-            .struct_()
-            .field_by_name(ONSET_TEMPERATURE)
-            .eq(lit(60))
-            .and(
-                col(MODE)
-                    .struct_()
-                    .field_by_name(TEMPERATURE_STEP)
-                    .eq(lit(1)),
-            );
-        println!(
-            "after: {:?}",
-            lazy_frame.clone().filter(predicate).collect().unwrap()
-        );
-        // println!("AGILENT: {:?}", lazy_frame.clone().collect().unwrap());
         let data = lazy_frame.collect()?;
-        let frame = MetaDataFrame::new(AGILENT.meta.clone(), HashedDataFrame::new(data)?);
-        export::ron::save(&frame, "SORTED.ron")?;
+        let mut meta = AGILENT.meta.clone();
+        let mut version = meta[VERSION].parse::<Version>()?;
+        version.patch += 1;
+        meta.insert(VERSION.to_owned(), version.to_string());
+        let name = format!("{}.ron", meta.format("."));
+        let frame = MetaDataFrame::new(meta, HashedDataFrame::new(data)?);
+        export::ron::save(&frame, &name)?;
         Ok(())
     }
 

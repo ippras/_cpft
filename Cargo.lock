@@ -999,6 +999,7 @@ dependencies = [
  "polars_excel_writer",
  "polars_ext 0.6.2 (git+https://github.com/kgv/polars_ext?branch=0.6)",
  "ron",
+ "semver",
  "serde",
  "temp-env",
  "tracing",
@@ -4920,9 +4921,9 @@ dependencies = [
 
 [[package]]
 name = "ratex-font"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77db48f444b305047e301da59245203a9535dbedf24609a837e3b1c3c518de1d"
+checksum = "1f3b09d2994886d337dbdbf6fcd2e86321d6c210643736b48d374d71b4d72d89"
 dependencies = [
  "phf 0.11.3",
  "ratex-types",
@@ -4930,9 +4931,9 @@ dependencies = [
 
 [[package]]
 name = "ratex-font-loader"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcdf81b7ee7862ef44c293c62131592ae35c52f9744c8d48f79a57a64bcc4c44"
+checksum = "fa79d0493ea11b932d95b836477e4ec0c2c2388541a1211ffd3c2e4ae261fb95"
 dependencies = [
  "ab_glyph",
  "ratex-font",
@@ -4943,18 +4944,18 @@ dependencies = [
 
 [[package]]
 name = "ratex-katex-fonts"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2b47435657357588c46ba797ab0bba2b56cf2563389b6b290dec79c7c392946"
+checksum = "75ee178442689dc22b0fc5b829ab94661668e2f11bf6ade904ac1663b1340135"
 dependencies = [
  "rust-embed",
 ]
 
 [[package]]
 name = "ratex-layout"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f92c77f36cfe9132cc189f5c2a58e76991dbb6dce31e74f8650f8b515871cb9"
+checksum = "dc5f2ff5797c4226c4391190d68aa25630cb0bf3c9d4f52521ff825e2763a1c8"
 dependencies = [
  "ratex-font",
  "ratex-parser",
@@ -4964,9 +4965,9 @@ dependencies = [
 
 [[package]]
 name = "ratex-lexer"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "087fb8ba8369e0b30d57459c33a95c8689bd53837147eed8be77d9558c6d8a5b"
+checksum = "070410c8c842ffcfb8292bf416626394a27e15410e9064fad5aa9ba9013b5550"
 dependencies = [
  "ratex-types",
  "serde",
@@ -4975,9 +4976,9 @@ dependencies = [
 
 [[package]]
 name = "ratex-parser"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a605ed8c0f51724ba067131d88b45cbac024d827634374bc95eed2e3a97318db"
+checksum = "384da3ce5b93e6035560bc5d38ad2f0f03ca6a3b97b4e017a1c87098ebbf3968"
 dependencies = [
  "fancy-regex",
  "ratex-font",
@@ -4993,9 +4994,9 @@ dependencies = [
 
 [[package]]
 name = "ratex-svg"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a04b3d6a4a212f10d574be4a3684ea6843e32d907433081fb50dab8a4df5f44"
+checksum = "4b8c8732578b8f365491f1cd437193738aee9677f52e00bbff013853122233fb"
 dependencies = [
  "ab_glyph",
  "base64",
@@ -5008,18 +5009,18 @@ dependencies = [
 
 [[package]]
 name = "ratex-types"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afd352ed8aa097630cb9dcf956d6c3c8d8a025c3f36c9aa32e40f3016f65614b"
+checksum = "d64ce0e9190bd69f9d7d4eadde2b1a1fe256d7ee57c7cbc0137fcd8895fa5506"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "ratex-unicode-font"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d05ca0eb85a3fabc46cc2c30b75cc89fa526313f749b836e0dc8543671391ae8"
+checksum = "14c9b86f7ab7c0a1619bed1a9c705e1feba07f7e11f89631b4262ac2542035f6"
 dependencies = [
  "fontdb",
  "ttf-parser",

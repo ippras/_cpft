@@ -8,7 +8,7 @@ use crate::{
         VerticalButton,
     },
     localization::ContextExt as _,
-    presets::{AGILENT, AGILENT_3_14},
+    presets::AGILENT,
 };
 use anyhow::Result;
 use data::Data;
@@ -258,24 +258,15 @@ impl App {
     /// Database button
     fn database_button(&mut self, ui: &mut Ui) {
         ui.menu_button(RichText::new(DATABASE).size(ICON_SIZE), |ui| {
-            let mut response =
-                ui.button(RichText::new(format!("{DATABASE} IPPRAS/Agilent")).heading());
+            let mut response = ui.button(
+                RichText::new(format!("{DATABASE} {}", AGILENT.meta.format(" "))).heading(),
+            );
             response = response.on_hover_ui(|ui| {
                 MetadataWidget::new(&AGILENT.meta).show(ui);
             });
             if response.clicked() {
                 self.tree
                     .insert_pane::<VERTICAL>(Pane::source(AGILENT.clone()));
-            }
-
-            let mut response =
-                ui.button(RichText::new(format!("{DATABASE} IPPRAS/Agilent 3.14")).heading());
-            response = response.on_hover_ui(|ui| {
-                MetadataWidget::new(&AGILENT_3_14.meta).show(ui);
-            });
-            if response.clicked() {
-                self.tree
-                    .insert_pane::<VERTICAL>(Pane::source(AGILENT_3_14.clone()));
             }
         })
         .response
