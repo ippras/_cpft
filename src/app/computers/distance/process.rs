@@ -4,11 +4,12 @@ use crate::{
         states::distance::Settings,
     },
     r#const::{
-        ABSOLUTE, CHAIN_LENGTH, DEAD_TIME, DISTANCE, EQUIVALENT_CHAIN_LENGTH, FILTER, FROM, MODE,
-        ONSET_TEMPERATURE, RETENTION_TIME, SELECTIVITY_FACTOR, TEMPERATURE_STEP, TO,
+        ABSOLUTE, CHAIN_LENGTH, DEAD_TIME, DISTANCE, EQUIVALENT_CHAIN_LENGTH, ERROR, FILTER, FROM,
+        MODE, ONSET_TEMPERATURE, RETENTION_TIME, SELECTIVITY_FACTOR, TEMPERATURE_STEP, TO, WARNING,
     },
     utils::hash::HashedDataFrame,
 };
+use const_format::formatcp;
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;
@@ -72,6 +73,14 @@ pub(crate) static OUTPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
         Field::new(
             PlSmallStr::from_static(SELECTIVITY_FACTOR),
             DataType::Array(Box::new(DataType::Float64), 0),
+        ),
+        Field::new(
+            PlSmallStr::from_static(formatcp!("_{WARNING}")),
+            DataType::Boolean,
+        ),
+        Field::new(
+            PlSmallStr::from_static(formatcp!("_{ERROR}")),
+            DataType::Boolean,
         ),
     ]))
 });
@@ -196,51 +205,67 @@ fn join(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     lazy_frame = lazy_frame.filter(col(TO).is_not_null());
     println!("!!!!!!!!!1: {}", lazy_frame.clone().collect().unwrap());
     // Restructure
-    lazy_frame = lazy_frame.select([
-        col(MODE),
-        as_struct(vec![
-            col(FROM).struct_().field_by_name(FATTY_ACID).name().keep(),
-            col(TO).struct_().field_by_name(FATTY_ACID).name().keep(),
+    lazy_frame = lazy_frame
+        .select([
+            col(MODE),
+            as_struct(vec![
+                col(FROM).struct_().field_by_name(FATTY_ACID).name().keep(),
+                col(TO).struct_().field_by_name(FATTY_ACID).name().keep(),
+            ])
+            .alias(FATTY_ACID),
+            col(DEAD_TIME),
+            as_struct(vec![
+                col(FROM)
+                    .struct_()
+                    .field_by_name(RETENTION_TIME)
+                    .name()
+                    .keep(),
+                col(TO)
+                    .struct_()
+                    .field_by_name(RETENTION_TIME)
+                    .name()
+                    .keep(),
+                (col(TO).struct_().field_by_name(RETENTION_TIME)
+                    - col(FROM).struct_().field_by_name(RETENTION_TIME))
+                .over([MODE])?
+                .alias(DISTANCE),
+            ])
+            .alias(RETENTION_TIME),
+            as_struct(vec![
+                col(FROM)
+                    .struct_()
+                    .field_by_name(EQUIVALENT_CHAIN_LENGTH)
+                    .name()
+                    .keep(),
+                col(TO)
+                    .struct_()
+                    .field_by_name(EQUIVALENT_CHAIN_LENGTH)
+                    .name()
+                    .keep(),
+                (col(TO).struct_().field_by_name(EQUIVALENT_CHAIN_LENGTH)
+                    - col(FROM).struct_().field_by_name(EQUIVALENT_CHAIN_LENGTH))
+                .over([MODE])?
+                .alias(DISTANCE),
+            ])
+            .alias(EQUIVALENT_CHAIN_LENGTH),
+            ((col(FROM).struct_().field_by_name(RETENTION_TIME) - col(DEAD_TIME))
+                / (col(TO).struct_().field_by_name(RETENTION_TIME) - col(DEAD_TIME))
+                    .over([MODE])?)
+            .alias(SELECTIVITY_FACTOR),
         ])
-        .alias(FATTY_ACID),
-        col(DEAD_TIME),
-        as_struct(vec![
-            col(FROM)
+        .with_columns([
+            col(RETENTION_TIME)
                 .struct_()
-                .field_by_name(RETENTION_TIME)
-                .name()
-                .keep(),
-            col(TO)
+                .field_by_name(DISTANCE)
+                .arr()
+                .agg(element().lt(0).any(false))
+                .alias(formatcp!("_{WARNING}")),
+            col(RETENTION_TIME)
                 .struct_()
-                .field_by_name(RETENTION_TIME)
-                .name()
-                .keep(),
-            (col(TO).struct_().field_by_name(RETENTION_TIME)
-                - col(FROM).struct_().field_by_name(RETENTION_TIME))
-            .over([MODE])?
-            .alias(DISTANCE),
-        ])
-        .alias(RETENTION_TIME),
-        as_struct(vec![
-            col(FROM)
-                .struct_()
-                .field_by_name(EQUIVALENT_CHAIN_LENGTH)
-                .name()
-                .keep(),
-            col(TO)
-                .struct_()
-                .field_by_name(EQUIVALENT_CHAIN_LENGTH)
-                .name()
-                .keep(),
-            (col(TO).struct_().field_by_name(EQUIVALENT_CHAIN_LENGTH)
-                - col(FROM).struct_().field_by_name(EQUIVALENT_CHAIN_LENGTH))
-            .over([MODE])?
-            .alias(DISTANCE),
-        ])
-        .alias(EQUIVALENT_CHAIN_LENGTH),
-        ((col(FROM).struct_().field_by_name(RETENTION_TIME) - col(DEAD_TIME))
-            / (col(TO).struct_().field_by_name(RETENTION_TIME) - col(DEAD_TIME)).over([MODE])?)
-        .alias(SELECTIVITY_FACTOR),
-    ]);
+                .field_by_name(DISTANCE)
+                .arr()
+                .agg(element().lt(0).any(false))
+                .alias(formatcp!("_{ERROR}")),
+        ]);
     Ok(lazy_frame)
 }

@@ -18,12 +18,7 @@ use itertools::Itertools;
 use lipid::prelude::*;
 use polars::prelude::*;
 use polars_ext::option::DisplayOption;
-use polars_utils::format_list;
-use std::{
-    fmt::{Display, Formatter},
-    iter::zip,
-    ops::Range,
-};
+use std::{fmt::Display, iter::zip, ops::Range};
 use tracing::instrument;
 
 pub(crate) const NUM_COLUMNS: usize = top::DISTANCE.end;
@@ -147,6 +142,12 @@ impl TableView<'_> {
         row: usize,
         column: Range<usize>,
     ) -> PolarsResult<()> {
+        // ui.visuals_mut().override_text_color = Some(ui.visuals().strong_text_color());
+        if let Some(true) = self.data_frame[formatcp!("_{ERROR}")].bool()?.get(row) {
+            ui.visuals_mut().override_text_color = Some(ui.visuals().error_fg_color);
+        } else if let Some(true) = self.data_frame[formatcp!("_{WARNING}")].bool()?.get(row) {
+            ui.visuals_mut().override_text_color = Some(ui.visuals().warn_fg_color);
+        }
         match (row, column) {
             (row, top::INDEX) => {
                 ui.label(row.to_string());

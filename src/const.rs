@@ -17,6 +17,7 @@ pub(crate) const DEAD_TIME: &str = "DeadTime";
 pub(crate) const DISTANCE: &str = "Distance";
 pub(crate) const EQUIVALENT_CARBON_NUMBER: &str = "EquivalentCarbonNumber";
 pub(crate) const EQUIVALENT_CHAIN_LENGTH: &str = "EquivalentChainLength";
+pub(crate) const ERROR: &str = "Error";
 pub(crate) const FILTER: &str = "Filter";
 pub(crate) const FRACTIONAL_CHAIN_LENGTH: &str = "FractionalChainLength";
 pub(crate) const FROM: &str = "From";
@@ -33,6 +34,7 @@ pub(crate) const STANDARD: &str = "Standard";
 pub(crate) const TEMPERATURE_STEP: &str = "TemperatureStep";
 pub(crate) const TEMPERATURE: &str = "Temperature";
 pub(crate) const TO: &str = "To";
+pub(crate) const WARNING: &str = "Warning";
 
 pub(crate) const BACKWARD: &str = "Backward";
 pub(crate) const FORWARD: &str = "Forward";
