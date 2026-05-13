@@ -5,6 +5,7 @@ use self::{
 use crate::{
     app::{
         computers::distance::{
+            export::{Computed as ExportComputed, Key as ExportKey},
             process::{Computed as ProcessComputed, Key as ProcessKey},
             sum::{Computed as SumComputed, Key as SumKey},
             view::{
@@ -16,8 +17,10 @@ use crate::{
         states::distance::{Settings, State, View},
         widgets::buttons::{MetadataButton, ResetButton, ResizeButton, SettingsButton, ViewButton},
     },
+    export,
     utils::hash::{HashedDataFrame, HashedMetaDataFrame},
 };
+use anyhow::Result;
 use egui::{
     CentralPanel, CursorIcon, Frame, Id, MenuBar, Panel, Response, RichText, ScrollArea, TextStyle,
     Ui, Widget as _, Window, util::hash,
@@ -25,10 +28,10 @@ use egui::{
 use egui_l20n::prelude::*;
 use egui_phosphor::regular::{FLOPPY_DISK, RULER, SIGMA, SLIDERS_HORIZONTAL, TAG, X};
 use egui_tiles::{TileId, UiResponse};
-use metadata::egui::MetadataWidget;
+use metadata::{egui::MetadataWidget, polars::MetaDataFrame};
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fmt::{Display, from_fn};
+use std::fmt::{Debug, Display, from_fn};
 use tracing::instrument;
 
 const ID_SOURCE: &str = "Distance";
@@ -149,29 +152,15 @@ impl Pane {
         ui.separator();
         self.sum_button(ui, state);
         ui.separator();
-        self.save_button(ui);
+        self.save_button(ui, state);
         ui.separator();
         response
     }
 
     /// Save button
-    fn save_button(&self, ui: &mut Ui) {
-        // let name = format!("{}.distance.ipc", self.frame.frame.meta.title());
-        // if ui
-        //     .button(RichText::new(FLOPPY_DISK).heading())
-        //     .on_hover_text(&name)
-        //     .clicked()
-        // {
-        //     if let Err(error) = save(
-        //         &name,
-        //         MetaDataFrame::new(&self.frame.frame.meta, &mut self.target),
-        //     ) {
-        //         error!(%error);
-        //     }
-        // }
+    fn save_button(&self, ui: &mut Ui, state: &mut State) {
         ui.menu_button(RichText::new(FLOPPY_DISK).heading(), |ui| {
-            let meta = &self.frame.meta;
-            let name = meta.format(".");
+            let name = self.frame.meta.format(".");
             if ui
                 .button((FLOPPY_DISK, "RON"))
                 .on_hover_ui(|ui| {
@@ -184,7 +173,51 @@ impl Pane {
             {
                 // let _ = self.save_ron(&name, meta);
             }
+
+            if ui
+                .button((FLOPPY_DISK, "MD"))
+                .on_hover_ui(|ui| {
+                    ui.label(ui.localize("Save"));
+                })
+                .on_hover_ui(|ui| {
+                    ui.label(format!("{name}.cpft.md"));
+                })
+                .clicked()
+            {
+                let _ = self.save_md(ui, state, &name);
+            }
         });
+    }
+
+    #[instrument(skip(self, ui, state), err)]
+    fn save_md(&self, ui: &mut Ui, state: &State, name: impl Debug + Display) -> Result<()> {
+        let meta = &self.frame.meta;
+        let name = format!("{}.cpft.md", meta.format("."));
+        let data = ui.memory_mut(|memory| {
+            memory
+                .caches
+                .cache::<ExportComputed>()
+                .get(ExportKey::new(&self.calculated, &state.settings))
+                .clone()
+        });
+        let frame = MetaDataFrame::new(meta, data);
+        temp_env::with_vars(
+            [
+                ("POLARS_FMT_TABLE_FORMATTING", Some("MARKDOWN")),
+                ("POLARS_FMT_TABLE_HIDE_COLUMN_DATA_TYPES", Some("1")),
+                (
+                    "POLARS_FMT_TABLE_HIDE_DATAFRAME_SHAPE_INFORMATION",
+                    Some("1"),
+                ),
+                ("POLARS_TABLE_WIDTH", Some("-1")),
+                ("POLARS_FMT_MAX_COLS", Some("-1")),
+                ("POLARS_FMT_MAX_ROWS", Some("-1")),
+                ("POLARS_FMT_STR_LEN", Some("1024")),
+                ("POLARS_FMT_TABLE_CELL_LIST_LEN", Some("-1")),
+            ],
+            || export::md::save(&frame, &name),
+        )?;
+        Ok(())
     }
 
     /// Sum button
