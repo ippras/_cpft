@@ -8,7 +8,6 @@ use crate::{
     },
     utils::hash::HashedDataFrame,
 };
-use const_format::formatcp;
 use egui::util::cache::{ComputerMut, FrameCache};
 use lipid::prelude::*;
 use polars::prelude::*;

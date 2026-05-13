@@ -1,7 +1,13 @@
 use crate::{
-    app::{computers::plot::IndexKey, states::distance::Settings},
+    app::{
+        computers::{
+            distance::process::OUTPUT_SCHEMA as INPUT_SCHEMA, matches_schema, plot::IndexKey,
+        },
+        states::distance::Settings,
+    },
     r#const::{
-        SELECTIVITY_FACTOR, DISTANCE, EQUIVALENT_CHAIN_LENGTH, FROM, MODE, ONSET_TEMPERATURE, TEMPERATURE_STEP, TO,
+        DISTANCE, EQUIVALENT_CHAIN_LENGTH, FROM, MODE, ONSET_TEMPERATURE, SELECTIVITY_FACTOR,
+        TEMPERATURE_STEP, TO,
     },
     utils::hash::HashedDataFrame,
 };
@@ -34,6 +40,7 @@ pub(crate) struct Computer;
 
 impl Computer {
     fn try_compute(&mut self, key: Key<'_>) -> PolarsResult<Value> {
+        matches_schema(&key.frame.data_frame, &INPUT_SCHEMA)?;
         let lazy_frame = key.frame.data_frame.clone().lazy();
         // match key.settings.plot.axes {
         //     Axes {
@@ -86,7 +93,9 @@ fn equivalent_chain_length_alpha(mut lazy_frame: LazyFrame) -> PolarsResult<Valu
             col(FATTY_ACID),
             col(MODE).struct_().field_by_name("*"),
             concat_arr(vec![
-                col(EQUIVALENT_CHAIN_LENGTH).struct_().field_by_name(DISTANCE),
+                col(EQUIVALENT_CHAIN_LENGTH)
+                    .struct_()
+                    .field_by_name(DISTANCE),
                 col(SELECTIVITY_FACTOR),
             ])?
             .alias(COORDINATES),
