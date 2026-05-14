@@ -1,3 +1,15 @@
+import pandas as pd
+import numpy as np
+import tkinter as tk
+from tkinter import ttk, messagebox
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import seaborn as sns
+
+# 1. Тестовые данные
+raw_data = """
 | Mode.OnsetTemperature | Mode.TemperatureStep | FattyAcid                  | RetentionFactor.Mean | RetentionFactor.StandardDeviation |
 |-----------------------|----------------------|----------------------------|----------------------|-----------------------------------|
 | 60.0                  | 1.0                  | 8:0                        | 3.728                | 0.009                             |
@@ -3600,3 +3612,205 @@
 | 150.0                 | 10.0                 | 24:0                       | 1.62                 | 0.001                             |
 | 150.0                 | 10.0                 | 24:1Δ15c                   | 1.698                | 0.001                             |
 | 150.0                 | 10.0                 | 22:6Δ4c,7c,10c,13c,16c,19c | 1.942                | 0.001                             |
+"""
+
+def load_data(text):
+    lines = text.strip().split('\n')
+    header_line = next(l for l in lines if '|' in l)
+    headers = [col.strip() for col in header_line.split('|') if col.strip()]
+    
+    data = []
+    for line in lines:
+        if '|' not in line or '---' in line or 'Mode.OnsetTemperature' in line:
+            continue
+        row = [col.strip() for col in line.split('|')[1:-1]]
+        row = [None if val.lower() == 'null' else val for val in row]
+        if len(row) == len(headers):
+            data.append(row)
+            
+    df = pd.DataFrame(data, columns=headers)
+    numeric_cols = ['Mode.OnsetTemperature', 'Mode.TemperatureStep', 'RetentionFactor.Mean']
+    for col in numeric_cols:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+    # Создаем удобную колонку "Режим" (Mode)
+    df['Mode_Name'] = df['Mode.OnsetTemperature'].astype(str) + "°C / " + df['Mode.TemperatureStep'].astype(str) + "°C/min"
+    return df
+
+df = load_data(raw_data)
+modes = sorted(df['Mode_Name'].dropna().unique())
+
+# --- ОПРЕДЕЛЕНИЕ ПОРЯДКА ЖК И ФОРМИРОВАНИЕ ПАР ---
+# Ищем эталонный режим 60/1
+reference_mode = "60.0°C / 1.0°C/min"
+if reference_mode in df['Mode_Name'].values:
+    df_ref = df[df['Mode_Name'] == reference_mode].copy()
+else:
+    # Если вдруг такого режима нет, берем первый попавшийся
+    df_ref = df[df['Mode_Name'] == modes[0]].copy()
+
+# Сортируем ЖК по времени удерживания, чтобы получить правильный порядок элюирования
+df_ref_sorted = df_ref.sort_values('RetentionFactor.Mean')
+fixed_fa_order = df_ref_sorted['FattyAcid'].dropna().tolist()
+
+# Формируем пары (предыдущая -> следующая)
+ratio_pairs = []
+ratio_labels = []
+for i in range(len(fixed_fa_order) - 1):
+    fa_prev = fixed_fa_order[i]
+    fa_next = fixed_fa_order[i+1]
+    ratio_pairs.append((fa_prev, fa_next))
+    ratio_labels.append(f"{fa_next} / {fa_prev}")
+
+
+def plot_radar():
+    selected_target_indices = listbox_targets.curselection()
+    selected_pairs = [ratio_pairs[i] for i in selected_target_indices]
+    selected_labels = [ratio_labels[i] for i in selected_target_indices]
+    
+    selected_mode_indices = listbox_modes.curselection()
+    selected_modes = [listbox_modes.get(i) for i in selected_mode_indices]
+    
+    if not selected_pairs or not selected_modes:
+        messagebox.showwarning("Ошибка", "Выберите хотя бы 3 целевых отношения и хотя бы 1 режим!")
+        return
+    
+    if len(selected_pairs) < 3:
+        messagebox.showwarning("Ошибка", "Для радара нужно выбрать минимум 3 оси (отношения).")
+        return
+
+    # 1. Сбор данных и поиск максимального значения для масштаба сетки
+    all_values = []
+    max_val = 0
+    
+    for mode in selected_modes:
+        mode_data = df[df['Mode_Name'] == mode]
+        
+        values = []
+        for fa_prev, fa_next in selected_pairs:
+            val_prev_series = mode_data[mode_data['FattyAcid'] == fa_prev]['RetentionFactor.Mean']
+            val_next_series = mode_data[mode_data['FattyAcid'] == fa_next]['RetentionFactor.Mean']
+            
+            if val_prev_series.empty or val_next_series.empty:
+                values.append(np.nan)
+            else:
+                val_prev = val_prev_series.values[0]
+                val_next = val_next_series.values[0]
+                
+                if pd.isna(val_prev) or pd.isna(val_next) or val_prev == 0:
+                    values.append(np.nan)
+                else:
+                    val = val_next / val_prev
+                    values.append(val)
+                    if not np.isnan(val):
+                        max_val = max(max_val, val)
+                    
+        values.append(values[0]) # Замыкаем круг значений
+        all_values.append(values)
+
+    if max_val == 0:
+        messagebox.showinfo("Пусто", "Нет данных для построения.")
+        return
+
+    # 2. Настройка углов
+    angles = np.linspace(0, 2 * np.pi, len(selected_labels), endpoint=False).tolist()
+    angles += angles[:1] # Замыкаем круг углов
+
+    # 3. Создаем обычный график (не polar), чтобы рисовать прямые линии
+    fig, ax = plt.subplots(figsize=(9, 8))
+    ax.axis('off') 
+    ax.set_aspect('equal') 
+
+    # Генерируем красивые круглые числа для шагов сетки
+    locator = ticker.MaxNLocator(nbins=5)
+    ticks = locator.tick_values(0, max_val)
+    ticks = ticks[ticks > 0] 
+    actual_max = ticks[-1] if len(ticks) > 0 else max_val
+
+    # 4. Рисуем многоугольную фоновую сетку (паутину)
+    for t in ticks:
+        x = t * np.cos(angles)
+        y = t * np.sin(angles)
+        ax.plot(x, y, color='lightgrey', linewidth=1, linestyle='--')
+        ax.text(x[0], y[0], f"{t:.2f}", color='grey', fontsize=9, va='bottom', ha='left')
+
+    # 5. Рисуем оси (лучи из центра)
+    for angle in angles[:-1]:
+        x = [0, actual_max * np.cos(angle)]
+        y = [0, actual_max * np.sin(angle)]
+        ax.plot(x, y, color='lightgrey', linewidth=1)
+
+    # 6. Подписи осей (названия отношений)
+    for angle, label in zip(angles[:-1], selected_labels):
+        x = actual_max * 1.15 * np.cos(angle)
+        y = actual_max * 1.15 * np.sin(angle)
+        
+        ha = 'center'
+        va = 'center'
+        if np.cos(angle) > 0.1: ha = 'left'
+        elif np.cos(angle) < -0.1: ha = 'right'
+        if np.sin(angle) > 0.1: va = 'bottom'
+        elif np.sin(angle) < -0.1: va = 'top'
+        
+        ax.text(x, y, label, size=11, ha=ha, va=va, fontweight='bold')
+
+    # 7. Отрисовка самих данных (многоугольников режимов)
+    colors = sns.color_palette("husl", len(selected_modes))
+    
+    for i, (mode, values) in enumerate(zip(selected_modes, all_values)):
+        if all(np.isnan(v) for v in values):
+            continue 
+            
+        color = colors[i]
+        x = [v * np.cos(a) if not np.isnan(v) else np.nan for v, a in zip(values, angles)]
+        y = [v * np.sin(a) if not np.isnan(v) else np.nan for v, a in zip(values, angles)]
+        
+        ax.plot(x, y, linewidth=2, label=mode, color=color)
+        ax.fill(x, y, alpha=0.15, color=color)
+
+    # 8. Финальное оформление
+    plt.title("Профиль отношений смежных кислот (по порядку из 60/1)", size=14, pad=20)
+    plt.legend(loc='upper left', bbox_to_anchor=(1.05, 1.05), title="Режимы")
+    
+    ax.set_xlim(-actual_max * 1.3, actual_max * 1.3)
+    ax.set_ylim(-actual_max * 1.3, actual_max * 1.3)
+    
+    plt.tight_layout()
+    plt.show()
+
+# --- Интерфейс Tkinter ---
+root = tk.Tk()
+root.title("Радарная диаграмма (Отношения ЖК)")
+root.geometry("450x450")
+
+frame = ttk.Frame(root, padding=15)
+frame.pack(fill=tk.BOTH, expand=True)
+
+# 1. Выбор целевых отношений (Оси радара)
+ttk.Label(frame, text="1. Целевые отношения (Оси радара):", font=("Arial", 10, "bold")).pack(anchor=tk.W)
+ttk.Label(frame, text="(Используйте Shift для диапазона и Ctrl для точечного выбора)").pack(anchor=tk.W)
+listbox_targets = tk.Listbox(frame, selectmode=tk.EXTENDED, height=8, exportselection=False)
+listbox_targets.pack(fill=tk.X, pady=(5, 15))
+
+for label in ratio_labels:
+    listbox_targets.insert(tk.END, label)
+# Выделяем все доступные пары по умолчанию
+for i in range(len(ratio_labels)):
+    listbox_targets.select_set(i)
+
+# 2. Выбор режимов
+ttk.Label(frame, text="2. Режимы для сравнения:", font=("Arial", 10, "bold")).pack(anchor=tk.W)
+ttk.Label(frame, text="(Используйте Shift для диапазона и Ctrl для точечного выбора)").pack(anchor=tk.W)
+listbox_modes = tk.Listbox(frame, selectmode=tk.EXTENDED, height=6, exportselection=False)
+listbox_modes.pack(fill=tk.X, pady=(5, 15))
+
+for mode in modes:
+    listbox_modes.insert(tk.END, mode)
+for i in range(min(3, len(modes))):
+    listbox_modes.select_set(i)
+
+# Кнопка
+btn_plot = ttk.Button(frame, text="Построить Радар", command=plot_radar)
+btn_plot.pack(fill=tk.X, ipady=8)
+
+root.mainloop()

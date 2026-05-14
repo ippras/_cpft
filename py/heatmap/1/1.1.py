@@ -1,3 +1,14 @@
+import pandas as pd
+import numpy as np
+import io
+import re
+import tkinter as tk
+from tkinter import ttk, messagebox
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# 1. Тестовый кусок данных (замените на загрузку из файла)
+raw_data = """
 | Mode.OnsetTemperature | Mode.TemperatureStep | FattyAcid                  | RetentionFactor.Mean | RetentionFactor.StandardDeviation |
 |-----------------------|----------------------|----------------------------|----------------------|-----------------------------------|
 | 60.0                  | 1.0                  | 8:0                        | 3.728                | 0.009                             |
@@ -3600,3 +3611,110 @@
 | 150.0                 | 10.0                 | 24:0                       | 1.62                 | 0.001                             |
 | 150.0                 | 10.0                 | 24:1Δ15c                   | 1.698                | 0.001                             |
 | 150.0                 | 10.0                 | 22:6Δ4c,7c,10c,13c,16c,19c | 1.942                | 0.001                             |
+"""
+
+def load_data():
+    # Очистка markdown таблицы для Pandas
+    cleaned_data = "\n".join([re.sub(r'^\||\|$', '', line) for line in raw_data.strip().split('\n')])
+    df = pd.read_csv(io.StringIO(cleaned_data), sep=r'\s*\|\s*', engine='python')
+    df = df.drop(0) # Удаляем строку с разделителями (---)
+    
+    # Преобразуем нужные колонки в числа
+    numeric_cols = ['Mode.OnsetTemperature', 'Mode.TemperatureStep', 
+                    'RetentionFactor.Mean', 'RetentionFactor.StandardDeviation']
+    for col in numeric_cols:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+    return df
+
+# Загружаем данные
+df = load_data()
+
+# Получаем уникальные значения кислот для выпадающих списков
+acids = sorted(df['FattyAcid'].dropna().unique())
+
+def plot_heatmap():
+    fa_num = combo_num.get() # Числитель
+    fa_den = combo_den.get() # Знаменатель
+    
+    if not fa_num or not fa_den:
+        messagebox.showwarning("Ошибка", "Выберите обе кислоты!")
+        return
+
+    # Фильтруем данные по выбранным кислотам
+    df_num = df[df['FattyAcid'] == fa_num].copy()
+    df_den = df[df['FattyAcid'] == fa_den].copy()
+    
+    if df_num.empty or df_den.empty:
+        messagebox.showinfo("Пусто", "Нет данных для одной из выбранных кислот.")
+        return
+
+    # Объединяем данные двух кислот по температуре и шагу
+    merged = pd.merge(df_num, df_den, 
+                      on=['Mode.OnsetTemperature', 'Mode.TemperatureStep'], 
+                      suffixes=('_num', '_den'))
+    
+    if merged.empty:
+        messagebox.showinfo("Пусто", "Нет общих точек (OnsetTemperature, TemperatureStep) для этих кислот.")
+        return
+
+    # Вычисляем отношение (Ratio)
+    merged['Ratio.Mean'] = merged['RetentionFactor.Mean_num'] / merged['RetentionFactor.Mean_den']
+    
+    # Вычисляем погрешность отношения (по формуле распространения ошибок при делении)
+    rel_std_num = merged['RetentionFactor.StandardDeviation_num'] / merged['RetentionFactor.Mean_num']
+    rel_std_den = merged['RetentionFactor.StandardDeviation_den'] / merged['RetentionFactor.Mean_den']
+    merged['Ratio.Std'] = merged['Ratio.Mean'] * np.sqrt(rel_std_num**2 + rel_std_den**2)
+
+    # Создаем сводные таблицы (pivot) для Mean и Std
+    pivot_mean = merged.pivot(index='Mode.OnsetTemperature', 
+                              columns='Mode.TemperatureStep', 
+                              values='Ratio.Mean')
+    
+    pivot_std = merged.pivot(index='Mode.OnsetTemperature', 
+                             columns='Mode.TemperatureStep', 
+                             values='Ratio.Std')
+
+    # Формируем подписи для ячеек в формате "Mean \n ± Std"
+    annot_labels = pivot_mean.round(3).astype(str) + "\n± " + pivot_std.round(3).astype(str)
+    annot_labels = annot_labels.replace('nan\n± nan', '') # Убираем текст из пустых ячеек
+
+    # Настройка и отрисовка графика
+    plt.figure(figsize=(8, 6))
+    ax = sns.heatmap(pivot_mean, 
+                     annot=annot_labels, 
+                     fmt="", 
+                     cmap="YlGnBu", 
+                     cbar_kws={'label': f'Ratio ({fa_num} / {fa_den})'},
+                     linewidths=.5)
+    
+    ax.invert_yaxis() # Переворачиваем ось Y, чтобы температура росла снизу вверх
+    plt.title(f"Heatmap: Retention Factor Ratio\n{fa_num} / {fa_den}", fontsize=14, pad=15)
+    plt.xlabel("Mode.TemperatureStep", fontsize=12)
+    plt.ylabel("Mode.OnsetTemperature", fontsize=12)
+    plt.tight_layout()
+    plt.show()
+
+# --- Создание графического интерфейса (Tkinter) ---
+root = tk.Tk()
+root.title("Выбор кислот для Heatmap")
+root.geometry("350x200")
+root.eval('tk::PlaceWindow . center') # Центрируем окно
+
+frame = ttk.Frame(root, padding=20)
+frame.pack(fill=tk.BOTH, expand=True)
+
+ttk.Label(frame, text="FattyAcid 1 (Числитель):").pack(anchor=tk.W, pady=(0, 5))
+combo_num = ttk.Combobox(frame, values=acids, state="readonly")
+combo_num.pack(fill=tk.X, pady=(0, 15))
+if len(acids) > 0: combo_num.set(acids[0])
+
+ttk.Label(frame, text="FattyAcid 2 (Знаменатель):").pack(anchor=tk.W, pady=(0, 5))
+combo_den = ttk.Combobox(frame, values=acids, state="readonly")
+combo_den.pack(fill=tk.X, pady=(0, 20))
+if len(acids) > 1: combo_den.set(acids[1]) # Ставим вторую кислоту по умолчанию, если она есть
+
+btn_plot = ttk.Button(frame, text="Построить Heatmap", command=plot_heatmap)
+btn_plot.pack(fill=tk.X, ipady=5)
+
+root.mainloop()

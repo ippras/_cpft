@@ -1,3 +1,16 @@
+import pandas as pd
+import numpy as np
+import tkinter as tk
+from tkinter import ttk, messagebox
+
+# Явно указываем бэкенд для отрисовки
+import matplotlib
+matplotlib.use('TkAgg') 
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Сюда можете вставить ВСЕ ваши данные
+raw_data = """
 | Mode.OnsetTemperature | Mode.TemperatureStep | FattyAcid                  | RetentionFactor.Mean | RetentionFactor.StandardDeviation |
 |-----------------------|----------------------|----------------------------|----------------------|-----------------------------------|
 | 60.0                  | 1.0                  | 8:0                        | 3.728                | 0.009                             |
@@ -3600,3 +3613,116 @@
 | 150.0                 | 10.0                 | 24:0                       | 1.62                 | 0.001                             |
 | 150.0                 | 10.0                 | 24:1Δ15c                   | 1.698                | 0.001                             |
 | 150.0                 | 10.0                 | 22:6Δ4c,7c,10c,13c,16c,19c | 1.942                | 0.001                             |
+"""
+
+def load_data(text):
+    lines = text.strip().split('\n')
+    
+    # Ищем заголовки
+    header_line = next(l for l in lines if '|' in l)
+    headers = [col.strip() for col in header_line.split('|') if col.strip()]
+    
+    data =[]
+    for line in lines:
+        if '|' not in line or '---' in line or 'Mode.OnsetTemperature' in line:
+            continue
+        
+        row = [col.strip() for col in line.split('|')[1:-1]]
+        row = [None if val.lower() == 'null' else val for val in row]
+        
+        if len(row) == len(headers):
+            data.append(row)
+            
+    df = pd.DataFrame(data, columns=headers)
+    
+    numeric_cols = ['Mode.OnsetTemperature', 'Mode.TemperatureStep', 
+                    'RetentionFactor.Mean', 'RetentionFactor.StandardDeviation']
+    for col in numeric_cols:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+    return df
+
+# Загружаем данные
+df = load_data(raw_data)
+acids = sorted(df['FattyAcid'].dropna().unique())
+
+def plot_heatmap():
+    fa_num = combo_num.get()
+    fa_den = combo_den.get()
+    
+    if not fa_num or not fa_den:
+        messagebox.showwarning("Ошибка", "Выберите обе кислоты!")
+        return
+
+    df_num = df[df['FattyAcid'] == fa_num].copy()
+    df_den = df[df['FattyAcid'] == fa_den].copy()
+    
+    if df_num.empty or df_den.empty:
+        messagebox.showinfo("Пусто", "Нет данных для одной из выбранных кислот.")
+        return
+
+    merged = pd.merge(df_num, df_den, 
+                      on=['Mode.OnsetTemperature', 'Mode.TemperatureStep'], 
+                      suffixes=('_num', '_den'))
+    
+    if merged.empty:
+        messagebox.showinfo("Пусто", "Нет общих точек для этих кислот.")
+        return
+
+    # Вычисляем отношение (Ratio)
+    merged['Ratio.Mean'] = merged['RetentionFactor.Mean_num'] / merged['RetentionFactor.Mean_den']
+    
+    # Вычисляем погрешность отношения
+    rel_std_num = merged['RetentionFactor.StandardDeviation_num'] / merged['RetentionFactor.Mean_num']
+    rel_std_den = merged['RetentionFactor.StandardDeviation_den'] / merged['RetentionFactor.Mean_den']
+    merged['Ratio.Std'] = merged['Ratio.Mean'] * np.sqrt(rel_std_num**2 + rel_std_den**2)
+
+    # Создаем сводные таблицы
+    pivot_mean = merged.pivot(index='Mode.OnsetTemperature', columns='Mode.TemperatureStep', values='Ratio.Mean')
+    pivot_std = merged.pivot(index='Mode.OnsetTemperature', columns='Mode.TemperatureStep', values='Ratio.Std')
+
+    # Формируем подписи
+    annot_labels = pivot_mean.round(3).astype(str) + "\n± " + pivot_std.round(3).astype(str)
+    annot_labels = annot_labels.replace('nan\n± nan', '')
+
+    plt.figure(figsize=(8, 6))
+    
+    # --- ИЗМЕНЕНИЯ ЗДЕСЬ ---
+    ax = sns.heatmap(pivot_mean, 
+                     annot=annot_labels, 
+                     fmt="", 
+                     cmap="bwr",       # Палитра Blue-White-Red (Синий - Белый - Красный)
+                     center=1.0,       # Жестко привязываем белый цвет к значению 1.0
+                     cbar_kws={'label': f'Ratio ({fa_num} / {fa_den})'}, 
+                     linewidths=.5)
+    # -----------------------
+    
+    ax.invert_yaxis()
+    plt.title(f"Heatmap: Retention Factor Ratio\n{fa_num} / {fa_den}", fontsize=14, pad=15)
+    plt.xlabel("Mode.TemperatureStep", fontsize=12)
+    plt.ylabel("Mode.OnsetTemperature", fontsize=12)
+    plt.tight_layout()
+    plt.show()
+
+root = tk.Tk()
+root.title("Выбор кислот для Heatmap")
+root.geometry("350x200")
+
+frame = ttk.Frame(root, padding=20)
+frame.pack(fill=tk.BOTH, expand=True)
+
+ttk.Label(frame, text="FattyAcid 1 (Числитель):").pack(anchor=tk.W, pady=(0, 5))
+combo_num = ttk.Combobox(frame, values=acids, state="readonly")
+combo_num.pack(fill=tk.X, pady=(0, 15))
+if len(acids) > 0: combo_num.set(acids[0])
+
+ttk.Label(frame, text="FattyAcid 2 (Знаменатель):").pack(anchor=tk.W, pady=(0, 5))
+combo_den = ttk.Combobox(frame, values=acids, state="readonly")
+combo_den.pack(fill=tk.X, pady=(0, 20))
+if len(acids) > 1: combo_den.set(acids[1])
+
+btn_plot = ttk.Button(frame, text="Построить Heatmap", command=plot_heatmap)
+btn_plot.pack(fill=tk.X, ipady=5)
+
+root.update_idletasks()
+root.mainloop()
