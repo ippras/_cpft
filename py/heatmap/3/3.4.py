@@ -3682,7 +3682,7 @@ def plot_heatmap():
     # Если нужен еще более резкий переход, измените на vmin=0.8, vmax=1.25
     ax = sns.heatmap(matrix, 
                      cmap="bwr", 
-                     norm=LogNorm(vmin=0.9, vmax=1.11), 
+                     norm=LogNorm(vmin=0.95, vmax=1.05), 
                      annot=False,        
                      linewidths=.5, 
                      cbar_kws={
