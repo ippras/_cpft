@@ -5,7 +5,10 @@ use crate::{
         },
         states::source::Settings,
     },
-    r#const::{ONSET_TEMPERATURE, *},
+    r#const::{
+        ABSOLUTE, CHAIN_LENGTH, EQUIVALENT_CHAIN_LENGTH, FILTER, MEAN, MODE, ONSET_TEMPERATURE,
+        POINTS, RETENTION_FACTOR, RETENTION_TIME, TEMPERATURE_STEP,
+    },
     utils::hash::HashedDataFrame,
 };
 use egui::{
@@ -29,8 +32,6 @@ pub(crate) struct Computer;
 
 impl Computer {
     fn try_compute(&mut self, key: Key<'_>) -> PolarsResult<Value> {
-        // println!("key.frame.data_frame: {:#?}", key.frame.data_frame.schema());
-        // println!("INPUT_SCHEMA: {:#?}", &*INPUT_SCHEMA);
         matches_schema(&key.frame.data_frame, &INPUT_SCHEMA)?;
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
         // Filter
@@ -164,34 +165,19 @@ impl PartialEq for PointValue {
 }
 
 fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
-    // println!(
-    //     "lazy_frame: {}",
-    //     lazy_frame
-    //         .clone()
-    //         .select([col(CHAIN_LENGTH).struct_().field_by_name("*")])
-    //         .collect()?
-    // );
     lazy_frame = lazy_frame.select([
         col(MODE).struct_().field_by_name(ONSET_TEMPERATURE),
         col(MODE).struct_().field_by_name(TEMPERATURE_STEP),
         col(FATTY_ACID),
-        col(RETENTION_TIME)
-            .struct_()
-            .field_by_name(ABSOLUTE)
-            .struct_()
-            .field_by_name(MEAN)
-            .alias(RETENTION_TIME),
-        col(CHAIN_LENGTH)
-            .struct_()
-            .field_by_name(EQUIVALENT_CHAIN_LENGTH),
+        col(RETENTION_FACTOR).arr().mean(),
     ]);
-    // println!("lazy_frame: {}", lazy_frame.clone().collect().unwrap());
-    lazy_frame = lazy_frame.select([
-        col(ONSET_TEMPERATURE),
-        col(TEMPERATURE_STEP),
-        col(FATTY_ACID),
-        concat_arr(vec![col(RETENTION_TIME), col(EQUIVALENT_CHAIN_LENGTH)])?.alias(POINTS),
-    ]);
+    println!("lazy_frame GGG0: {}", lazy_frame.clone().collect().unwrap());
+    // lazy_frame = lazy_frame.select([
+    //     col(ONSET_TEMPERATURE),
+    //     col(TEMPERATURE_STEP),
+    //     col(FATTY_ACID),
+    //     concat_arr(vec![col(RETENTION_TIME), col(EQUIVALENT_CHAIN_LENGTH)])?.alias(POINTS),
+    // ]);
     lazy_frame = lazy_frame
         .group_by([col(FATTY_ACID), col(ONSET_TEMPERATURE)])
         .agg([col(TEMPERATURE_STEP), col(POINTS)]);

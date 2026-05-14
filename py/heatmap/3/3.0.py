@@ -1,23 +1,13 @@
-змени чтобы оси - это не режим, а ЖК а а значения - отношения их RetentionFactor.Mean
-Выбираем мы соответственно какой режим отобразить
-
-в итоговой программе данные не пиши все, оставь первые строки
-
-Вот программа и данные
-
-```
 import pandas as pd
 import numpy as np
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-# Явно указываем бэкенд для отрисовки
 import matplotlib
-matplotlib.use('TkAgg') 
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Сюда можете вставить ВСЕ ваши данные
 raw_data = """
 | Mode.OnsetTemperature | Mode.TemperatureStep | FattyAcid                  | RetentionFactor.Mean | RetentionFactor.StandardDeviation |
 |-----------------------|----------------------|----------------------------|----------------------|-----------------------------------|
@@ -3625,113 +3615,118 @@ raw_data = """
 
 def load_data(text):
     lines = text.strip().split('\n')
-    
-    # Ищем заголовки
     header_line = next(l for l in lines if '|' in l)
     headers = [col.strip() for col in header_line.split('|') if col.strip()]
     
-    data =[]
+    data = []
     for line in lines:
         if '|' not in line or '---' in line or 'Mode.OnsetTemperature' in line:
             continue
-        
         row = [col.strip() for col in line.split('|')[1:-1]]
         row = [None if val.lower() == 'null' else val for val in row]
-        
         if len(row) == len(headers):
             data.append(row)
             
     df = pd.DataFrame(data, columns=headers)
-    
-    numeric_cols = ['Mode.OnsetTemperature', 'Mode.TemperatureStep', 
-                    'RetentionFactor.Mean', 'RetentionFactor.StandardDeviation']
+    numeric_cols = ['Mode.OnsetTemperature', 'Mode.TemperatureStep', 'RetentionFactor.Mean']
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce')
         
+    df['Mode_Name'] = df['Mode.OnsetTemperature'].astype(str) + "°C / " + df['Mode.TemperatureStep'].astype(str) + "°C/min"
     return df
 
-# Загружаем данные
 df = load_data(raw_data)
-acids = sorted(df['FattyAcid'].dropna().unique())
+
+# --- 1. Определяем жесткий порядок ЖК на основе режима 60.0 / 1.0 ---
+mode_60_1 = df[(df['Mode.OnsetTemperature'] == 60.0) & (df['Mode.TemperatureStep'] == 1.0)]
+mode_60_1 = mode_60_1.sort_values('RetentionFactor.Mean')
+fixed_fa_order = mode_60_1['FattyAcid'].tolist()
+
+# --- 2. Формируем пары смежных ЖК ---
+fa_pairs = [(fixed_fa_order[i], fixed_fa_order[i+1]) for i in range(len(fixed_fa_order)-1)]
+pair_labels = [f"{a} / {b}" for a, b in fa_pairs]
+
+# --- 3. Подготавливаем сводную таблицу отношений для всех режимов ---
+modes = sorted(df['Mode_Name'].dropna().unique())
+records = []
+
+for mode in modes:
+    mode_data = df[df['Mode_Name'] == mode].set_index('FattyAcid')['RetentionFactor.Mean']
+    record = {'Mode_Name': mode}
+    
+    for (fa_prev, fa_next), label in zip(fa_pairs, pair_labels):
+        if fa_prev in mode_data.index and fa_next in mode_data.index:
+            # Считаем отношение Предыдущая / Следующая
+            record[label] = mode_data[fa_prev] / mode_data[fa_next]
+        else:
+            record[label] = np.nan
+            
+    records.append(record)
+
+# Датафрейм, где индексы - это режимы, а колонки - пары ЖК
+df_ratios = pd.DataFrame(records).set_index('Mode_Name')
 
 def plot_heatmap():
-    fa_num = combo_num.get()
-    fa_den = combo_den.get()
+    selected_mode_indices = listbox_modes.curselection()
+    selected_modes = [listbox_modes.get(i) for i in selected_mode_indices]
     
-    if not fa_num or not fa_den:
-        messagebox.showwarning("Ошибка", "Выберите обе кислоты!")
+    if not selected_modes:
+        messagebox.showwarning("Ошибка", "Выберите хотя бы 1 режим!")
+        return
+    
+    # Фильтруем данные только для выбранных режимов
+    plot_df = df_ratios.loc[selected_modes]
+    
+    # Удаляем столбцы (пары ЖК), в которых для выбранных режимов вообще нет данных
+    plot_df = plot_df.dropna(axis=1, how='all')
+    
+    if plot_df.empty:
+        messagebox.showinfo("Пусто", "Нет данных для построения.")
         return
 
-    df_num = df[df['FattyAcid'] == fa_num].copy()
-    df_den = df[df['FattyAcid'] == fa_den].copy()
+    # Строим Heatmap
+    plt.figure(figsize=(10, 6))
     
-    if df_num.empty or df_den.empty:
-        messagebox.showinfo("Пусто", "Нет данных для одной из выбранных кислот.")
-        return
-
-    merged = pd.merge(df_num, df_den, 
-                      on=['Mode.OnsetTemperature', 'Mode.TemperatureStep'], 
-                      suffixes=('_num', '_den'))
+    ax = sns.heatmap(plot_df, 
+                     cmap="viridis",     # Цветовая палитра (можно заменить на 'coolwarm' или 'magma')
+                     annot=True,         # Показывать значения в ячейках
+                     fmt=".3f",          # Формат чисел (3 знака после запятой)
+                     linewidths=.5, 
+                     cbar_kws={'label': 'Ratio (Prev / Next)'})
     
-    if merged.empty:
-        messagebox.showinfo("Пусто", "Нет общих точек для этих кислот.")
-        return
-
-    # Вычисляем отношение (Ratio)
-    merged['Ratio.Mean'] = merged['RetentionFactor.Mean_num'] / merged['RetentionFactor.Mean_den']
+    plt.title("Heatmap: Отношение RetentionFactor смежных ЖК", fontsize=14, pad=15)
+    plt.xlabel("Пары жирных кислот (по порядку элюирования)", fontsize=12)
+    plt.ylabel("Режим (Onset Temp / Temp Step)", fontsize=12)
     
-    # Вычисляем погрешность отношения
-    rel_std_num = merged['RetentionFactor.StandardDeviation_num'] / merged['RetentionFactor.Mean_num']
-    rel_std_den = merged['RetentionFactor.StandardDeviation_den'] / merged['RetentionFactor.Mean_den']
-    merged['Ratio.Std'] = merged['Ratio.Mean'] * np.sqrt(rel_std_num**2 + rel_std_den**2)
-
-    # Создаем сводные таблицы
-    pivot_mean = merged.pivot(index='Mode.OnsetTemperature', columns='Mode.TemperatureStep', values='Ratio.Mean')
-    pivot_std = merged.pivot(index='Mode.OnsetTemperature', columns='Mode.TemperatureStep', values='Ratio.Std')
-
-    # Формируем подписи
-    annot_labels = pivot_mean.round(3).astype(str) + "\n± " + pivot_std.round(3).astype(str)
-    annot_labels = annot_labels.replace('nan\n± nan', '')
-
-    plt.figure(figsize=(8, 6))
+    # Поворачиваем подписи по оси X для читаемости
+    plt.xticks(rotation=45, ha='right')
+    plt.yticks(rotation=0)
     
-    # --- ИЗМЕНЕНИЯ ЗДЕСЬ ---
-    ax = sns.heatmap(pivot_mean, 
-                     annot=annot_labels, 
-                     fmt="", 
-                     cmap="bwr",       # Палитра Blue-White-Red (Синий - Белый - Красный)
-                     center=1.0,       # Жестко привязываем белый цвет к значению 1.0
-                     cbar_kws={'label': f'Ratio ({fa_num} / {fa_den})'}, 
-                     linewidths=.5)
-    # -----------------------
-    
-    ax.invert_yaxis()
-    plt.title(f"Heatmap: Retention Factor Ratio\n{fa_num} / {fa_den}", fontsize=14, pad=15)
-    plt.xlabel("Mode.TemperatureStep", fontsize=12)
-    plt.ylabel("Mode.OnsetTemperature", fontsize=12)
     plt.tight_layout()
     plt.show()
 
+# --- Интерфейс Tkinter ---
 root = tk.Tk()
-root.title("Выбор кислот для Heatmap")
-root.geometry("350x200")
+root.title("Heatmap отношений ЖК")
+root.geometry("400x350")
 
-frame = ttk.Frame(root, padding=20)
+frame = ttk.Frame(root, padding=15)
 frame.pack(fill=tk.BOTH, expand=True)
 
-ttk.Label(frame, text="FattyAcid 1 (Числитель):").pack(anchor=tk.W, pady=(0, 5))
-combo_num = ttk.Combobox(frame, values=acids, state="readonly")
-combo_num.pack(fill=tk.X, pady=(0, 15))
-if len(acids) > 0: combo_num.set(acids[0])
+ttk.Label(frame, text="Выберите режимы для отображения:", font=("Arial", 10, "bold")).pack(anchor=tk.W)
+ttk.Label(frame, text="(Используйте Shift для диапазона и Ctrl для точечного выбора)").pack(anchor=tk.W)
 
-ttk.Label(frame, text="FattyAcid 2 (Знаменатель):").pack(anchor=tk.W, pady=(0, 5))
-combo_den = ttk.Combobox(frame, values=acids, state="readonly")
-combo_den.pack(fill=tk.X, pady=(0, 20))
-if len(acids) > 1: combo_den.set(acids[1])
+listbox_modes = tk.Listbox(frame, selectmode=tk.EXTENDED, height=10, exportselection=False)
+listbox_modes.pack(fill=tk.BOTH, expand=True, pady=(5, 15))
+
+for mode in modes:
+    listbox_modes.insert(tk.END, mode)
+    
+# Выделяем все режимы по умолчанию
+for i in range(len(modes)):
+    listbox_modes.select_set(i)
 
 btn_plot = ttk.Button(frame, text="Построить Heatmap", command=plot_heatmap)
-btn_plot.pack(fill=tk.X, ipady=5)
+btn_plot.pack(fill=tk.X, ipady=8)
 
-root.update_idletasks()
 root.mainloop()
-```

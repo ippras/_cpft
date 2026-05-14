@@ -1,23 +1,13 @@
-змени чтобы оси - это не режим, а ЖК а а значения - отношения их RetentionFactor.Mean
-Выбираем мы соответственно какой режим отобразить
-
-в итоговой программе данные не пиши все, оставь первые строки
-
-Вот программа и данные
-
-```
 import pandas as pd
 import numpy as np
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-# Явно указываем бэкенд для отрисовки
 import matplotlib
-matplotlib.use('TkAgg') 
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Сюда можете вставить ВСЕ ваши данные
 raw_data = """
 | Mode.OnsetTemperature | Mode.TemperatureStep | FattyAcid                  | RetentionFactor.Mean | RetentionFactor.StandardDeviation |
 |-----------------------|----------------------|----------------------------|----------------------|-----------------------------------|
@@ -3625,113 +3615,102 @@ raw_data = """
 
 def load_data(text):
     lines = text.strip().split('\n')
-    
-    # Ищем заголовки
     header_line = next(l for l in lines if '|' in l)
     headers = [col.strip() for col in header_line.split('|') if col.strip()]
     
-    data =[]
+    data = []
     for line in lines:
         if '|' not in line or '---' in line or 'Mode.OnsetTemperature' in line:
             continue
-        
         row = [col.strip() for col in line.split('|')[1:-1]]
         row = [None if val.lower() == 'null' else val for val in row]
-        
         if len(row) == len(headers):
             data.append(row)
             
     df = pd.DataFrame(data, columns=headers)
-    
-    numeric_cols = ['Mode.OnsetTemperature', 'Mode.TemperatureStep', 
-                    'RetentionFactor.Mean', 'RetentionFactor.StandardDeviation']
+    numeric_cols = ['Mode.OnsetTemperature', 'Mode.TemperatureStep', 'RetentionFactor.Mean']
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce')
         
+    df['Mode_Name'] = df['Mode.OnsetTemperature'].astype(str) + "°C / " + df['Mode.TemperatureStep'].astype(str) + "°C/min"
     return df
 
-# Загружаем данные
 df = load_data(raw_data)
-acids = sorted(df['FattyAcid'].dropna().unique())
+
+# --- 1. Определяем жесткий порядок ЖК на основе режима 60.0 / 1.0 ---
+mode_60_1 = df[(df['Mode.OnsetTemperature'] == 60.0) & (df['Mode.TemperatureStep'] == 1.0)]
+mode_60_1 = mode_60_1.sort_values('RetentionFactor.Mean')
+fixed_fa_order = mode_60_1['FattyAcid'].tolist()
+
+# --- 2. Сортируем режимы математически: от большего к меньшему ---
+unique_modes_df = df[['Mode.OnsetTemperature', 'Mode.TemperatureStep']].drop_duplicates()
+unique_modes_df = unique_modes_df.sort_values(by=['Mode.OnsetTemperature', 'Mode.TemperatureStep'], ascending=[False, False])
+modes = (unique_modes_df['Mode.OnsetTemperature'].astype(str) + "°C / " + unique_modes_df['Mode.TemperatureStep'].astype(str) + "°C/min").tolist()
 
 def plot_heatmap():
-    fa_num = combo_num.get()
-    fa_den = combo_den.get()
+    selected_mode = combo_mode.get()
     
-    if not fa_num or not fa_den:
-        messagebox.showwarning("Ошибка", "Выберите обе кислоты!")
+    if not selected_mode:
+        messagebox.showwarning("Ошибка", "Выберите режим!")
+        return
+    
+    # Получаем данные только для выбранного режима
+    mode_data = df[df['Mode_Name'] == selected_mode].set_index('FattyAcid')['RetentionFactor.Mean']
+    
+    # Оставляем только те кислоты, которые есть в этом режиме (сохраняя эталонный порядок)
+    current_fas = [fa for fa in fixed_fa_order if fa in mode_data.index]
+    
+    if len(current_fas) < 2:
+        messagebox.showinfo("Пусто", "Недостаточно данных для построения матрицы в этом режиме.")
         return
 
-    df_num = df[df['FattyAcid'] == fa_num].copy()
-    df_den = df[df['FattyAcid'] == fa_den].copy()
+    # Создаем пустую матрицу (DataFrame)
+    matrix = pd.DataFrame(index=current_fas, columns=current_fas, dtype=float)
     
-    if df_num.empty or df_den.empty:
-        messagebox.showinfo("Пусто", "Нет данных для одной из выбранных кислот.")
-        return
+    # Заполняем матрицу отношениями (Ось Y / Ось X)
+    for fa_row in current_fas:
+        for fa_col in current_fas:
+            matrix.loc[fa_row, fa_col] = mode_data[fa_row] / mode_data[fa_col]
 
-    merged = pd.merge(df_num, df_den, 
-                      on=['Mode.OnsetTemperature', 'Mode.TemperatureStep'], 
-                      suffixes=('_num', '_den'))
+    # Строим Heatmap
+    plt.figure(figsize=(9, 8))
     
-    if merged.empty:
-        messagebox.showinfo("Пусто", "Нет общих точек для этих кислот.")
-        return
-
-    # Вычисляем отношение (Ratio)
-    merged['Ratio.Mean'] = merged['RetentionFactor.Mean_num'] / merged['RetentionFactor.Mean_den']
+    # ИЗМЕНЕНИЯ ЗДЕСЬ: cmap="bwr" (Blue-White-Red) и center=1.0
+    ax = sns.heatmap(matrix, 
+                     cmap="bwr",         # Синий (<1) - Белый (=1) - Красный (>1)
+                     center=1.0,         # Жестко привязываем белый цвет к 1.0
+                     annot=False,        # Без цифр
+                     linewidths=.5, 
+                     cbar_kws={'label': 'Ratio (Ось Y / Ось X)'})
     
-    # Вычисляем погрешность отношения
-    rel_std_num = merged['RetentionFactor.StandardDeviation_num'] / merged['RetentionFactor.Mean_num']
-    rel_std_den = merged['RetentionFactor.StandardDeviation_den'] / merged['RetentionFactor.Mean_den']
-    merged['Ratio.Std'] = merged['Ratio.Mean'] * np.sqrt(rel_std_num**2 + rel_std_den**2)
-
-    # Создаем сводные таблицы
-    pivot_mean = merged.pivot(index='Mode.OnsetTemperature', columns='Mode.TemperatureStep', values='Ratio.Mean')
-    pivot_std = merged.pivot(index='Mode.OnsetTemperature', columns='Mode.TemperatureStep', values='Ratio.Std')
-
-    # Формируем подписи
-    annot_labels = pivot_mean.round(3).astype(str) + "\n± " + pivot_std.round(3).astype(str)
-    annot_labels = annot_labels.replace('nan\n± nan', '')
-
-    plt.figure(figsize=(8, 6))
+    plt.title(f"Heatmap отношений ЖК\nРежим: {selected_mode}", fontsize=14, pad=15)
+    plt.xlabel("Fatty Acid (Знаменатель)", fontsize=12)
+    plt.ylabel("Fatty Acid (Числитель)", fontsize=12)
     
-    # --- ИЗМЕНЕНИЯ ЗДЕСЬ ---
-    ax = sns.heatmap(pivot_mean, 
-                     annot=annot_labels, 
-                     fmt="", 
-                     cmap="bwr",       # Палитра Blue-White-Red (Синий - Белый - Красный)
-                     center=1.0,       # Жестко привязываем белый цвет к значению 1.0
-                     cbar_kws={'label': f'Ratio ({fa_num} / {fa_den})'}, 
-                     linewidths=.5)
-    # -----------------------
+    # Поворачиваем подписи для читаемости
+    plt.xticks(rotation=90)
+    plt.yticks(rotation=0)
     
-    ax.invert_yaxis()
-    plt.title(f"Heatmap: Retention Factor Ratio\n{fa_num} / {fa_den}", fontsize=14, pad=15)
-    plt.xlabel("Mode.TemperatureStep", fontsize=12)
-    plt.ylabel("Mode.OnsetTemperature", fontsize=12)
     plt.tight_layout()
     plt.show()
 
+# --- Интерфейс Tkinter ---
 root = tk.Tk()
-root.title("Выбор кислот для Heatmap")
-root.geometry("350x200")
+root.title("Матрица отношений ЖК")
+root.geometry("350x150")
 
 frame = ttk.Frame(root, padding=20)
 frame.pack(fill=tk.BOTH, expand=True)
 
-ttk.Label(frame, text="FattyAcid 1 (Числитель):").pack(anchor=tk.W, pady=(0, 5))
-combo_num = ttk.Combobox(frame, values=acids, state="readonly")
-combo_num.pack(fill=tk.X, pady=(0, 15))
-if len(acids) > 0: combo_num.set(acids[0])
+ttk.Label(frame, text="Выберите режим:", font=("Arial", 10, "bold")).pack(anchor=tk.W, pady=(0, 5))
 
-ttk.Label(frame, text="FattyAcid 2 (Знаменатель):").pack(anchor=tk.W, pady=(0, 5))
-combo_den = ttk.Combobox(frame, values=acids, state="readonly")
-combo_den.pack(fill=tk.X, pady=(0, 20))
-if len(acids) > 1: combo_den.set(acids[1])
+# Используем Combobox для выбора одного режима
+combo_mode = ttk.Combobox(frame, values=modes, state="readonly")
+combo_mode.pack(fill=tk.X, pady=(0, 15))
+if modes:
+    combo_mode.set(modes[0]) # Устанавливаем первый (самый большой) по умолчанию
 
 btn_plot = ttk.Button(frame, text="Построить Heatmap", command=plot_heatmap)
 btn_plot.pack(fill=tk.X, ipady=5)
 
-root.update_idletasks()
 root.mainloop()
-```
