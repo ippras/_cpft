@@ -1388,7 +1388,7 @@ dependencies = [
 [[package]]
 name = "egui_ext"
 version = "0.6.1"
-source = "git+https://github.com/kgv/egui_ext?branch=0.6#c468b8ed1996c3496176dcf946064bf6f83d99e0"
+source = "git+https://github.com/kgv/egui_ext?branch=0.6#e8f262511cb3d33ef994d357415acf3eb826b70c"
 dependencies = [
  "eframe",
  "egui",
@@ -2872,12 +2872,13 @@ dependencies = [
 
 [[package]]
 name = "kurbo"
-version = "0.13.0"
+version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7564e90fe3c0d5771e1f0bc95322b21baaeaa0d9213fa6a0b61c99f8b17b3bfb"
+checksum = "4b60dfc32f652b926df6192e55525b16d186c69d47876c3ead4da5cc9f8450e2"
 dependencies = [
  "arrayvec",
  "euclid",
+ "polycool",
  "smallvec",
 ]
 
@@ -3769,13 +3770,13 @@ checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
 name = "peniko"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a2b6aadb221872732e87d465213e9be5af2849b0e8cc5300a8ba98fffa2e00a"
+checksum = "839c8299360d2e998bdb106dc0a6cd71dcc5f4df51df1b620361bf50e283cca6"
 dependencies = [
  "bytemuck",
  "color",
- "kurbo 0.13.0",
+ "kurbo 0.13.1",
  "linebender_resource_handle",
  "smallvec",
 ]
@@ -3899,18 +3900,18 @@ checksum = "5be167a7af36ee22fe3115051bc51f6e6c7054c9348e28deb4f49bd6f705a315"
 
 [[package]]
 name = "pin-project"
-version = "1.1.12"
+version = "1.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cbf0d9e68100b3a7989b4901972f265cd542e560a3a8a724e1e20322f4d06ce9"
+checksum = "2466b2336ed02bcdca6b294417127b90ec92038d1d5c4fbeac971a922e0e0924"
 dependencies = [
  "pin-project-internal",
 ]
 
 [[package]]
 name = "pin-project-internal"
-version = "1.1.12"
+version = "1.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a990e22f43e84855daf260dded30524ef4a9021cc7541c26540500a50b624389"
+checksum = "c96395f0a926bc13b1c17622aaddda1ecb55d49c8f1bf9777e4d877800a43f8b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4657,6 +4658,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "polycool"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50596ddc09eb5ad5f75cacd40209568e66df71baf86e1499a0e99c4cff12a5a6"
+dependencies = [
+ "arrayvec",
+]
+
+[[package]]
 name = "portable-atomic"
 version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4921,9 +4931,9 @@ dependencies = [
 
 [[package]]
 name = "ratex-font"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f3b09d2994886d337dbdbf6fcd2e86321d6c210643736b48d374d71b4d72d89"
+checksum = "1340a7740d7dc2f3ec0589f1d9e6acfaf7c193512d7a3549d2e1ae272040d206"
 dependencies = [
  "phf 0.11.3",
  "ratex-types",
@@ -4931,9 +4941,9 @@ dependencies = [
 
 [[package]]
 name = "ratex-font-loader"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa79d0493ea11b932d95b836477e4ec0c2c2388541a1211ffd3c2e4ae261fb95"
+checksum = "a654ce29763b754a3efbc2ef8876d262bd12c5b6433976b53f8bae036147fbde"
 dependencies = [
  "ab_glyph",
  "ratex-font",
@@ -4944,18 +4954,18 @@ dependencies = [
 
 [[package]]
 name = "ratex-katex-fonts"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75ee178442689dc22b0fc5b829ab94661668e2f11bf6ade904ac1663b1340135"
+checksum = "063d79daf286e25348d8b87328bde605df245f348a8b61966e95e2380fd77245"
 dependencies = [
  "rust-embed",
 ]
 
 [[package]]
 name = "ratex-layout"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc5f2ff5797c4226c4391190d68aa25630cb0bf3c9d4f52521ff825e2763a1c8"
+checksum = "44bd6b3bfad29024b5dc9ac72c6772d2a237cf2bd7dadf9b2ab9f4b0142ebaab"
 dependencies = [
  "ratex-font",
  "ratex-parser",
@@ -4965,9 +4975,9 @@ dependencies = [
 
 [[package]]
 name = "ratex-lexer"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "070410c8c842ffcfb8292bf416626394a27e15410e9064fad5aa9ba9013b5550"
+checksum = "31d0f7dec11c7c3d0e9a52134e41a938aef549d772789294eaa69fbad270178c"
 dependencies = [
  "ratex-types",
  "serde",
@@ -4976,9 +4986,9 @@ dependencies = [
 
 [[package]]
 name = "ratex-parser"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "384da3ce5b93e6035560bc5d38ad2f0f03ca6a3b97b4e017a1c87098ebbf3968"
+checksum = "bee370e0b001df52e8d01aa938eaac924f02a0bb60a9368e2b278eb74cd68648"
 dependencies = [
  "fancy-regex",
  "ratex-font",
@@ -4994,9 +5004,9 @@ dependencies = [
 
 [[package]]
 name = "ratex-svg"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b8c8732578b8f365491f1cd437193738aee9677f52e00bbff013853122233fb"
+checksum = "bcec73d44ce68905a5618f92ba62572f66c2a0d44c36dafc8fb7d3c815cac359"
 dependencies = [
  "ab_glyph",
  "base64",
@@ -5009,20 +5019,21 @@ dependencies = [
 
 [[package]]
 name = "ratex-types"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d64ce0e9190bd69f9d7d4eadde2b1a1fe256d7ee57c7cbc0137fcd8895fa5506"
+checksum = "c057ab4de339544890c431829bb0e107358686d7cf96834a74a95af492066963"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "ratex-unicode-font"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14c9b86f7ab7c0a1619bed1a9c705e1feba07f7e11f89631b4262ac2542035f6"
+checksum = "6a41451c0c51da58dd58ac4e2d5b0a3db61e2142b59edb202b984d613d90a21b"
 dependencies = [
  "fontdb",
+ "system-fonts",
  "ttf-parser",
 ]
 
@@ -6001,6 +6012,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "sys-locale"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8eab9a99a024a169fe8a903cf9d4a3b3601109bcc13bd9e3c6fff259138626c4"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "sysinfo"
 version = "0.37.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6012,6 +6032,16 @@ dependencies = [
  "objc2-core-foundation",
  "objc2-io-kit",
  "windows 0.61.3",
+]
+
+[[package]]
+name = "system-fonts"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f369feb844d5e08bb4e938c3f88ff359261bc94c7553ddb34e174447120b64d6"
+dependencies = [
+ "fontdb",
+ "sys-locale",
 ]
 
 [[package]]
@@ -7555,9 +7585,9 @@ dependencies = [
 
 [[package]]
 name = "winnow"
-version = "1.0.2"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ee1708bef14716a11bae175f579062d4554d95be2c6829f518df847b7b3fdd0"
+checksum = "0592e1c9d151f854e6fd382574c3a0855250e1d9b2f99d9281c6e6391af352f1"
 dependencies = [
  "memchr",
 ]

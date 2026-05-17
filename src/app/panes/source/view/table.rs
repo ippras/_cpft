@@ -194,14 +194,14 @@ impl TableView<'_> {
     ) -> PolarsResult<()> {
         match (row, column) {
             (row, top::INDEX) => {
-                // ui.label(row.to_string());
-                ui.label(format!(
-                    "{}/{}",
-                    row.to_string(),
-                    self.data_frame[INDEX]
-                        .as_materialized_series()
-                        .str_value(row)?
-                ));
+                ui.label(row.to_string())
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        let text = self.data_frame[INDEX]
+                            .as_materialized_series()
+                            .str_value(row)?;
+                        ui.label(text);
+                        Ok(())
+                    })?;
             }
             (row, bottom::ONSET) => {
                 ui.label(
