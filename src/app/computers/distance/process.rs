@@ -100,7 +100,9 @@ impl Computer {
         // Фильтруем до расчетов дистанций, чтоб считать только необходимые дистанции между жирными кислотами
         lazy_frame = lazy_frame.filter(col(FILTER));
         // Join
-        lazy_frame = join(lazy_frame, key)?;
+        lazy_frame = join1(lazy_frame)?;
+        // Restructure
+        lazy_frame = restructure(lazy_frame)?;
         HashedDataFrame::new(lazy_frame.collect()?)
     }
 }
@@ -126,20 +128,14 @@ impl<'a> Key<'a> {
 /// Distance value
 type Value = HashedDataFrame;
 
-fn join(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
+fn join1(mut lazy_frame: LazyFrame) -> PolarsResult<LazyFrame> {
     // lazy_frame = lazy_frame
     //     .clone()
     //     .select([
     //         col(MODE).alias("LeftKey"),
     //         as_struct(vec![
     //             col(FATTY_ACID),
-    //             col(RETENTION_TIME)
-    //                 .struct_()
-    //                 .field_by_name(ABSOLUTE)
-    //                 .struct_()
-    //                 .field_by_name(MEAN)
-    //                 .name()
-    //                 .keep(),
+    //             retention_time.clone(),
     //             col(CHAIN_LENGTH)
     //                 .struct_()
     //                 .field_by_name(EQUIVALENT_CHAIN_LENGTH),
@@ -156,13 +152,7 @@ fn join(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     //                 col(MODE).alias("RightKey"),
     //                 as_struct(vec![
     //                     col(FATTY_ACID),
-    //                     col(RETENTION_TIME)
-    //                         .struct_()
-    //                         .field_by_name(ABSOLUTE)
-    //                         .struct_()
-    //                         .field_by_name(MEAN)
-    //                         .name()
-    //                         .keep(),
+    //                     retention_time.clone(),
     //                     col(CHAIN_LENGTH)
     //                         .struct_()
     //                         .field_by_name(EQUIVALENT_CHAIN_LENGTH),
@@ -177,19 +167,18 @@ fn join(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     //         // Fatty asids not equals combination
     //         col("LeftIndex").lt(col("RightIndex")),
     //     ]);
-    let retention_time = col(RETENTION_TIME).struct_().field_by_name(ABSOLUTE);
+
     let fatty_acid = as_struct(vec![
         col(FATTY_ACID),
-        retention_time.clone().name().keep(),
+        col(RETENTION_TIME)
+            .struct_()
+            .field_by_name(ABSOLUTE)
+            .name()
+            .keep(),
         col(CHAIN_LENGTH)
             .struct_()
             .field_by_name(EQUIVALENT_CHAIN_LENGTH),
     ]);
-    // // ВАЖНО: Сортируем данные, чтобы гарантировать последовательность по времени удерживания
-    // lazy_frame = lazy_frame.sort_by_exprs(
-    //     vec![col(MODE), retention_time.arr().mean()],
-    //     SortMultipleOptions::default().with_maintain_order(true),
-    // );
     lazy_frame = lazy_frame.select([
         col(MODE),
         col(DEAD_TIME),
@@ -203,8 +192,49 @@ fn join(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     ]);
     // Убираем последние строки в каждой группе, у которых нет пары (TO is null)
     lazy_frame = lazy_frame.filter(col(TO).is_not_null());
+
     println!("!!!!!!!!!1: {}", lazy_frame.clone().collect().unwrap());
-    // Restructure
+    Ok(lazy_frame)
+}
+
+fn join2(mut lazy_frame: LazyFrame) -> PolarsResult<LazyFrame> {
+    let fatty_acid = as_struct(vec![
+        col(FATTY_ACID),
+        col(RETENTION_TIME)
+            .struct_()
+            .field_by_name(ABSOLUTE)
+            .name()
+            .keep(),
+        col(CHAIN_LENGTH)
+            .struct_()
+            .field_by_name(EQUIVALENT_CHAIN_LENGTH),
+    ]);
+    lazy_frame = lazy_frame
+        .clone()
+        .select([
+            col(MODE).alias("LeftKey"),
+            fatty_acid.clone().alias(FROM),
+            col(MODE),
+            col(DEAD_TIME),
+        ])
+        .with_row_index("LeftIndex", None)
+        .join_builder()
+        .with(
+            lazy_frame
+                .select([col(MODE).alias("RightKey"), fatty_acid.alias(TO)])
+                .with_row_index("RightIndex", None),
+        )
+        .join_where(vec![
+            // Same modes
+            col("LeftKey").eq(col("RightKey")),
+            // Fatty asids not equals combination
+            col("LeftIndex").lt(col("RightIndex")),
+        ]);
+    Ok(lazy_frame)
+}
+
+/// Restructure
+fn restructure(mut lazy_frame: LazyFrame) -> PolarsResult<LazyFrame> {
     lazy_frame = lazy_frame
         .select([
             col(MODE),

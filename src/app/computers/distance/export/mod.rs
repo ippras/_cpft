@@ -5,8 +5,9 @@ use crate::{
     },
     r#const::{
         ABSOLUTE, ARRAY, CHAIN_LENGTH, DEAD_TIME, DISTANCE, EQUIVALENT_CHAIN_LENGTH, FILTER,
-        FRACTIONAL_CHAIN_LENGTH, MASS, MEAN, MODE, RELATIVE, RETENTION_FACTOR, RETENTION_TIME,
-        SELECTIVITY_FACTOR, STANDARD_DEVIATION, TEMPERATURE,
+        FRACTIONAL_CHAIN_LENGTH, FROM, MASS, MEAN, MODE, ONSET_TEMPERATURE, RELATIVE,
+        RETENTION_FACTOR, RETENTION_TIME, SELECTIVITY_FACTOR, STANDARD_DEVIATION, TEMPERATURE,
+        TEMPERATURE_STEP, TO,
     },
     utils::hash::HashedDataFrame,
 };
@@ -34,9 +35,28 @@ impl Computer {
         // Format
         lazy_frame = format(lazy_frame, key)?;
         // Select
-        lazy_frame = lazy_frame.select([dtype_cols(&[DataType::Float64, DataType::String])
-            .as_selector()
-            .as_expr()]);
+        lazy_frame = lazy_frame.select([
+            col(formatcp!("{MODE}.{ONSET_TEMPERATURE}")),
+            col(formatcp!("{MODE}.{TEMPERATURE_STEP}")),
+            col(formatcp!("{FATTY_ACID}.{FROM}")),
+            col(formatcp!("{FATTY_ACID}.{TO}")),
+            col(DEAD_TIME),
+            col(formatcp!("{RETENTION_TIME}.{ARRAY}[0]")),
+            col(formatcp!("{RETENTION_TIME}.{ARRAY}[1]")),
+            col(formatcp!("{RETENTION_TIME}.{ARRAY}[2]")),
+            col(formatcp!("{RETENTION_TIME}.{MEAN}")),
+            col(formatcp!("{RETENTION_TIME}.{STANDARD_DEVIATION}")),
+            col(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.{ARRAY}[0]")),
+            col(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.{ARRAY}[1]")),
+            col(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.{ARRAY}[2]")),
+            col(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.{MEAN}")),
+            col(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.{STANDARD_DEVIATION}")),
+            col(formatcp!("{SELECTIVITY_FACTOR}.{ARRAY}[0]")),
+            col(formatcp!("{SELECTIVITY_FACTOR}.{ARRAY}[1]")),
+            col(formatcp!("{SELECTIVITY_FACTOR}.{ARRAY}[2]")),
+            col(formatcp!("{SELECTIVITY_FACTOR}.{MEAN}")),
+            col(formatcp!("{SELECTIVITY_FACTOR}.{STANDARD_DEVIATION}")),
+        ]);
         HashedDataFrame::new(lazy_frame.collect()?)
     }
 }
@@ -72,46 +92,122 @@ type Value = HashedDataFrame;
 
 fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     lazy_frame = lazy_frame
-        // .unnest(
-        //     cols([MODE, FATTY_ACID, RETENTION_TIME, EQUIVALENT_CHAIN_LENGTH]),
-        //     Some(PlSmallStr::from_static(".")),
-        // )
         .with_columns([
-            col(formatcp!(r#"^{FATTY_ACID}\..+$"#))
+            col(MODE)
+                .struct_()
+                .field_by_name("*")
+                .name()
+                .prefix(formatcp!("{MODE}.")),
+            col(FATTY_ACID)
+                .struct_()
+                .field_by_name("*")
                 .fatty_acid()
-                .display(),
-            cols([DEAD_TIME, formatcp!(r#"^{MASS}\..+$"#)])
-                .as_expr()
-                .precision(key.precision, key.significant),
-        ]);
-    let names = [
-        formatcp!("{RETENTION_TIME}.{DISTANCE}"),
-        formatcp!("{EQUIVALENT_CHAIN_LENGTH}.{DISTANCE}"),
-        SELECTIVITY_FACTOR,
-    ];
-    lazy_frame = lazy_frame.with_columns(names.map(|name| {
-        let array = Array::builder()
-            .expr(col(name))
-            .ddof(key.ddof)
-            .precision(key.precision)
-            .significant(key.significant)
-            .build();
-        as_struct(vec![
-            array
-                .clone()
-                .struct_()
-                .field_by_name(ARRAY)
-                .arr()
-                .to_struct(Some(PlanCallback::new(move |index| {
-                    Ok(format!("{ARRAY}[{index}]"))
-                })))
-                .struct_()
-                .field_by_name("*"),
-            array.clone().struct_().field_by_name(MEAN),
-            array.clone().struct_().field_by_name(STANDARD_DEVIATION),
+                .display()
+                .name()
+                .prefix(formatcp!("{FATTY_ACID}.")),
+            col(DEAD_TIME).precision(key.precision, key.significant),
+            format_array(
+                col(RETENTION_TIME)
+                    .struct_()
+                    .field_by_name(DISTANCE)
+                    .name()
+                    .keep(),
+                key,
+                true,
+            ),
+            format_array(
+                col(EQUIVALENT_CHAIN_LENGTH)
+                    .struct_()
+                    .field_by_name(DISTANCE)
+                    .name()
+                    .keep(),
+                key,
+                true,
+            ),
+            format_array(col(SELECTIVITY_FACTOR), key, true),
         ])
-        .alias(name)
-    }));
-    lazy_frame = lazy_frame.unnest(cols(names), Some(PlSmallStr::from_static(".")));
+        .unnest(
+            cols([RETENTION_TIME, EQUIVALENT_CHAIN_LENGTH, SELECTIVITY_FACTOR]),
+            Some(PlSmallStr::from_static(".")),
+        );
+
+    // let exprs = [
+    //     col(RETENTION_TIME).struct_().field_by_name(DISTANCE),
+    //     col(EQUIVALENT_CHAIN_LENGTH)
+    //         .struct_()
+    //         .field_by_name(DISTANCE),
+    //     col(SELECTIVITY_FACTOR),
+    // ];
+    // lazy_frame = lazy_frame.with_columns(exprs.map(|expr| {
+    //     let array = Array::builder()
+    //         .expr(expr)
+    //         .ddof(key.ddof)
+    //         .precision(key.precision)
+    //         .significant(key.significant)
+    //         .build();
+    //     as_struct(vec![
+    //         array
+    //             .clone()
+    //             .struct_()
+    //             .field_by_name(ARRAY)
+    //             .arr()
+    //             .to_struct(Some(PlanCallback::new(move |index| {
+    //                 Ok(format!("{ARRAY}[{index}]"))
+    //             })))
+    //             .struct_()
+    //             .field_by_name("*"),
+    //         array.clone().struct_().field_by_name(MEAN),
+    //         array.clone().struct_().field_by_name(STANDARD_DEVIATION),
+    //     ])
+    //     .name()
+    //     .keep()
+    // }));
+    // lazy_frame = lazy_frame.unnest(
+    //     cols([RETENTION_TIME, EQUIVALENT_CHAIN_LENGTH, SELECTIVITY_FACTOR]),
+    //     Some(PlSmallStr::from_static(".")),
+    // );
     Ok(lazy_frame)
+}
+
+fn format_array(expr: Expr, key: Key, flatten: bool) -> Expr {
+    let mut array = expr.clone().arr().eval(
+        element()
+            // .percent(key.percent)
+            .precision(key.precision, key.significant),
+        false,
+    );
+    if flatten {
+        array = array
+            .arr()
+            .to_struct(Some(PlanCallback::new(move |index| {
+                Ok(format!("{ARRAY}[{index}]"))
+            })))
+            .struct_()
+            .field_by_name("*");
+    } else {
+        array = array.alias(ARRAY);
+    }
+    as_struct(vec![
+        array,
+        expr.clone()
+            .arr()
+            .mean()
+            // .percent(key.percent)
+            .precision(key.precision, key.significant)
+            .alias(MEAN),
+        expr.clone()
+            .arr()
+            .std(key.ddof)
+            // .percent(key.percent)
+            .precision(key.precision, key.significant)
+            .alias(STANDARD_DEVIATION),
+    ])
+    .name()
+    .keep()
+    // Array::builder()
+    //     .expr(expr)
+    //     .ddof(key.ddof)
+    //     .precision(key.precision)
+    //     .significant(key.significant)
+    //     .build()
 }

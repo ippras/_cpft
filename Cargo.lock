@@ -1388,7 +1388,7 @@ dependencies = [
 [[package]]
 name = "egui_ext"
 version = "0.6.1"
-source = "git+https://github.com/kgv/egui_ext?branch=0.6#e8f262511cb3d33ef994d357415acf3eb826b70c"
+source = "git+https://github.com/kgv/egui_ext?branch=0.6#a2f12862c4b4d9e1c72228a0b19e2e4c4f959bb6"
 dependencies = [
  "eframe",
  "egui",
