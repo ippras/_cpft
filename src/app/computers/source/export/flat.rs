@@ -4,7 +4,7 @@ use crate::{
         states::source::Settings,
     },
     r#const::{
-        ABSOLUTE, ARRAY, CHAIN_LENGTH, DEAD_TIME, EQUIVALENT_CHAIN_LENGTH, FILTER,
+        ABSOLUTE, ADJUSTED, ARRAY, CHAIN_LENGTH, DEAD_TIME, EQUIVALENT_CHAIN_LENGTH, FILTER,
         FRACTIONAL_CHAIN_LENGTH, MASS, MEAN, MODE, RELATIVE, RETENTION_FACTOR, RETENTION_TIME,
         STANDARD_DEVIATION, TEMPERATURE,
     },
@@ -84,6 +84,7 @@ fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
         ]);
     let names = [
         formatcp!("{RETENTION_TIME}.{ABSOLUTE}"),
+        formatcp!("{RETENTION_TIME}.{ADJUSTED}"),
         formatcp!("{RETENTION_TIME}.{RELATIVE}"),
         RETENTION_FACTOR,
         formatcp!("{CHAIN_LENGTH}.{EQUIVALENT_CHAIN_LENGTH}"),
@@ -120,13 +121,25 @@ fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
         )) / col(formatcp!("{RETENTION_TIME}.{ABSOLUTE}.{MEAN}"))
             * lit(100))
         .precision(key.precision, key.significant)
-        .alias(formatcp!("{RETENTION_TIME}.{ABSOLUTE}.Percent")),
+        .alias(formatcp!(
+            "{RETENTION_TIME}.{ABSOLUTE}.RelativeStandardDeviation"
+        )),
+        (col(formatcp!(
+            "{RETENTION_TIME}.{ADJUSTED}.{STANDARD_DEVIATION}"
+        )) / col(formatcp!("{RETENTION_TIME}.{ADJUSTED}.{MEAN}"))
+            * lit(100))
+        .precision(key.precision, key.significant)
+        .alias(formatcp!(
+            "{RETENTION_TIME}.{ADJUSTED}.RelativeStandardDeviation"
+        )),
         (col(formatcp!(
             "{RETENTION_TIME}.{RELATIVE}.{STANDARD_DEVIATION}"
         )) / col(formatcp!("{RETENTION_TIME}.{RELATIVE}.{MEAN}"))
             * lit(100))
         .precision(key.precision, key.significant)
-        .alias(formatcp!("{RETENTION_TIME}.{RELATIVE}.Percent")),
+        .alias(formatcp!(
+            "{RETENTION_TIME}.{RELATIVE}.RelativeStandardDeviation"
+        )),
     ]);
     Ok(lazy_frame)
 }
