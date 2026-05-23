@@ -19,6 +19,10 @@ use polars::prelude::*;
 use polars_ext::prelude::*;
 use std::sync::LazyLock;
 
+fn array_of_nulls<const N: usize>() -> Expr {
+    lit(Scalar::new_array(Series::new_null(PlSmallStr::EMPTY, N), N))
+}
+
 /// Input schema
 pub(crate) static INPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
     Arc::new(Schema::from_iter([
@@ -392,6 +396,7 @@ fn _forward_retention_time() -> Expr {
     // Сдвигаем "вниз", чтобы получить предыдущую строку (вперед, по направлению к началу серии)
     col(ABSOLUTE)
         .shift(lit(1))
+        .fill_null(array_of_nulls::<3>())
         .alias(formatcp!("_{FORWARD}{RETENTION_TIME}"))
 }
 
@@ -400,6 +405,7 @@ fn _backward_retention_time() -> Expr {
     // Сдвигаем "вверх", чтобы получить следующую строку (назад, по направлению к концу серии)
     col(ABSOLUTE)
         .shift(lit(-1))
+        .fill_null(array_of_nulls::<3>())
         .alias(formatcp!("_{BACKWARD}{RETENTION_TIME}"))
 }
 
