@@ -7,7 +7,8 @@ use crate::{
     r#const::{
         ABSOLUTE, ADJUSTED, ARRAY, BACKWARD, CHAIN_LENGTH, DEAD_TIME, EQUIVALENT_CARBON_NUMBER,
         EQUIVALENT_CHAIN_LENGTH, FORWARD, FRACTIONAL_CHAIN_LENGTH, MASS, MODE, ONSET_TEMPERATURE,
-        RELATIVE, RETENTION_FACTOR, RETENTION_TIME, STANDARD, TEMPERATURE, TEMPERATURE_STEP,
+        RELATIVE, RETENTION_FACTOR, RETENTION_TIME, SELECTIVITY_FACTOR, STANDARD, TEMPERATURE,
+        TEMPERATURE_STEP,
     },
     utils::polars::SeriesExt as _,
 };
@@ -34,6 +35,7 @@ const TOP: &[Range<usize>] = &[
     top::DEAD_TIME,
     top::RETENTION_TIME,
     top::RETENTION_FACTOR,
+    top::SELECTIVITY_FACTOR,
     top::CHAIN_LENGTH,
     top::TEMPERATURE,
     top::MASS,
@@ -85,7 +87,7 @@ impl TableView<'_> {
             .show(ui, self);
     }
 
-    fn header_cell_content_ui(&mut self, ui: &mut Ui, row: usize, column: Range<usize>) {
+    fn header(&mut self, ui: &mut Ui, row: usize, column: Range<usize>) {
         if self.settings.truncate {
             ui.style_mut().wrap_mode = Some(TextWrapMode::Truncate);
         }
@@ -115,6 +117,16 @@ impl TableView<'_> {
             (0, top::RETENTION_FACTOR) => {
                 ui.heading(ui.localize(RETENTION_FACTOR))
                     .on_hover_localized(formatcp!("{RETENTION_FACTOR}.hover"))
+                    .on_hover_ui(|ui| {
+                        ui.markdown(include_str!(concat!(
+                            env!("CARGO_MANIFEST_DIR"),
+                            "/doc/en/RetentionFactor.md"
+                        )));
+                    });
+            }
+            (0, top::SELECTIVITY_FACTOR) => {
+                ui.heading(ui.localize(SELECTIVITY_FACTOR))
+                    .on_hover_localized(formatcp!("{SELECTIVITY_FACTOR}.hover"))
                     .on_hover_ui(|ui| {
                         ui.markdown(include_str!(concat!(
                             env!("CARGO_MANIFEST_DIR"),
@@ -157,6 +169,14 @@ impl TableView<'_> {
                 ui.heading(ui.localize(formatcp!("{ADJUSTED}{RETENTION_TIME}")))
                     .on_hover_localized(formatcp!("{ADJUSTED}{RETENTION_TIME}.hover"));
             }
+            (1, bottom::FORWARD) => {
+                ui.heading(ui.localize(formatcp!("{FORWARD}{SELECTIVITY_FACTOR}")))
+                    .on_hover_localized(formatcp!("{FORWARD}{SELECTIVITY_FACTOR}.hover"));
+            }
+            (1, bottom::BACKWARD) => {
+                ui.heading(ui.localize(formatcp!("{BACKWARD}{SELECTIVITY_FACTOR}")))
+                    .on_hover_localized(formatcp!("{BACKWARD}{SELECTIVITY_FACTOR}.hover"));
+            }
             (1, bottom::ECL) => {
                 ui.heading(ui.localize(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.abbreviation")))
                     .on_hover_localized(EQUIVALENT_CHAIN_LENGTH)
@@ -186,12 +206,7 @@ impl TableView<'_> {
     }
 
     #[instrument(skip(self, ui), err)]
-    fn body_cell_content_ui(
-        &mut self,
-        ui: &mut Ui,
-        row: usize,
-        column: Range<usize>,
-    ) -> PolarsResult<()> {
+    fn body(&mut self, ui: &mut Ui, row: usize, column: Range<usize>) -> PolarsResult<()> {
         match (row, column) {
             (row, top::INDEX) => {
                 ui.label(row.to_string())
@@ -258,9 +273,10 @@ impl TableView<'_> {
                     .try_on_hover_ui(|ui| -> PolarsResult<()> {
                         ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
 
-                        for (retention_time, standard_retention_time) in
-                            zip(&self.retention_times(row)?, &self._retention_time(row)?)
-                        {
+                        for (retention_time, standard_retention_time) in zip(
+                            &self.retention_times(row)?,
+                            &self._retention_time(row, STANDARD)?,
+                        ) {
                             let retention_time = retention_time.display();
                             let standard_retention_time = standard_retention_time.display();
                             ui.label(format!("{retention_time:#} / {standard_retention_time:#}"));
@@ -306,6 +322,64 @@ impl TableView<'_> {
                         for retention_time in &self.retention_times(row)? {
                             let retention_time = retention_time.display();
                             ui.label(format!("({retention_time:#} - {dead_time}) / {dead_time}"));
+                        }
+                        Ok(())
+                    })?;
+            }
+            (row, bottom::FORWARD) => {
+                Float64Array::builder()
+                    .series(
+                        &self.data_frame[SELECTIVITY_FACTOR]
+                            .struct_()?
+                            .field_by_name(FORWARD)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+
+                        let dead_time = self.dead_time(row)?;
+                        for (retention_time, forward_retention_time) in zip(
+                            &self.retention_times(row)?,
+                            &self._retention_time(row, FORWARD)?,
+                        ) {
+                            let retention_time = retention_time.display();
+                            let forward_retention_time = forward_retention_time.display();
+                            ui.label(format!(
+                                "({retention_time:#} - {dead_time}) / ({forward_retention_time:#} - {dead_time})"
+                            ));
+                        }
+                        Ok(())
+                    })?;
+            }
+            (row, bottom::BACKWARD) => {
+                Float64Array::builder()
+                    .series(
+                        &self.data_frame[SELECTIVITY_FACTOR]
+                            .struct_()?
+                            .field_by_name(BACKWARD)?,
+                    )
+                    .row(row)
+                    .mean(self.settings.mean)
+                    .standard_deviation(self.settings.standard_deviation)
+                    .build()
+                    .show(ui)?
+                    .try_on_hover_ui(|ui| -> PolarsResult<()> {
+                        ui.style_mut().wrap_mode = Some(TextWrapMode::Extend);
+
+                        let dead_time = self.dead_time(row)?;
+                        for (retention_time, backward_retention_time) in zip(
+                            &self.retention_times(row)?,
+                            &self._retention_time(row, BACKWARD)?,
+                        ) {
+                            let retention_time = retention_time.display();
+                            let backward_retention_time = backward_retention_time.display();
+                            ui.label(format!(
+                                "({backward_retention_time:#} - {dead_time}) / ({retention_time:#} - {dead_time})"
+                            ));
                         }
                         Ok(())
                     })?;
@@ -482,18 +556,16 @@ impl TableView<'_> {
         Ok(equivalent_chain_length.f64()?.clone())
     }
 
-    fn _retention_time(&self, row: usize) -> PolarsResult<Float64Chunked> {
-        let Some(standard) = self.data_frame["_"]
+    fn _retention_time(&self, row: usize, field: &str) -> PolarsResult<Float64Chunked> {
+        let Some(series) = self.data_frame["_"]
             .struct_()?
-            .field_by_name(formatcp!("_{RETENTION_TIME}"))?
-            .struct_()?
-            .field_by_name(STANDARD)?
+            .field_by_name(&format!("_{field}{RETENTION_TIME}"))?
             .array()?
             .get_as_series(row)
         else {
-            return Err(polars_err!(NoData: "_{RETENTION_TIME}.{STANDARD}[{row}]"));
+            return Err(polars_err!(NoData: "_{field}{RETENTION_TIME}[{row}]"));
         };
-        Ok(standard.f64()?.clone())
+        Ok(series.f64()?.clone())
     }
 
     fn _equivalent_chain_length(
@@ -567,7 +639,7 @@ impl TableDelegate for TableView<'_> {
         Frame::new()
             .inner_margin(Margin::from(MARGIN))
             .show(ui, |ui| {
-                self.header_cell_content_ui(ui, cell.row_nr, cell.col_range.clone())
+                self.header(ui, cell.row_nr, cell.col_range.clone())
             });
     }
 
@@ -579,7 +651,7 @@ impl TableDelegate for TableView<'_> {
         Frame::new()
             .inner_margin(Margin::from(MARGIN))
             .show(ui, |ui| {
-                _ = self.body_cell_content_ui(ui, cell.row_nr as _, cell.col_nr..cell.col_nr + 1);
+                _ = self.body(ui, cell.row_nr as _, cell.col_nr..cell.col_nr + 1);
             });
     }
 }
@@ -593,7 +665,10 @@ mod top {
     pub(crate) const DEAD_TIME: Range<usize> = FATTY_ACID.end..FATTY_ACID.end + 1;
     pub(crate) const RETENTION_TIME: Range<usize> = DEAD_TIME.end..DEAD_TIME.end + 3;
     pub(crate) const RETENTION_FACTOR: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
-    pub(crate) const CHAIN_LENGTH: Range<usize> = RETENTION_FACTOR.end..RETENTION_FACTOR.end + 3;
+    pub(crate) const SELECTIVITY_FACTOR: Range<usize> =
+        RETENTION_FACTOR.end..RETENTION_FACTOR.end + 2;
+    pub(crate) const CHAIN_LENGTH: Range<usize> =
+        SELECTIVITY_FACTOR.end..SELECTIVITY_FACTOR.end + 3;
     pub(crate) const TEMPERATURE: Range<usize> = CHAIN_LENGTH.end..CHAIN_LENGTH.end + 1;
     pub(crate) const MASS: Range<usize> = TEMPERATURE.end..TEMPERATURE.end + 1;
 }
@@ -609,6 +684,10 @@ mod bottom {
         top::RETENTION_TIME.start..top::RETENTION_TIME.start + 1;
     pub(crate) const RELATIVE: Range<usize> = ABSOLUTE.end..ABSOLUTE.end + 1;
     pub(crate) const ADJUSTED: Range<usize> = RELATIVE.end..RELATIVE.end + 1;
+    // SELECTIVITY_FACTOR
+    pub(crate) const FORWARD: Range<usize> =
+        top::SELECTIVITY_FACTOR.start..top::SELECTIVITY_FACTOR.start + 1;
+    pub(crate) const BACKWARD: Range<usize> = FORWARD.end..FORWARD.end + 1;
     // Chain length
     pub(crate) const ECL: Range<usize> = top::CHAIN_LENGTH.start..top::CHAIN_LENGTH.start + 1;
     pub(crate) const FCL: Range<usize> = ECL.end..ECL.end + 1;

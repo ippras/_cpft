@@ -7,8 +7,8 @@ use crate::{
     r#const::{
         ABSOLUTE, ADJUSTED, BACKWARD, CHAIN_LENGTH, DEAD_TIME, EQUIVALENT_CARBON_NUMBER,
         EQUIVALENT_CHAIN_LENGTH, FILTER, FORWARD, FRACTIONAL_CHAIN_LENGTH, MASS, MODE,
-        ONSET_TEMPERATURE, RELATIVE, RETENTION_FACTOR, RETENTION_TIME, STANDARD, TEMPERATURE,
-        TEMPERATURE_STEP,
+        ONSET_TEMPERATURE, RELATIVE, RETENTION_FACTOR, RETENTION_TIME, SELECTIVITY_FACTOR,
+        STANDARD, TEMPERATURE, TEMPERATURE_STEP,
     },
     utils::hash::HashedDataFrame,
 };
@@ -81,6 +81,19 @@ pub(crate) static OUTPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
             DataType::Array(Box::new(DataType::Float64), 0),
         ),
         Field::new(
+            PlSmallStr::from_static(SELECTIVITY_FACTOR),
+            DataType::Struct(vec![
+                Field::new(
+                    PlSmallStr::from_static(FORWARD),
+                    DataType::Array(Box::new(DataType::Float64), 0),
+                ),
+                Field::new(
+                    PlSmallStr::from_static(BACKWARD),
+                    DataType::Array(Box::new(DataType::Float64), 0),
+                ),
+            ]),
+        ),
+        Field::new(
             PlSmallStr::from_static(CHAIN_LENGTH),
             DataType::Struct(vec![
                 Field::new(
@@ -115,11 +128,16 @@ pub(crate) static OUTPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
             PlSmallStr::from_static("_"),
             DataType::Struct(vec![
                 Field::new(
-                    PlSmallStr::from_static(formatcp!("_{RETENTION_TIME}")),
-                    DataType::Struct(vec![Field::new(
-                        PlSmallStr::from_static(STANDARD),
-                        DataType::Array(Box::new(DataType::Float64), 0),
-                    )]),
+                    PlSmallStr::from_static(formatcp!("_{STANDARD}{RETENTION_TIME}")),
+                    DataType::Array(Box::new(DataType::Float64), 0),
+                ),
+                Field::new(
+                    PlSmallStr::from_static(formatcp!("_{FORWARD}{RETENTION_TIME}")),
+                    DataType::Array(Box::new(DataType::Float64), 0),
+                ),
+                Field::new(
+                    PlSmallStr::from_static(formatcp!("_{BACKWARD}{RETENTION_TIME}")),
+                    DataType::Array(Box::new(DataType::Float64), 0),
                 ),
                 Field::new(
                     PlSmallStr::from_static(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}")),
@@ -180,13 +198,16 @@ impl Computer {
             col(DEAD_TIME),
             col(RETENTION_TIME),
             col(RETENTION_FACTOR),
+            col(SELECTIVITY_FACTOR),
             col(CHAIN_LENGTH),
             col(TEMPERATURE),
             col(MASS),
             col(FILTER),
             // _
             as_struct(vec![
-                col(formatcp!("_{RETENTION_TIME}")),
+                col(formatcp!("_{STANDARD}{RETENTION_TIME}")),
+                col(formatcp!("_{FORWARD}{RETENTION_TIME}")),
+                col(formatcp!("_{BACKWARD}{RETENTION_TIME}")),
                 col(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}")),
                 col(formatcp!("_{FRACTIONAL_CHAIN_LENGTH}")),
             ])
@@ -233,13 +254,20 @@ type Value = HashedDataFrame;
 
 fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     // Retention time
-    lazy_frame = lazy_frame.with_column(_retention_time(key)?).with_columns([
-        col(RETENTION_TIME).alias(ABSOLUTE),
-        relative_retention_time().alias(RELATIVE),
-        adjusted_retention_time().alias(ADJUSTED),
-    ]);
-    // Retention factor
-    lazy_frame = lazy_frame.with_column(retention_factor().alias(RETENTION_FACTOR));
+    lazy_frame = lazy_frame
+        .with_column(_standard_retention_time(key)?)
+        .with_columns([
+            col(RETENTION_TIME).alias(ABSOLUTE),
+            relative_retention_time().alias(RELATIVE),
+            adjusted_retention_time().alias(ADJUSTED),
+        ]);
+    // Factors
+    lazy_frame = lazy_frame
+        .with_columns([_forward_retention_time(), _backward_retention_time()])
+        .with_columns([
+            retention_factor().alias(RETENTION_FACTOR),
+            selectivity_factor()?.alias(SELECTIVITY_FACTOR),
+        ]);
     // Chain length
     lazy_frame = lazy_frame
         .with_column(_equivalent_chain_length()?)
@@ -288,10 +316,11 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     Ok(lazy_frame)
 }
 
-fn _retention_time(key: Key) -> PolarsResult<Expr> {
+// Standard retention time
+fn _standard_retention_time(key: Key) -> PolarsResult<Expr> {
     // Время удерживания стандарта по отношению к которому будет расчитано
     // относительное время удерживания.
-    let standard = match &key.relative {
+    Ok(match &key.relative {
         Some(fatty_acid) => {
             let fatty_acid = FattyAcidExpr::try_from(fatty_acid)?;
             eval_arr(col(RETENTION_TIME), |element| {
@@ -306,8 +335,7 @@ fn _retention_time(key: Key) -> PolarsResult<Expr> {
             3,
         ))),
     }
-    .alias(STANDARD);
-    Ok(as_struct(vec![standard]).alias(formatcp!("_{RETENTION_TIME}")))
+    .alias(formatcp!("_{STANDARD}{RETENTION_TIME}")))
 }
 
 fn _equivalent_chain_length() -> PolarsResult<Expr> {
@@ -359,6 +387,22 @@ fn _fractional_chain_length() -> PolarsResult<Expr> {
     Ok(as_struct(vec![carbon]).alias(formatcp!("_{FRACTIONAL_CHAIN_LENGTH}")))
 }
 
+// Forward retention time
+fn _forward_retention_time() -> Expr {
+    // Сдвигаем "вниз", чтобы получить предыдущую строку (вперед, по направлению к началу серии)
+    col(ABSOLUTE)
+        .shift(lit(1))
+        .alias(formatcp!("_{FORWARD}{RETENTION_TIME}"))
+}
+
+// Backward retention time
+fn _backward_retention_time() -> Expr {
+    // Сдвигаем "вверх", чтобы получить следующую строку (назад, по направлению к концу серии)
+    col(ABSOLUTE)
+        .shift(lit(-1))
+        .alias(formatcp!("_{BACKWARD}{RETENTION_TIME}"))
+}
+
 // Adjusted retention time
 fn adjusted_retention_time() -> Expr {
     col(RETENTION_TIME) - col(DEAD_TIME)
@@ -366,15 +410,21 @@ fn adjusted_retention_time() -> Expr {
 
 // Relative retention time
 fn relative_retention_time() -> Expr {
-    col(RETENTION_TIME)
-        / col(formatcp!("_{RETENTION_TIME}"))
-            .struct_()
-            .field_by_name(STANDARD)
+    col(RETENTION_TIME) / col(formatcp!("_{STANDARD}{RETENTION_TIME}"))
 }
 
 // Retention factor
 fn retention_factor() -> Expr {
     col(ADJUSTED) / col(DEAD_TIME)
+}
+
+// Selectivity factor
+fn selectivity_factor() -> PolarsResult<Expr> {
+    Ok(as_struct(vec![
+        (col(ABSOLUTE) / col(formatcp!("_{FORWARD}{RETENTION_TIME}"))).alias(FORWARD),
+        (col(formatcp!("_{BACKWARD}{RETENTION_TIME}")) / col(ABSOLUTE)).alias(BACKWARD),
+    ])
+    .over([MODE])?)
 }
 
 /// Temperature
@@ -471,7 +521,7 @@ fn sort(lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     })
 }
 
-// Следующее по направлению к началу серии
+// Предыдущее (вперед, по направлению к началу серии)
 fn forward(mut expr: Expr, mask: Option<Expr>) -> Expr {
     if let Some(mask) = mask {
         expr = expr.nullify(mask);
@@ -479,7 +529,7 @@ fn forward(mut expr: Expr, mask: Option<Expr>) -> Expr {
     expr.fill_null_with_strategy(FillNullStrategy::Forward(None))
 }
 
-// Следующее по направлению к концу серии
+// Следующее (назад, по направлению к концу серии)
 fn backward(mut expr: Expr, mask: Option<Expr>) -> Expr {
     if let Some(mask) = mask {
         expr = expr.nullify(mask);

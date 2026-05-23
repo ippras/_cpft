@@ -6,7 +6,7 @@ use crate::{
     r#const::{
         ABSOLUTE, ADJUSTED, BACKWARD, CHAIN_LENGTH, DEAD_TIME, EQUIVALENT_CARBON_NUMBER,
         EQUIVALENT_CHAIN_LENGTH, FILTER, FORWARD, FRACTIONAL_CHAIN_LENGTH, MASS, RELATIVE,
-        RETENTION_FACTOR, RETENTION_TIME, STANDARD, TEMPERATURE,
+        RETENTION_FACTOR, RETENTION_TIME, SELECTIVITY_FACTOR, STANDARD, TEMPERATURE,
     },
     utils::hash::HashedDataFrame,
 };
@@ -94,6 +94,21 @@ fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
             .precision(key.precision)
             .significant(key.significant)
             .build(),
+        as_struct(vec![
+            Array::builder()
+                .expr(col(SELECTIVITY_FACTOR).struct_().field_by_name(FORWARD))
+                .ddof(key.ddof)
+                .precision(key.precision)
+                .significant(key.significant)
+                .build(),
+            Array::builder()
+                .expr(col(SELECTIVITY_FACTOR).struct_().field_by_name(BACKWARD))
+                .ddof(key.ddof)
+                .precision(key.precision)
+                .significant(key.significant)
+                .build(),
+        ])
+        .alias(SELECTIVITY_FACTOR),
         col(DEAD_TIME).precision(key.precision, key.significant),
         as_struct(vec![
             Array::builder()
@@ -147,19 +162,23 @@ fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
         ])
         .alias(MASS),
         col("_").struct_().with_fields(vec![
-            col("_")
-                .struct_()
-                .field_by_name(formatcp!("_{RETENTION_TIME}"))
-                .struct_()
-                .with_fields(vec![
-                    col("_")
-                        .struct_()
-                        .field_by_name(formatcp!("_{RETENTION_TIME}"))
-                        .struct_()
-                        .field_by_name(STANDARD)
-                        .arr()
-                        .eval(element().precision(key.precision, key.significant), false),
-                ]),
+            col("_").struct_().with_fields(vec![
+                col("_")
+                    .struct_()
+                    .field_by_name(formatcp!("_{STANDARD}{RETENTION_TIME}"))
+                    .arr()
+                    .eval(element().precision(key.precision, key.significant), false),
+                col("_")
+                    .struct_()
+                    .field_by_name(formatcp!("_{FORWARD}{RETENTION_TIME}"))
+                    .arr()
+                    .eval(element().precision(key.precision, key.significant), false),
+                col("_")
+                    .struct_()
+                    .field_by_name(formatcp!("_{BACKWARD}{RETENTION_TIME}"))
+                    .arr()
+                    .eval(element().precision(key.precision, key.significant), false),
+            ]),
             col("_")
                 .struct_()
                 .field_by_name(formatcp!("_{EQUIVALENT_CHAIN_LENGTH}"))
