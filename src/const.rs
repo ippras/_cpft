@@ -25,6 +25,7 @@ pub(crate) const MASS: &str = "Mass";
 pub(crate) const MODE: &str = "Mode";
 pub(crate) const ONSET_TEMPERATURE: &str = "OnsetTemperature";
 pub(crate) const REGRESSION: &str = "Regression";
+pub(crate) const RELATIVE_STANDARD_DEVIATION: &str = "RelativeStandardDeviation";
 pub(crate) const RELATIVE: &str = "Relative";
 pub(crate) const RETENTION_FACTOR: &str = "RetentionFactor";
 pub(crate) const RETENTION_TIME: &str = "RetentionTime";

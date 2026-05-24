@@ -1,3 +1,5 @@
+pub(crate) use export::Export;
+
 use crate::{
     app::{
         MAX_PRECISION, panes::source::view::table::NUM_COLUMNS, states::source::ID_SOURCE,
@@ -8,14 +10,13 @@ use crate::{
     utils::VecExt as _,
 };
 use egui::{
-    ComboBox, DragValue, Grid, Popup, PopupCloseBehavior, RichText, Slider, TextWrapMode, Ui,
-    Vec2b, Widget, emath::Float as _,
+    ComboBox, Popup, PopupCloseBehavior, RichText, Slider, TextWrapMode, Ui, Vec2b, Widget,
+    emath::Float as _,
 };
 use egui_dnd::dnd;
 use egui_l20n::prelude::*;
 use egui_phosphor::regular::{BOOKMARK, DOTS_SIX_VERTICAL, FUNNEL, FUNNEL_X, MINUS, PLUS};
 use lipid::prelude::FattyAcid;
-use polars::prelude::*;
 use polars_utils::format_list_truncated;
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
@@ -49,6 +50,7 @@ pub(crate) struct Settings {
 
     pub(crate) regression: Regression,
     pub(crate) plot: Plot,
+    pub(crate) export: Export,
 
     pub(crate) cache: Cache,
 }
@@ -77,6 +79,7 @@ impl Settings {
 
             regression: Regression::new(),
             plot: Plot::new(),
+            export: Export::new(),
 
             cache: Cache::new(),
         }
@@ -131,6 +134,11 @@ impl Settings {
                 });
             },
         );
+
+        // Export
+        ui.collapsing(RichText::from(ui.localize("Export")).heading(), |ui| {
+            self.export.show(ui);
+        });
     }
 
     /// Precision
@@ -554,6 +562,12 @@ impl Settings {
             };
         });
     }
+
+    /// Export
+    fn export(&mut self, ui: &mut Ui) {
+        self.legend(ui);
+        self.radius_of_points(ui);
+    }
 }
 
 impl Default for Settings {
@@ -920,3 +934,5 @@ impl Text for View {
         }
     }
 }
+
+pub(crate) mod export;

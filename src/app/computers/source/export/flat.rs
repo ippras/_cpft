@@ -1,11 +1,15 @@
 use crate::{
     app::{
         computers::{matches_schema, source::process::OUTPUT_SCHEMA as INPUT_SCHEMA},
-        states::source::Settings,
+        states::source::{
+            Settings,
+            settings::{Export, export::Column},
+        },
     },
     r#const::{
-        ABSOLUTE, ADJUSTED, ARRAY, CHAIN_LENGTH, DEAD_TIME, EQUIVALENT_CHAIN_LENGTH, FILTER,
-        FRACTIONAL_CHAIN_LENGTH, MASS, MEAN, MODE, RELATIVE, RETENTION_FACTOR, RETENTION_TIME,
+        ABSOLUTE, ADJUSTED, ARRAY, BACKWARD, CHAIN_LENGTH, DEAD_TIME, EQUIVALENT_CHAIN_LENGTH,
+        FILTER, FORWARD, FRACTIONAL_CHAIN_LENGTH, MASS, MEAN, MODE, RELATIVE,
+        RELATIVE_STANDARD_DEVIATION, RETENTION_FACTOR, RETENTION_TIME, SELECTIVITY_FACTOR,
         STANDARD_DEVIATION, TEMPERATURE,
     },
     utils::hash::HashedDataFrame,
@@ -34,9 +38,24 @@ impl Computer {
         // Format
         lazy_frame = format(lazy_frame, key)?;
         // Select
-        lazy_frame = lazy_frame.select([dtype_cols(&[DataType::Float64, DataType::String])
-            .as_selector()
-            .as_expr()]);
+        let mut exprs = vec![col(formatcp!(r#"^{MODE}.+$"#)), col(FATTY_ACID)];
+        for item in key.export {
+            if !item.visible {
+                continue;
+            }
+            let expr = match item.column {
+                Column::DeadTime => col(DEAD_TIME),
+                Column::RetentionTime => col(formatcp!(r#"^{RETENTION_TIME}.+$"#)),
+                Column::RetentionFactor => col(formatcp!(r#"^{RETENTION_FACTOR}.+$"#)),
+                Column::SelectivityFactor => col(formatcp!(r#"^{SELECTIVITY_FACTOR}.+$"#)),
+                Column::EquivalentChainLength => col(formatcp!(r#"^{EQUIVALENT_CHAIN_LENGTH}.+$"#)),
+                Column::FractionalChainLength => col(formatcp!(r#"^{FRACTIONAL_CHAIN_LENGTH}.+$"#)),
+                Column::Temperature => col(formatcp!(r#"^{TEMPERATURE}.+$"#)),
+                Column::Mass => col(formatcp!(r#"^{MASS}.+$"#)),
+            };
+            exprs.push(expr);
+        }
+        lazy_frame = lazy_frame.select(exprs);
         HashedDataFrame::new(lazy_frame.collect()?)
     }
 }
@@ -52,6 +71,7 @@ impl ComputerMut<Key<'_>, Value> for Computer {
 pub(crate) struct Key<'a> {
     pub(crate) frame: &'a HashedDataFrame,
     pub(crate) ddof: u8,
+    pub(crate) export: &'a Export,
     pub(crate) precision: usize,
     pub(crate) significant: bool,
 }
@@ -61,6 +81,7 @@ impl<'a> Key<'a> {
         Self {
             frame,
             ddof: settings.ddof,
+            export: &settings.export,
             precision: settings.precision,
             significant: settings.significant,
         }
@@ -72,76 +93,160 @@ type Value = HashedDataFrame;
 
 fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     lazy_frame = lazy_frame
-        .unnest(
-            cols([MODE, RETENTION_TIME, CHAIN_LENGTH, MASS]),
-            Some(PlSmallStr::from_static(".")),
-        )
         .with_columns([
+            col(MODE)
+                .struct_()
+                .field_by_name("*")
+                .name()
+                .prefix(formatcp!("{MODE}.")),
             col(FATTY_ACID).fatty_acid().display(),
-            cols([DEAD_TIME, formatcp!(r#"^{MASS}\..+$"#)])
-                .as_expr()
-                .precision(key.precision, key.significant),
-        ]);
-    let names = [
-        formatcp!("{RETENTION_TIME}.{ABSOLUTE}"),
-        formatcp!("{RETENTION_TIME}.{ADJUSTED}"),
-        formatcp!("{RETENTION_TIME}.{RELATIVE}"),
-        RETENTION_FACTOR,
-        formatcp!("{CHAIN_LENGTH}.{EQUIVALENT_CHAIN_LENGTH}"),
-        formatcp!("{CHAIN_LENGTH}.{FRACTIONAL_CHAIN_LENGTH}"),
-        TEMPERATURE,
-    ];
-    lazy_frame = lazy_frame.with_columns(names.map(|name| {
-        let array = Array::builder()
-            .expr(col(name))
-            .ddof(key.ddof)
-            .precision(key.precision)
-            .significant(key.significant)
-            .build();
-        as_struct(vec![
-            array
-                .clone()
-                .struct_()
-                .field_by_name(ARRAY)
-                .arr()
-                .to_struct(Some(PlanCallback::new(move |index| {
-                    Ok(format!("{ARRAY}[{index}]"))
-                })))
-                .struct_()
-                .field_by_name("*"),
-            array.clone().struct_().field_by_name(MEAN),
-            array.clone().struct_().field_by_name(STANDARD_DEVIATION),
+            col(DEAD_TIME).precision(key.precision, key.significant),
         ])
-        .alias(name)
-    }));
-    lazy_frame = lazy_frame.unnest(cols(names), Some(PlSmallStr::from_static(".")));
-    lazy_frame = lazy_frame.with_columns([
-        (col(formatcp!(
-            "{RETENTION_TIME}.{ABSOLUTE}.{STANDARD_DEVIATION}"
-        )) / col(formatcp!("{RETENTION_TIME}.{ABSOLUTE}.{MEAN}"))
-            * lit(100))
-        .precision(key.precision, key.significant)
-        .alias(formatcp!(
-            "{RETENTION_TIME}.{ABSOLUTE}.RelativeStandardDeviation"
-        )),
-        (col(formatcp!(
-            "{RETENTION_TIME}.{ADJUSTED}.{STANDARD_DEVIATION}"
-        )) / col(formatcp!("{RETENTION_TIME}.{ADJUSTED}.{MEAN}"))
-            * lit(100))
-        .precision(key.precision, key.significant)
-        .alias(formatcp!(
-            "{RETENTION_TIME}.{ADJUSTED}.RelativeStandardDeviation"
-        )),
-        (col(formatcp!(
-            "{RETENTION_TIME}.{RELATIVE}.{STANDARD_DEVIATION}"
-        )) / col(formatcp!("{RETENTION_TIME}.{RELATIVE}.{MEAN}"))
-            * lit(100))
-        .precision(key.precision, key.significant)
-        .alias(formatcp!(
-            "{RETENTION_TIME}.{RELATIVE}.RelativeStandardDeviation"
-        )),
-    ]);
+        .with_columns([
+            format_array(
+                col(RETENTION_TIME).struct_().field_by_name(ABSOLUTE),
+                key,
+                true,
+            )
+            .name()
+            .prefix(formatcp!("{RETENTION_TIME}.{ABSOLUTE}.")),
+            format_array(
+                col(RETENTION_TIME).struct_().field_by_name(ADJUSTED),
+                key,
+                true,
+            )
+            .name()
+            .prefix(formatcp!("{RETENTION_TIME}.{ADJUSTED}.")),
+            format_array(
+                col(RETENTION_TIME).struct_().field_by_name(RELATIVE),
+                key,
+                true,
+            )
+            .name()
+            .prefix(formatcp!("{RETENTION_TIME}.{RELATIVE}.")),
+        ])
+        .with_columns([format_array(col(RETENTION_FACTOR), key, true)
+            .name()
+            .prefix(formatcp!("{RETENTION_FACTOR}."))])
+        .with_columns([
+            format_array(
+                col(SELECTIVITY_FACTOR).struct_().field_by_name(FORWARD),
+                key,
+                true,
+            )
+            .name()
+            .prefix(formatcp!("{SELECTIVITY_FACTOR}.{FORWARD}.")),
+            format_array(
+                col(SELECTIVITY_FACTOR).struct_().field_by_name(BACKWARD),
+                key,
+                true,
+            )
+            .name()
+            .prefix(formatcp!("{SELECTIVITY_FACTOR}.{BACKWARD}.")),
+        ])
+        .with_columns([
+            format_array(
+                col(CHAIN_LENGTH)
+                    .struct_()
+                    .field_by_name(EQUIVALENT_CHAIN_LENGTH),
+                key,
+                true,
+            )
+            .name()
+            .prefix(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.")),
+            format_array(
+                col(CHAIN_LENGTH)
+                    .struct_()
+                    .field_by_name(FRACTIONAL_CHAIN_LENGTH),
+                key,
+                true,
+            )
+            .name()
+            .prefix(formatcp!("{FRACTIONAL_CHAIN_LENGTH}.")),
+        ])
+        .with_columns([format_array(col(TEMPERATURE), key, true)
+            .name()
+            .prefix(formatcp!("{TEMPERATURE}."))])
+        .with_columns([col(MASS)
+            .struct_()
+            .field_by_name("*")
+            .name()
+            .prefix(formatcp!("{MASS}."))]);
     Ok(lazy_frame)
+}
+
+fn format_array(expr: Expr, key: Key, flatten: bool) -> Expr {
+    let mut array = expr.clone().arr().eval(
+        element()
+            // .percent(key.percent)
+            .precision(key.precision, key.significant),
+        false,
+    );
+    if flatten {
+        array = array
+            .arr()
+            .to_struct(Some(PlanCallback::new(move |index| {
+                Ok(format!("{ARRAY}[{index}]"))
+            })))
+            .struct_()
+            .field_by_name("*");
+    } else {
+        array = array.alias(ARRAY);
+    }
+    let mut expr = as_struct(vec![
+        array,
+        expr.clone()
+            .arr()
+            .mean()
+            // .percent(key.percent)
+            .precision(key.precision, key.significant)
+            .alias(MEAN),
+        expr.clone()
+            .arr()
+            .std(key.ddof)
+            // .percent(key.percent)
+            .precision(key.precision, key.significant)
+            .alias(STANDARD_DEVIATION),
+        (expr.clone().arr().std(key.ddof) / expr.clone().arr().mean())
+            .percent(true)
+            .precision(key.precision, key.significant)
+            .alias(RELATIVE_STANDARD_DEVIATION),
+    ]);
+    if flatten {
+        expr = expr.struct_().field_by_name("*");
+    }
+    expr
+}
+
+// fn _unnest<'a>(names: impl IntoIterator<Item = &'a str>, separator: Option<PlSmallStr>) -> Expr {
+//     format_array(
+//         col(SELECTIVITY_FACTOR).struct_().field_by_name(FORWARD),
+//         key,
+//         true,
+//     )
+//     .struct_()
+//     .field_by_name("*")
+//     .name()
+//     .prefix(formatcp!("{SELECTIVITY_FACTOR}.{FORWARD}."))
+// }
+
+fn unnest<'a>(
+    names: impl IntoIterator<Item = &'a str>,
+    separator: Option<PlSmallStr>,
+) -> PolarsResult<Expr> {
+    let mut iter = names.into_iter();
+    let Some(name) = iter.next() else {
+        return Err(polars_err!(NoData: "Require at least one name"));
+    };
+    let mut expr = col(name);
+    let prefix = name;
+    for name in iter {
+        expr = expr.struct_().field_by_name(name);
+        if let Some(separator) = &separator {
+            expr = expr.name().prefix(&format!("{prefix}{separator}"));
+        }
+    }
+    Ok(expr)
 }
 
 // fn format(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {

@@ -1,4 +1,5 @@
 #![feature(decl_macro)]
+#![feature(result_option_map_or_default)]
 // #![feature(debug_closure_helpers)]
 // #![feature(result_option_map_or_default)]
 // #![feature(tuple_trait)]

@@ -42,5 +42,5 @@ impl State {
     }
 }
 
-mod settings;
-mod windows;
+pub(crate) mod settings;
+pub(crate) mod windows;
