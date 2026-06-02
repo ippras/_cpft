@@ -1,8 +1,4 @@
-pub(crate) use self::{
-    settings::{Aggregation, Distance, Priority, Settings, Sort},
-    windows::Windows,
-};
-pub(crate) use crate::app::states::source::{Filter, View};
+pub(crate) use self::{settings::Settings, windows::Windows};
 
 use egui::{Context, Id};
 use serde::{Deserialize, Serialize};
@@ -41,5 +37,5 @@ impl State {
     }
 }
 
-mod settings;
-mod windows;
+pub(crate) mod settings;
+pub(crate) mod windows;

@@ -14,7 +14,10 @@ use crate::{
             },
         },
         panes::{Behavior, MARGIN},
-        states::distance::{Settings, State, View},
+        states::{
+            distance::{Settings, State},
+            source::settings::View,
+        },
         widgets::buttons::ViewButton,
     },
     export,

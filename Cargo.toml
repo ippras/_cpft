@@ -2,7 +2,7 @@
 name = "cpft"
 version = "0.6.2"
 edition = "2024"
- 
+
 [dependencies]
 anyhow = "1.0.102"
 const_format = "0.2.35"
@@ -23,9 +23,19 @@ egui_table = "0.8.0"
 egui_tiles = "0.15.0"
 indexmap = "2.14.0"
 itertools = "0.14.0"
+linfa = "0.8.1"
+linfa-linear = "0.8.1"
 log = "0.4.30"
 nalgebra = "0.35.0"
-polars = { version = "0.52.0", default-features = false, features = [
+ndarray = "0.17.2"
+ron = "0.12.1"
+serde = { version = "1.0.228", features = ["derive"] }
+temp-env = "0.3.6"
+tracing = "0.1.44"
+typed-builder = "0.23.2"
+uom = { version = "0.38.0", features = ["serde"] }
+
+polars = { version = "=0.52.0", default-features = false, features = [
     "abs",
     "array_arithmetic",
     "bitwise",
@@ -45,6 +55,7 @@ polars = { version = "0.52.0", default-features = false, features = [
     "lazy",
     "list_eval",
     "meta",
+    "ndarray",
     "rank",
     "round_series",
     "row_hash",
@@ -56,13 +67,8 @@ polars = { version = "0.52.0", default-features = false, features = [
     # "fmt_no_tty",
     # "interpolate_by",
 ] }
-polars-utils = { version = "0.53.0", features = ["nightly"] }
-ron = "0.12.1"
-serde = { version = "1.0.228", features = ["derive"] }
-temp-env = "0.3.6"
-tracing = "0.1.44"
-typed-builder = "0.23.2"
-uom = { version = "0.38.0", features = ["serde"] }
+polars-utils = { version = "=0.52.0", features = ["nightly"] }
+polars_excel_writer = "=0.24.0"
 
 semver = "*"
 
@@ -85,12 +91,11 @@ polars_ext = { git = "https://github.com/kgv/polars_ext", branch = "0.52", featu
     "array",
     "temporal_conversions",
 ] }
+# widgets = { path = "D:/g/git/ippras/widgets", features = [
 widgets = { git = "https://github.com/ippras/widgets", branch = "0.52", features = [
     "fatty_acids",
     "polars",
 ] }
-
-polars_excel_writer = "0.24.0"
 
 # native
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

@@ -2,7 +2,10 @@ use crate::{
     app::{
         MAX_TEMPERATURE,
         computers::matches_schema,
-        states::source::{Filter, Settings, Sort, settings::sort::SortKind},
+        states::source::{
+            Settings,
+            settings::{Filter, Sort, sort::SortKind},
+        },
     },
     r#const::{
         ABSOLUTE, ADJUSTED, BACKWARD, CHAIN_LENGTH, CHANGED, DEAD_TIME, EQUIVALENT_CARBON_NUMBER,
@@ -129,7 +132,7 @@ pub(crate) static OUTPUT_SCHEMA: LazyLock<SchemaRef> = LazyLock::new(|| {
             ]),
         ),
         Field::new(PlSmallStr::from_static(FILTER), DataType::Boolean),
-        // _
+        // _ DEV
         Field::new(
             PlSmallStr::from_static(formatcp!("_{CHANGED}{FORWARD}{ONSET_TEMPERATURE}")),
             DataType::Boolean,
@@ -516,6 +519,7 @@ fn _forward_retention_time() -> Expr {
     // Сдвигаем "вниз", чтобы получить предыдущую строку (вперед, по направлению к началу серии)
     col(ABSOLUTE)
         .shift(lit(1))
+        .over([col(MODE)])
         .fill_null(array_of_nulls::<3>())
         .alias(formatcp!("_{FORWARD}{RETENTION_TIME}"))
 }
@@ -525,6 +529,7 @@ fn _backward_retention_time() -> Expr {
     // Сдвигаем "вверх", чтобы получить следующую строку (назад, по направлению к концу серии)
     col(ABSOLUTE)
         .shift(lit(-1))
+        .over([col(MODE)])
         .fill_null(array_of_nulls::<3>())
         .alias(formatcp!("_{BACKWARD}{RETENTION_TIME}"))
 }

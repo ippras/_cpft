@@ -35,7 +35,7 @@ impl PlotView<'_> {
             // .allow_drag(context.settings.visualization.drag)
             // .allow_scroll(context.settings.visualization.scroll)
             ;
-        if self.settings.plot.legend {
+        if self.settings.plot.control.legend {
             plot = plot.legend(Legend::default().follow_insertion_order(true));
         }
         let onset_temperature = ui.localize("OnsetTemperature");
@@ -79,7 +79,7 @@ impl PlotView<'_> {
                 // Points
                 let points = Points::new(name, PlotPoints::Borrowed(points))
                     .color(color(*rank as _))
-                    .radius(self.settings.plot.radius_of_points);
+                    .radius(self.settings.plot.control.radius_of_points);
                 ui.points(points);
             }
             // for ((temperature_step, rank), points) in &self.value.temperature_step {

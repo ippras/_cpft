@@ -1,10 +1,11 @@
 use crate::{
     app::{
+        computers::source::sum::regression::Metrics,
         panes::MARGIN,
         states::source::{ID_SOURCE, Settings},
     },
     r#const::{
-        ANY, DEAD_TIME, EM_DASH, MODE, ONSET_TEMPERATURE, REGRESSION, RETENTION_TIME,
+        EQUIVALENT_CHAIN_LENGTH, MODE, ONSET_TEMPERATURE, REGRESSION, RETENTION_TIME,
         TEMPERATURE_STEP,
     },
     utils::egui::ToWidgetText,
@@ -16,9 +17,10 @@ use egui_phosphor::regular::HASH;
 use egui_table::{CellInfo, Column, HeaderCellInfo, HeaderRow, Table, TableDelegate, TableState};
 use lipid::prelude::{FATTY_ACID, INDEX};
 use polars::prelude::*;
+use polars_ext::option::DisplayOption;
 use std::ops::Range;
 use tracing::instrument;
-use widgets::polars::array::{BooleanArray, Float64Array};
+use widgets::polars::array::Float64Array;
 
 const NUM_COLUMNS: usize = top::REGRESSION.end;
 
@@ -26,8 +28,7 @@ const TOP: &[Range<usize>] = &[
     top::INDEX,
     top::MODE,
     top::FATTY_ACID,
-    top::RETENTION_TIME,
-    top::DEAD_TIME,
+    top::EQUIVALENT_CHAIN_LENGTH,
     top::REGRESSION,
 ];
 
@@ -94,15 +95,11 @@ impl<'a> Regression<'a> {
                     ui.label(ui.localize(formatcp!("{FATTY_ACID}.hover")));
                 });
             }
-            (0, top::RETENTION_TIME) => {
-                ui.heading(ui.localize(RETENTION_TIME)).on_hover_ui(|ui| {
-                    ui.label(ui.localize(formatcp!("{RETENTION_TIME}.hover")));
-                });
-            }
-            (0, top::DEAD_TIME) => {
-                ui.heading(ui.localize(DEAD_TIME)).on_hover_ui(|ui| {
-                    ui.label(ui.localize(formatcp!("{DEAD_TIME}.hover")));
-                });
+            (0, top::EQUIVALENT_CHAIN_LENGTH) => {
+                ui.heading(ui.localize(EQUIVALENT_CHAIN_LENGTH))
+                    .on_hover_ui(|ui| {
+                        ui.label(ui.localize(formatcp!("{EQUIVALENT_CHAIN_LENGTH}.hover")));
+                    });
             }
             (0, top::REGRESSION) => {
                 ui.heading(ui.localize(REGRESSION)).on_hover_ui(|ui| {
@@ -133,14 +130,14 @@ impl<'a> Regression<'a> {
         row: usize,
         column: Range<usize>,
     ) -> PolarsResult<()> {
-        if let Some(true) = self.data_frame[REGRESSION]
-            .struct_()?
-            .field_by_name(ANY)?
-            .bool()?
-            .get(row)
-        {
-            ui.visuals_mut().override_text_color = Some(ui.visuals().strong_text_color());
-        }
+        // if let Some(true) = self.data_frame[REGRESSION]
+        //     .struct_()?
+        //     .field_by_name(ANY)?
+        //     .bool()?
+        //     .get(row)
+        // {
+        //     ui.visuals_mut().override_text_color = Some(ui.visuals().strong_text_color());
+        // }
         match (row, column) {
             (row, top::INDEX) => {
                 ui.label(row.to_string());
@@ -168,25 +165,23 @@ impl<'a> Regression<'a> {
                     self.data_frame[FATTY_ACID]
                         .str()?
                         .get(row)
-                        .unwrap_or(EM_DASH),
+                        .display()
+                        .to_string(),
                 );
             }
-            (row, top::RETENTION_TIME) => {
+            (row, top::EQUIVALENT_CHAIN_LENGTH) => {
                 Float64Array::builder()
-                    .series(self.data_frame[RETENTION_TIME].as_materialized_series())
+                    .series(self.data_frame[EQUIVALENT_CHAIN_LENGTH].as_materialized_series())
                     .row(row)
                     .mean_and_standard_deviation(self.settings.mean_and_standard_deviation)
                     .build()
                     .show(ui)?;
             }
-            (row, top::DEAD_TIME) => {
-                let text = self.data_frame[DEAD_TIME].f64()?.get(row).to_widget_text();
-                ui.label(text);
-            }
             (row, top::REGRESSION) => {
-                BooleanArray::builder()
+                Float64Array::builder()
                     .series(self.data_frame[REGRESSION].as_materialized_series())
                     .row(row)
+                    .mean_and_standard_deviation(self.settings.mean_and_standard_deviation)
                     .build()
                     .show(ui)?;
             }
@@ -230,9 +225,9 @@ mod top {
     pub(super) const INDEX: Range<usize> = 0..1;
     pub(super) const MODE: Range<usize> = INDEX.end..INDEX.end + 2;
     pub(super) const FATTY_ACID: Range<usize> = MODE.end..MODE.end + 1;
-    pub(super) const RETENTION_TIME: Range<usize> = FATTY_ACID.end..FATTY_ACID.end + 1;
-    pub(super) const DEAD_TIME: Range<usize> = RETENTION_TIME.end..RETENTION_TIME.end + 1;
-    pub(super) const REGRESSION: Range<usize> = DEAD_TIME.end..DEAD_TIME.end + 1;
+    pub(super) const EQUIVALENT_CHAIN_LENGTH: Range<usize> = FATTY_ACID.end..FATTY_ACID.end + 1;
+    pub(super) const REGRESSION: Range<usize> =
+        EQUIVALENT_CHAIN_LENGTH.end..EQUIVALENT_CHAIN_LENGTH.end + 1;
 }
 
 mod bottom {

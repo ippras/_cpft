@@ -33,9 +33,9 @@ impl PlotView<'_> {
 
     fn try_show(self, ui: &mut Ui) -> PolarsResult<()> {
         let mut plot = Plot::new("Plot")
-            .allow_drag(self.settings.plot.drag)
-            .allow_scroll(self.settings.plot.scroll);
-        if self.settings.plot.legend {
+            .allow_drag(self.settings.plot.control.drag)
+            .allow_scroll(self.settings.plot.control.scroll);
+        if self.settings.plot.control.legend {
             plot = plot.legend(Legend::default().follow_insertion_order(true));
         }
         // let scale = plot.transform.dvalue_dpos();
@@ -90,7 +90,7 @@ impl PlotView<'_> {
                 // Points
                 let mut points = Points::new(name, PlotPoints::Borrowed(&data.points))
                     .color(color(data.onset_temperature as _))
-                    .radius(self.settings.plot.radius_of_points);
+                    .radius(self.settings.plot.control.radius_of_points);
                 if data.fatty_acid.unsaturated.is_empty() {
                     points = points.shape(MarkerShape::Square);
                 }

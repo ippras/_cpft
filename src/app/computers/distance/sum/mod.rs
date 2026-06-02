@@ -1,7 +1,13 @@
 use crate::{
     app::{
         computers::{distance::process::OUTPUT_SCHEMA as INPUT_SCHEMA, matches_schema},
-        states::distance::{Aggregation, Distance, Filter, Priority, Settings, Sort},
+        states::{
+            distance::{
+                Settings,
+                settings::{Priority, Sort},
+            },
+            source::settings::Filter,
+        },
     },
     r#const::{
         DISTANCE, EQUIVALENT_CHAIN_LENGTH, MAXIMUM, MEAN, MEDIAN, MINIMUM, MODE, SELECTIVITY_FACTOR,

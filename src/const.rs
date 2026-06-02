@@ -50,4 +50,4 @@ pub(crate) const MEAN: &str = "Mean";
 pub(crate) const MEDIAN: &str = "Median";
 pub(crate) const MINIMUM: &str = "Minimum";
 
-pub(crate) const POINTS: &str = "Points";
+pub(crate) const Y: &str = "Points";

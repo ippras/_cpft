@@ -1,7 +1,7 @@
 use crate::{
     app::{
         panes::distance::view::table::NUM_COLUMNS,
-        states::source::{Axis, Filter, PlotSettings, View},
+        states::source::settings::{Filter, Plot, View},
     },
     r#const::{EQUIVALENT_CHAIN_LENGTH, MAXIMUM, MEAN, MEDIAN, MINIMUM, SELECTIVITY_FACTOR},
     localization::Text,
@@ -38,7 +38,7 @@ pub(crate) struct Settings {
     pub(crate) priority: Priority,
 
     pub(crate) view: View,
-    pub(crate) plot: PlotSettings,
+    pub(crate) plot: Plot,
 
     // Reset
     pub(crate) reset: bool,
@@ -60,7 +60,7 @@ impl Settings {
             priority: Priority::new(),
 
             view: View::Table,
-            plot: PlotSettings::new(),
+            plot: Plot::new(),
 
             // Reset
             reset: false,
@@ -105,7 +105,7 @@ impl Settings {
             RichText::from(ui.localize("PlotSettings")).heading(),
             |ui| {
                 ui.add_enabled_ui(self.view == View::Plot, |ui| {
-                    self.plot(ui);
+                    self.plot.show(ui);
                 });
             },
         );
@@ -225,86 +225,54 @@ impl Settings {
         });
     }
 
-    /// Plot
-    fn plot(&mut self, ui: &mut Ui) {
-        self.legend(ui);
-        self.radius_of_points(ui);
-        self.axis(ui);
-    }
-
-    /// Legend
-    fn legend(&mut self, ui: &mut Ui) {
-        ui.horizontal(|ui| {
-            ui.label(ui.localize("Legend"));
-            ui.checkbox(&mut self.plot.legend, "");
-        });
-    }
-
-    /// Radius of points
-    fn radius_of_points(&mut self, ui: &mut Ui) {
-        ui.horizontal(|ui| {
-            ui.label(ui.localize("RadiusOfPoints")).on_hover_ui(|ui| {
-                ui.label(ui.localize("RadiusOfPoints.hover"));
-            });
-            ui.horizontal(|ui| {
-                Slider::new(&mut self.plot.radius_of_points, 0..=u8::MAX)
-                    .logarithmic(true)
-                    .ui(ui);
-                if ui.button((BOOKMARK, "2")).clicked() {
-                    self.plot.radius_of_points = 2;
-                };
-            });
-        });
-    }
-
-    /// Axis
-    fn axis(&mut self, ui: &mut Ui) {
-        for axis in [&mut self.plot.axes.x, &mut self.plot.axes.y] {
-            ui.horizontal(|ui| {
-                ui.label(ui.localize("PlotAxes"));
-                ComboBox::from_id_salt(ui.next_auto_id())
-                    .selected_text(ui.localize(axis.text()))
-                    .show_ui(ui, |ui| {
-                        ui.selectable_value(
-                            axis,
-                            Axis::SelectivityFactor,
-                            ui.localize(Axis::SelectivityFactor.text()),
-                        )
-                        .on_hover_ui(|ui| {
-                            ui.label(ui.localize(Axis::SelectivityFactor.hover_text()));
-                        });
-                        ui.selectable_value(
-                            axis,
-                            Axis::EquivalentChainLength,
-                            ui.localize(Axis::EquivalentChainLength.text()),
-                        )
-                        .on_hover_ui(|ui| {
-                            ui.label(ui.localize(Axis::EquivalentChainLength.hover_text()));
-                        });
-                        ui.selectable_value(
-                            axis,
-                            Axis::OnsetTemperature,
-                            ui.localize(Axis::OnsetTemperature.text()),
-                        )
-                        .on_hover_ui(|ui| {
-                            ui.label(ui.localize(Axis::OnsetTemperature.hover_text()));
-                        });
-                        ui.selectable_value(
-                            axis,
-                            Axis::TemperatureStep,
-                            ui.localize(Axis::TemperatureStep.text()),
-                        )
-                        .on_hover_ui(|ui| {
-                            ui.label(ui.localize(Axis::TemperatureStep.hover_text()));
-                        });
-                    })
-                    .response
-                    .on_hover_ui(|ui| {
-                        ui.label(ui.localize(axis.hover_text()));
-                    });
-            });
-        }
-    }
+    // /// Axis
+    // fn axis(&mut self, ui: &mut Ui) {
+    //     for axis in [&mut self.plot.axes.x, &mut self.plot.axes.y] {
+    //         ui.horizontal(|ui| {
+    //             ui.label(ui.localize("PlotAxes"));
+    //             ComboBox::from_id_salt(ui.next_auto_id())
+    //                 .selected_text(ui.localize(axis.text()))
+    //                 .show_ui(ui, |ui| {
+    //                     ui.selectable_value(
+    //                         axis,
+    //                         Axis::SelectivityFactor,
+    //                         ui.localize(Axis::SelectivityFactor.text()),
+    //                     )
+    //                     .on_hover_ui(|ui| {
+    //                         ui.label(ui.localize(Axis::SelectivityFactor.hover_text()));
+    //                     });
+    //                     ui.selectable_value(
+    //                         axis,
+    //                         Axis::EquivalentChainLength,
+    //                         ui.localize(Axis::EquivalentChainLength.text()),
+    //                     )
+    //                     .on_hover_ui(|ui| {
+    //                         ui.label(ui.localize(Axis::EquivalentChainLength.hover_text()));
+    //                     });
+    //                     ui.selectable_value(
+    //                         axis,
+    //                         Axis::OnsetTemperature,
+    //                         ui.localize(Axis::OnsetTemperature.text()),
+    //                     )
+    //                     .on_hover_ui(|ui| {
+    //                         ui.label(ui.localize(Axis::OnsetTemperature.hover_text()));
+    //                     });
+    //                     ui.selectable_value(
+    //                         axis,
+    //                         Axis::TemperatureStep,
+    //                         ui.localize(Axis::TemperatureStep.text()),
+    //                     )
+    //                     .on_hover_ui(|ui| {
+    //                         ui.label(ui.localize(Axis::TemperatureStep.hover_text()));
+    //                     });
+    //                 })
+    //                 .response
+    //                 .on_hover_ui(|ui| {
+    //                     ui.label(ui.localize(axis.hover_text()));
+    //                 });
+    //         });
+    //     }
+    // }
 }
 
 impl Default for Settings {

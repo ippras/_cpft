@@ -1,4 +1,4 @@
-pub(crate) use self::{export::Export, sort::Sort};
+pub(crate) use self::{export::Export, plot::Plot, sort::Sort};
 
 use crate::{
     app::{
@@ -136,7 +136,7 @@ impl Settings {
             RichText::from(ui.localize("PlotSettings")).heading(),
             |ui| {
                 ui.add_enabled_ui(self.view == View::Plot, |ui| {
-                    self.plot(ui);
+                    self.plot.show(ui);
                 });
             },
         );
@@ -423,62 +423,6 @@ impl Settings {
         // // ui.horizontal(|ui| {});
         // // ui.horizontal(|ui| {});
     }
-
-    /// Plot
-    fn plot(&mut self, ui: &mut Ui) {
-        // // Group
-        // ui.label("Group");
-        // ComboBox::from_id_salt(ui.next_auto_id())
-        //     .selected_text(self.group.text())
-        //     .show_ui(ui, |ui| {
-        //         ui.selectable_value(
-        //             &mut self.group,
-        //             Group::FattyAcid,
-        //             Group::FattyAcid.text(),
-        //         )
-        //         .on_hover_text(Group::FattyAcid.hover_text());
-        //         ui.selectable_value(
-        //             &mut self.group,
-        //             Group::OnsetTemperature,
-        //             Group::OnsetTemperature.text(),
-        //         )
-        //         .on_hover_text(Group::OnsetTemperature.hover_text());
-        //         ui.selectable_value(
-        //             &mut self.group,
-        //             Group::TemperatureStep,
-        //             Group::TemperatureStep.text(),
-        //         )
-        //         .on_hover_text(Group::TemperatureStep.hover_text());
-        //     })
-        //     .response
-        //     .on_hover_text(self.group.hover_text());
-
-        self.legend(ui);
-        self.radius_of_points(ui);
-    }
-
-    /// Legend
-    fn legend(&mut self, ui: &mut Ui) {
-        ui.horizontal(|ui| {
-            ui.label(ui.localize("Legend"));
-            ui.checkbox(&mut self.plot.legend, "");
-        });
-    }
-
-    /// Radius of points
-    fn radius_of_points(&mut self, ui: &mut Ui) {
-        ui.horizontal(|ui| {
-            ui.label(ui.localize("RadiusOfPoints")).on_hover_ui(|ui| {
-                ui.label(ui.localize("RadiusOfPoints.hover"));
-            });
-            Slider::new(&mut self.plot.radius_of_points, 0..=u8::MAX)
-                .logarithmic(true)
-                .ui(ui);
-            if ui.button((BOOKMARK, "2")).clicked() {
-                self.plot.radius_of_points = 2;
-            };
-        });
-    }
 }
 
 impl Default for Settings {
@@ -527,94 +471,6 @@ impl Regression {
     pub(crate) fn new() -> Self {
         Self {
             fatty_acids: Vec::new(),
-        }
-    }
-}
-
-/// Plot
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub(crate) struct Plot {
-    pub(crate) drag: Vec2b,
-    pub(crate) legend: bool,
-    pub(crate) radius_of_points: u8,
-    pub(crate) scroll: Vec2b,
-}
-
-impl Plot {
-    pub(crate) fn new() -> Self {
-        Self {
-            drag: Vec2b::TRUE,
-            legend: true,
-            radius_of_points: 2,
-            scroll: Vec2b::TRUE,
-        }
-    }
-}
-
-impl Hash for Plot {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.drag.x.hash(state);
-        self.drag.y.hash(state);
-        self.legend.hash(state);
-        self.radius_of_points.hash(state);
-        self.scroll.x.hash(state);
-        self.scroll.y.hash(state);
-    }
-}
-
-/// Plot settings
-#[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
-pub(crate) struct PlotSettings {
-    pub(crate) legend: bool,
-    pub(crate) radius_of_points: u8,
-    pub(crate) axes: Axes,
-}
-
-impl PlotSettings {
-    pub(crate) fn new() -> Self {
-        Self {
-            radius_of_points: 2,
-            legend: true,
-            axes: Axes {
-                x: Axis::TemperatureStep,
-                y: Axis::SelectivityFactor,
-            },
-        }
-    }
-}
-
-// Plot axes
-#[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
-pub(crate) struct Axes {
-    pub(crate) x: Axis,
-    pub(crate) y: Axis,
-}
-
-/// Plot axis
-#[derive(Clone, Copy, Debug, Deserialize, Hash, PartialEq, Serialize)]
-pub(crate) enum Axis {
-    SelectivityFactor,
-    EquivalentChainLength,
-    OnsetTemperature,
-    TemperatureStep,
-}
-
-impl Text for Axis {
-    fn text(&self) -> &'static str {
-        match self {
-            Self::SelectivityFactor => "SelectivityFactor",
-            Self::EquivalentChainLength => "EquivalentChainLength",
-            Self::OnsetTemperature => "OnsetTemperature",
-            Self::TemperatureStep => "TemperatureStep",
-        }
-    }
-
-    fn hover_text(&self) -> &'static str {
-        match self {
-            Self::SelectivityFactor => "SelectivityFactor.hover",
-            Self::EquivalentChainLength => "EquivalentChainLength.hover",
-            Self::OnsetTemperature => "OnsetTemperature.hover",
-            Self::TemperatureStep => "TemperatureStep.hover",
         }
     }
 }
@@ -784,15 +640,15 @@ pub(crate) enum View {
     Table,
 }
 
-impl Text for View {
-    fn text(&self) -> &'static str {
+impl View {
+    pub const fn text(&self) -> &'static str {
         match self {
             Self::Plot => "PlotView",
             Self::Table => "TableView",
         }
     }
 
-    fn hover_text(&self) -> &'static str {
+    pub const fn hover_text(&self) -> &'static str {
         match self {
             Self::Plot => "TableView.hover",
             Self::Table => "PlotView.hover",
@@ -801,4 +657,5 @@ impl Text for View {
 }
 
 pub(crate) mod export;
+pub(crate) mod plot;
 pub(crate) mod sort;

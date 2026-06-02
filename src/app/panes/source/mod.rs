@@ -17,7 +17,7 @@ use crate::{
             Behavior, MARGIN,
             source::sum::{correlation::Correlation, regression::Regression},
         },
-        states::source::{ID_SOURCE, Settings, State, View},
+        states::source::{ID_SOURCE, Settings, State, settings::View},
         widgets::buttons::ViewButton,
     },
     r#const::{
@@ -30,12 +30,13 @@ use crate::{
 use anyhow::Result;
 use const_format::formatcp;
 use egui::{
-    Button, CentralPanel, CursorIcon, Frame, Id, MenuBar, Panel, Response, RichText, ScrollArea,
-    TextStyle, Ui, Widget as _, Window, util::hash,
+    Button, CentralPanel, CursorIcon, Frame, Grid, Id, MenuBar, Panel, Response, RichText,
+    ScrollArea, TextStyle, Ui, Widget as _, Window, util::hash,
 };
 use egui_l10n::prelude::*;
 use egui_phosphor::regular::{FLOPPY_DISK, RULER, SIGMA, SLIDERS_HORIZONTAL, TABLE, TAG, X};
 use egui_tiles::{TileId, UiResponse};
+use linfa::Error::Parameters;
 use lipid::prelude::*;
 use metadata::{egui::MetadataWidget, polars::MetaDataFrame};
 use polars::prelude::*;
@@ -458,12 +459,49 @@ impl Pane {
             .open(&mut state.windows.open_regression)
             .show(ui.ctx(), |ui| {
                 top(ui, &mut state.settings);
-                let data_frame = ui.memory_mut(|memory| {
+                let (data_frame, parameters, metrics) = ui.memory_mut(|memory| {
                     memory
                         .caches
                         .cache::<RegressionComputed>()
                         .get(RegressionKey::new(&self.calculated, &state.settings))
                         .clone()
+                });
+                ui.visuals_mut().collapsing_header_frame = true;
+                ui.collapsing("Точность модели", |ui| {
+                    Grid::new(ui.next_auto_id()).show(ui, |ui| {
+                        ui.label("R^2 (Коэффициент детерминации)");
+                        ui.label(format!(
+                            "{:.*?}",
+                            state.settings.precision.precision, metrics.r2
+                        ));
+                        ui.end_row();
+
+                        ui.label("MAE (Абсолютная ошибка)");
+                        ui.label(format!(
+                            "{:.*?}",
+                            state.settings.precision.precision, metrics.mean_absolute_error
+                        ));
+                        ui.end_row();
+
+                        ui.label("MSE (Квадратичная ошибка)");
+                        ui.label(format!(
+                            "{:.*?}",
+                            state.settings.precision.precision, metrics.mean_squared_error
+                        ));
+                        ui.end_row();
+                    });
+                    ui.group(|ui| {
+                        ui.set_width(ui.available_width());
+                        for (name, parameter) in parameters {
+                            ui.horizontal(|ui| {
+                                ui.label(name);
+                                ui.label(format!(
+                                    "{:.*?}",
+                                    state.settings.precision.precision, parameter
+                                ));
+                            });
+                        }
+                    });
                 });
                 Regression::new(&data_frame, &mut state.settings).show(ui);
             });

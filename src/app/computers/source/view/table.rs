@@ -25,7 +25,6 @@ pub(crate) struct Computer;
 
 impl Computer {
     fn try_compute(&mut self, key: Key) -> PolarsResult<Value> {
-        println!("key.frame.data_frame: {}", key.frame.data_frame);
         matches_schema(&key.frame.data_frame, &INPUT_SCHEMA)?;
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
         // Filter

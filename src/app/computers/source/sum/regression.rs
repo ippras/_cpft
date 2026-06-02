@@ -1,22 +1,37 @@
 use crate::{
-    app::states::source::{Regression, Settings},
+    app::{
+        computers::{matches_schema, source::process::OUTPUT_SCHEMA as INPUT_SCHEMA},
+        states::source::{Settings, settings::Regression},
+    },
     r#const::*,
     utils::hash::HashedDataFrame,
 };
 use const_format::formatcp;
 use egui::util::cache::{ComputerMut, FrameCache};
+use linfa::prelude::*;
+use linfa_linear::LinearRegression;
 use lipid::prelude::*;
 use polars::prelude::*;
 use polars_ext::{expr::ExprExt, prelude::*};
-use std::{iter::zip, sync::LazyLock};
+use std::{
+    collections::{BTreeMap, HashMap},
+    iter::zip,
+    mem::MaybeUninit,
+    sync::LazyLock,
+};
+use tracing::debug;
 
-// use scirs2::stats::regression::linear_regression;
-// use scirs2_core::ndarray::{Array1, Array2};
+pub(crate) const X1: &str = "x[1]";
+pub(crate) const X2: &str = "x[2]";
+pub(crate) const Y: &str = "y";
+pub(crate) const Z: &str = "z";
+
+const I: usize = 3;
 
 const FALSE_REGRESSION: LazyLock<Scalar> =
-    LazyLock::new(|| Scalar::new_array(Series::new(PlSmallStr::EMPTY, &[false; 3]), 3));
+    LazyLock::new(|| Scalar::new_array(Series::new(PlSmallStr::EMPTY, &[false; I]), I));
 const TRUE_REGRESSION: LazyLock<Scalar> =
-    LazyLock::new(|| Scalar::new_array(Series::new(PlSmallStr::EMPTY, &[true; 3]), 3));
+    LazyLock::new(|| Scalar::new_array(Series::new(PlSmallStr::EMPTY, &[true; I]), I));
 
 /// Regression computed
 pub(crate) type Computed = FrameCache<Value, Computer>;
@@ -27,83 +42,63 @@ pub(crate) struct Computer;
 
 impl Computer {
     fn try_compute(&mut self, key: Key) -> PolarsResult<Value> {
+        matches_schema(&key.frame.data_frame, &INPUT_SCHEMA)?;
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
+
         // Filter
+        let filtered = &key
+            .frame
+            .data_frame
+            .filter(key.frame.data_frame[FILTER].bool()?)?[FATTY_ACID];
+        let n_unique = filtered.n_unique()?;
+        if n_unique != 1 {
+            return Ok((
+                HashedDataFrame::EMPTY,
+                Default::default(),
+                Default::default(),
+            ));
+            // return Err(polars_err!(ComputeError: "n_unique: {n_unique}"));
+        }
+        lazy_frame = lazy_frame.filter(col(FILTER));
+
+        // Rename
         lazy_frame = lazy_frame.select([
-            col(MODE),
-            col(FATTY_ACID),
-            col(RETENTION_TIME)
+            col(MODE)
                 .struct_()
-                .field_by_name(ABSOLUTE)
-                .alias(RETENTION_TIME),
-            col(DEAD_TIME),
+                .field_by_name(ONSET_TEMPERATURE)
+                .alias(X1),
+            col(MODE)
+                .struct_()
+                .field_by_name(TEMPERATURE_STEP)
+                .alias(X2),
+            col(FATTY_ACID),
+            col(CHAIN_LENGTH)
+                .struct_()
+                .field_by_name(EQUIVALENT_CHAIN_LENGTH)
+                .alias(Y),
         ]);
-        println!("filtered: {}", lazy_frame.clone().collect()?);
 
-        let regression = regression::<4>(lazy_frame.clone(), key)?;
-        println!("regression: {}", regression.clone().collect()?);
-
-        // std::fs::write(
-        //     "REGRESSION.md",
-        //     lazy_frame
-        //         .clone()
-        //         .select([
-        //             col(MODE),
-        //             col(FATTY_ACID),
-        //             concat_arr(vec![
-        //                 as_struct(vec![
-        //                     col(FATTY_ACID)
-        //                         .fatty_acid()
-        //                         .carbon()
-        //                         .cast(DataType::Float64),
-        //                     col(RETENTION_TIME)
-        //                         .arr()
-        //                         .to_struct(None)
-        //                         .struct_()
-        //                         .field_by_name("*"),
-        //                 ])
-        //                 .apply(regression::<4>, |_schema, field| {
-        //                     Ok(Field::new(PlSmallStr::EMPTY, field.dtype.clone()))
-        //                 })
-        //                 .struct_()
-        //                 .field_by_name(r#"^field_\d+$"#),
-        //             ])?
-        //             .over([MODE])
-        //             .alias(RETENTION_TIME),
-        //         ])
-        //         .collect()?
-        //         .to_string(),
-        // )?;
-
-        // Fill for RETENTION_TIME
-        lazy_frame = lazy_frame
-            .join(
-                regression,
-                [col(MODE), col(FATTY_ACID)],
-                [col(MODE), col(FATTY_ACID)],
-                JoinArgs::new(JoinType::Full).with_coalesce(JoinCoalesce::CoalesceColumns),
-            )
-            .with_column(
-                col(formatcp!("{RETENTION_TIME}_right"))
-                    .fill_null(col(RETENTION_TIME))
-                    .alias(RETENTION_TIME),
-            )
-            .drop(cols([formatcp!("{RETENTION_TIME}_right")]));
-        // Fill null for DEAD_TIME
-        lazy_frame = lazy_frame.with_columns([
-            col(DEAD_TIME)
-                .fill_null(col(DEAD_TIME).filter(col(DEAD_TIME).is_not_null()).first())
-                .over([MODE]),
-            col(REGRESSION)
-                .fill_null(lit(FALSE_REGRESSION.clone()))
-                .over([MODE]),
-        ]);
-        lazy_frame = lazy_frame.sort([MODE, RETENTION_TIME], SortMultipleOptions::new());
-        println!("lazy_frame: {}", lazy_frame.clone().collect()?);
-
+        // Regression
+        let (mut lazy_frame, parameters, metrics) = regression::<3>(lazy_frame)?;
         // Format
         lazy_frame = format(lazy_frame, key);
-        HashedDataFrame::new(lazy_frame.collect()?)
+
+        // Rename
+        lazy_frame = lazy_frame.select([
+            as_struct(vec![
+                col(X1).alias(ONSET_TEMPERATURE),
+                col(X2).alias(TEMPERATURE_STEP),
+            ])
+            .alias(MODE),
+            col(FATTY_ACID),
+            col(Y).alias(EQUIVALENT_CHAIN_LENGTH),
+            col(Z).alias(REGRESSION),
+        ]);
+        Ok((
+            HashedDataFrame::new(lazy_frame.collect()?)?,
+            parameters,
+            metrics,
+        ))
     }
 }
 
@@ -136,257 +131,159 @@ impl<'a> Key<'a> {
 }
 
 /// Regression value
-type Value = HashedDataFrame;
+type Value = (HashedDataFrame, Parameters, Metrics<f64>);
 
-fn regression<const N: usize>(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
-    // of observations (2) must be greater than number of predictors
-    // let saturated_fatty_acids = df! {
-    //     FATTY_ACID => (key.regression.start..=key.regression.end)
-    //         .map(|carbon| {
-    //             AnyValue::StructOwned(Box::new((
-    //                 vec![
-    //                     AnyValue::UInt8(carbon),
-    //                     AnyValue::List(Series::new_empty(
-    //                         PlSmallStr::from_static(INDICES),
-    //                         &data_type!(INDEX),
-    //                     )),
-    //                 ],
-    //                 vec![field!(CARBON), field!(INDICES)],
-    //             )))
-    //         }).collect::<Vec<_>>(),
-    // }?;
-    let fatty_acids = key
-        .regression
-        .fatty_acids
-        .iter()
-        .filter(|fatty_acid| fatty_acid.unsaturated.is_empty())
-        .map(|fatty_acid| {
-            AnyValue::StructOwned(Box::new((
-                vec![
-                    AnyValue::UInt8(fatty_acid.carbon),
-                    AnyValue::List(Series::new_empty(
-                        PlSmallStr::from_static(INDICES),
-                        &data_type!(INDEX),
-                    )),
-                ],
-                vec![field!(CARBON), field!(INDICES)],
-            )))
-        })
-        .collect::<Vec<_>>();
-    // Сreates frame with unique modes with predictable saturated fatty acids.
-    let cross_joined = lazy_frame
-        .clone()
-        .select([col(MODE)])
-        .unique(None, UniqueKeepStrategy::Any)
-        .cross_join(df! { FATTY_ACID => fatty_acids }?.lazy(), None)
-        .with_columns([lit(true).alias(REGRESSION)]);
-    // Обединяем фрейм с предсказываемыми и фрейм с наблюдаемыми SFA
-    lazy_frame = lazy_frame
-        .filter(col(FATTY_ACID).fatty_acid().is_saturated())
-        .join(
-            cross_joined,
-            [col(MODE), col(FATTY_ACID)],
-            [col(MODE), col(FATTY_ACID)],
-            JoinArgs::new(JoinType::Full).with_coalesce(JoinCoalesce::CoalesceColumns),
-        )
-        .with_columns([col(RETENTION_TIME).nullify(col(REGRESSION).is_null())])
-        .sort([MODE, FATTY_ACID], SortMultipleOptions::new());
-    println!("sorted: {}", lazy_frame.clone().collect()?);
+/// Regression parameters
+type Parameters = BTreeMap<String, Vec<f64>>;
 
-    // Observations Predictors
-    let regression = lazy_frame.select([
-        col(MODE),
-        col(FATTY_ACID),
-        concat_arr(vec![
-            as_struct(vec![
-                col(FATTY_ACID)
-                    .fatty_acid()
-                    .carbon()
-                    .cast(DataType::Float64),
-                col(RETENTION_TIME)
-                    .arr()
-                    .to_struct(None)
-                    .struct_()
-                    .field_by_name("*"),
-            ])
-            // .apply(regression_n::<N>, |_schema, field| {
-            //     Ok(Field::new(PlSmallStr::EMPTY, field.dtype.clone()))
-            // })
-            .struct_()
-            .field_by_name(r#"^field_\d+$"#),
-        ])?
-        .over([MODE])
-        .alias(RETENTION_TIME),
-        col(RETENTION_TIME)
-            .arr()
-            .eval(element().is_null(), false)
-            .fill_null(lit(TRUE_REGRESSION.clone()))
-            .alias(REGRESSION),
-    ]);
-    Ok(regression)
+/// Regression metrics
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Metrics<T> {
+    pub mean_absolute_error: [T; I],
+    pub mean_squared_error: [T; I],
+    pub r2: [T; I],
 }
 
-// fn x<const N: usize>(values: impl ExactSizeIterator<Item = f64>) -> PolarsResult<Array2<f64>> {
-//     let mut v: Vec<f64> = Vec::with_capacity(values.len() * N);
-//     for value in values {
-//         for n in 0..N {
-//             v.push(value.powi(n as _)); // x^n
-//         }
-//     }
-//     Array2::from_shape_vec((v.len() / N, N), v)
-//         .map_err(|error| polars_err!(ShapeMismatch: error.to_string()))
-// }
+impl Metrics<f64> {
+    fn uninit() -> Metrics<MaybeUninit<f64>> {
+        Metrics {
+            mean_absolute_error: [MaybeUninit::uninit(); I],
+            mean_squared_error: [MaybeUninit::uninit(); I],
+            r2: [MaybeUninit::uninit(); I],
+        }
+    }
+}
 
-// fn regression0<const N: usize>(column: Column) -> PolarsResult<Column> {
-//     let fields = column.struct_()?.fields_as_series();
-//     let carbon_series = &fields[0];
-//     let retention_times_series = &fields[1..];
-//     let mut fields = Vec::with_capacity(fields.len());
-//     fields.push(carbon_series.clone());
-//     for retention_time_series in retention_times_series {
-//         let is_not_null = retention_time_series.is_not_null();
-//         let is_null = retention_time_series.is_null();
+impl Metrics<MaybeUninit<f64>> {
+    unsafe fn assume_init(self) -> Metrics<f64> {
+        Metrics {
+            mean_absolute_error: unsafe {
+                MaybeUninit::array_assume_init(self.mean_absolute_error)
+            },
+            mean_squared_error: unsafe { MaybeUninit::array_assume_init(self.mean_squared_error) },
+            r2: unsafe { MaybeUninit::array_assume_init(self.r2) },
+        }
+    }
+}
 
-//         // Training
-//         let mut carbons = Vec::new();
-//         let mut retention_times = Vec::new();
-//         for (carbon, retention_time) in zip(
-//             carbon_series
-//                 .filter(&is_not_null)?
-//                 .f64()?
-//                 .into_no_null_iter(),
-//             retention_time_series
-//                 .filter(&is_not_null)?
-//                 .f64()?
-//                 .into_no_null_iter(),
-//         ) {
-//             for n in 0..N {
-//                 carbons.push(carbon.powi(n as _)); // x^n
-//             }
-//             retention_times.push(retention_time); // y
-//         }
-//         let results = {
-//             let x = Array2::from_shape_vec((carbons.len() / N, N), carbons)
-//                 .map_err(|error| polars_err!(ShapeMismatch: error.to_string()))?;
-//             let y = Array1::from_vec(retention_times);
-//             linear_regression(&x.view(), &y.view(), None)
-//                 .map_err(|error| polars_err!(ComputeError: error.to_string()))?
-//         };
-//         // println!("Summary: {}", results.summary());
+fn regression<const N: usize>(
+    mut lazy_frame: LazyFrame,
+) -> PolarsResult<(LazyFrame, Parameters, Metrics<f64>)> {
+    // X (records, двумерная)
+    let x = lazy_frame.clone().select(x_exprs::<N>()).collect()?;
+    debug!("x: {x}");
+    let records = x.to_ndarray::<Float64Type>(IndexOrder::C)?;
 
-//         // Predict
-//         let x = x::<N>(carbon_series.filter(&is_null)?.f64()?.into_no_null_iter())?;
-//         let y = results
-//             .predict(&x.view())
-//             .map_err(|error| polars_err!(ComputeError: error.to_string()))?;
-//         let null_indices =
-//             IdxCa::from_iter_values(PlSmallStr::EMPTY, 0..(carbon_series.len() as _))
-//                 .filter(&is_null)?
-//                 .into_no_null_iter()
-//                 .collect::<Vec<_>>();
-//         let values = Float64Chunked::new(PlSmallStr::EMPTY, y.to_vec());
-//         let retention_time = retention_time_series
-//             .f64()?
-//             .clone()
-//             .scatter(&null_indices, &values)?;
-//         fields.push(retention_time)
-//     }
-//     let r#struct = StructChunked::from_series(column.name().clone(), column.len(), fields.iter())?;
-//     Ok(r#struct.into_column())
-// }
+    // Y (targets, одномерная)
+    let y = lazy_frame
+        .clone()
+        .select([col(Y)
+            .arr()
+            .to_struct(Some(PlanCallback::new(move |index| {
+                Ok(format!("{Y}[{index}]"))
+            })))
+            .struct_()
+            .field_by_name("*")])
+        .collect()?;
+    debug!("y: {y}");
+    let targets = y.to_ndarray::<Float64Type>(IndexOrder::C)?;
 
-// fn regression_n<const N: usize>(column: Column) -> PolarsResult<Column> {
-//     let fields = column.struct_()?.fields_as_series();
-//     let carbon_series = &fields[0];
-//     let retention_times_series = &fields[1..];
-//     let mut fields = Vec::with_capacity(fields.len());
-//     fields.push(carbon_series.clone());
-//     for retention_time_series in retention_times_series {
-//         let is_not_null = retention_time_series.is_not_null();
-//         let is_null = retention_time_series.is_null();
+    let mut z = Vec::with_capacity(I);
+    let mut metrics = Metrics::uninit();
+    let mut parameters = Parameters::new();
+    for index in 0..I {
+        let dataset = Dataset::new(records.clone(), targets.column(index).to_owned());
+        let model = LinearRegression::new()
+            .fit(&dataset)
+            .map_err(|error| polars_err!(ComputeError: "{error}"))?;
+        debug!("Модель успешно обучена!");
+        // println!("Смещение (b0): {:.6}", model.intercept());
+        for (index, parameter) in model.params().iter().enumerate() {
+            parameters
+                .entry(x[index].name().to_string())
+                .or_default()
+                .push(*parameter);
+        }
+        // Предсказание (интерполяция и экстраполяция)
+        let predictions = model.predict(&records);
+        debug!("predictions: {predictions}");
+        // Считаем стандартные метрики
+        metrics.mean_absolute_error[index].write(
+            predictions
+                .mean_absolute_error(&dataset)
+                .map_err(|error| polars_err!(ComputeError: "{error}"))?,
+        );
+        metrics.mean_squared_error[index].write(
+            predictions
+                .mean_squared_error(&dataset)
+                .map_err(|error| polars_err!(ComputeError: "{error}"))?,
+        );
+        metrics.r2[index].write(
+            predictions
+                .r2(&dataset)
+                .map_err(|error| polars_err!(ComputeError: "{error}"))?,
+        );
+        z.push(lit(Series::from_iter(predictions)))
+    }
+    lazy_frame = lazy_frame.with_column(concat_arr(z)?.alias(Z));
+    let metrics = unsafe { metrics.assume_init() };
+    Ok((lazy_frame, parameters, metrics))
+}
 
-//         // println!(
-//         //     "carbons (is_not_null): {:?}",
-//         //     carbon_series
-//         //         .filter(&is_not_null)?
-//         //         .f64()?
-//         //         .into_no_null_iter()
-//         //         .collect::<Vec<_>>()
-//         // );
-//         // println!(
-//         //     "carbons (is_null): {:?}",
-//         //     carbon_series
-//         //         .filter(&is_null)?
-//         //         .f64()?
-//         //         .into_no_null_iter()
-//         //         .collect::<Vec<_>>()
-//         // );
-
-//         // Training
-//         let mut carbons = Vec::new();
-//         let mut retention_times = Vec::new();
-//         for (carbon, retention_time) in zip(
-//             carbon_series
-//                 .filter(&is_not_null)?
-//                 .f64()?
-//                 .into_no_null_iter(),
-//             retention_time_series
-//                 .filter(&is_not_null)?
-//                 .f64()?
-//                 .into_no_null_iter(),
-//         ) {
-//             for n in 0..N {
-//                 carbons.push(carbon.powi(n as _)); // x^n
-//             }
-//             retention_times.push(retention_time); // y
-//         }
-//         let results = {
-//             let x = Array2::from_shape_vec((carbons.len() / N, N), carbons)
-//                 .map_err(|error| polars_err!(ShapeMismatch: error.to_string()))?;
-//             let y = Array1::from_vec(retention_times);
-//             linear_regression(&x.view(), &y.view(), None)
-//                 .map_err(|error| polars_err!(ComputeError: error.to_string()))?
-//         };
-//         // println!("Summary: {}", results.summary());
-
-//         // Predict
-//         let x = x::<N>(carbon_series.filter(&is_null)?.f64()?.into_no_null_iter())?;
-//         let y = results
-//             .predict(&x.view())
-//             .map_err(|error| polars_err!(ComputeError: error.to_string()))?;
-//         let null_indices =
-//             IdxCa::from_iter_values(PlSmallStr::EMPTY, 0..(carbon_series.len() as _))
-//                 .filter(&is_null)?
-//                 .into_no_null_iter()
-//                 .collect::<Vec<_>>();
-//         let values = Float64Chunked::new(PlSmallStr::EMPTY, y.to_vec());
-//         let retention_time = retention_time_series
-//             .f64()?
-//             .clone()
-//             .scatter(&null_indices, &values)?;
-//         fields.push(retention_time)
-//     }
-//     let r#struct = StructChunked::from_series(column.name().clone(), column.len(), fields.iter())?;
-//     Ok(r#struct.into_column())
-// }
+// // 1-я степень
+// col(X1),
+// col(X2),
+// // 2-я степень
+// col(X1).pow(2).alias(formatcp!("{X1}^2")),
+// col(X2).pow(2).alias(formatcp!("{X2}^2")),
+// (col(X1) * col(X2)).alias(formatcp!("{X1}*{X2}")),
+// // 3-я степень
+// col(X1).pow(3).alias(formatcp!("{X1}^3")),
+// col(X2).pow(3).alias(formatcp!("{X2}^3")),
+// (col(X1).pow(2) * col(X2)).alias(formatcp!("{X1}^2*{X2}")),
+// (col(X1) * col(X2).pow(2)).alias(formatcp!("{X1}*{X2}^2")),
+fn x_exprs<const N: usize>() -> Vec<Expr> {
+    let mut exprs = Vec::new();
+    for j in 0..=N {
+        for i in 0..=N {
+            if 0 < i + j && i + j <= N {
+                let x1 = if i == 1 {
+                    col(X1)
+                } else {
+                    col(X1).pow(i as u32)
+                };
+                let x2 = if j == 1 {
+                    col(X2)
+                } else {
+                    col(X2).pow(j as u32)
+                };
+                let expr = match (i, j) {
+                    (_, 0) => x1,
+                    (0, _) => x2,
+                    (_, _) => x1 * x2,
+                };
+                exprs.push(expr.alias(&format!("{X1}^{i}*{X2}^{j}")));
+            }
+        }
+    }
+    exprs
+}
 
 /// Format
 fn format(lazy_frame: LazyFrame, key: Key) -> LazyFrame {
     lazy_frame.with_columns([
-        col(MODE),
         col(FATTY_ACID).fatty_acid().delta(),
         Array::builder()
-            .expr(col(RETENTION_TIME))
+            .expr(col(Y))
             .ddof(key.ddof)
             .precision(key.precision)
             .significant(key.significant)
-            .build()
-            .alias(RETENTION_TIME),
-        as_struct(vec![
-            col(REGRESSION).arr().agg(element().any(true)).alias(ANY),
-            col(REGRESSION).alias(ARRAY),
-        ])
-        .name()
-        .keep(),
+            .build(),
+        Array::builder()
+            .expr(col(Z))
+            .ddof(key.ddof)
+            .precision(key.precision)
+            .significant(key.significant)
+            .build(),
     ])
 }

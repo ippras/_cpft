@@ -7,7 +7,7 @@ use crate::{
     },
     r#const::{
         ABSOLUTE, CHAIN_LENGTH, EQUIVALENT_CHAIN_LENGTH, FILTER, MEAN, MODE, ONSET_TEMPERATURE,
-        POINTS, RETENTION_FACTOR, RETENTION_TIME, TEMPERATURE_STEP,
+        RETENTION_FACTOR, RETENTION_TIME, TEMPERATURE_STEP, Y,
     },
     utils::hash::HashedDataFrame,
 };
@@ -36,8 +36,10 @@ impl Computer {
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
         // Filter
         lazy_frame = lazy_frame.filter(col(FILTER));
+        // println!("filter: {}", lazy_frame.clone().collect().unwrap());
         // Compute
         lazy_frame = compute(lazy_frame, key)?;
+        // println!("compute: {}", lazy_frame.clone().collect().unwrap());
         // Pack
         pack(lazy_frame.collect()?, key)
 
@@ -106,15 +108,6 @@ impl<'a> Key<'a> {
     }
 }
 
-// impl Hash for Key<'_> {
-//     fn hash<H: Hasher>(&self, state: &mut H) {
-//         self.settings.ddof.hash(state);
-//         self.settings.logarithmic.hash(state);
-//         self.settings.filter.hash(state);
-//         self.settings.radius_of_points.hash(state);
-//     }
-// }
-
 /// Source plot value
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Value {
@@ -169,9 +162,13 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
         col(MODE).struct_().field_by_name(ONSET_TEMPERATURE),
         col(MODE).struct_().field_by_name(TEMPERATURE_STEP),
         col(FATTY_ACID),
-        col(RETENTION_FACTOR).arr().mean(),
+        col(CHAIN_LENGTH)
+            .struct_()
+            .field_by_name(EQUIVALENT_CHAIN_LENGTH)
+            .arr()
+            .mean()
+            .alias(Y),
     ]);
-    println!("lazy_frame GGG0: {}", lazy_frame.clone().collect().unwrap());
     // lazy_frame = lazy_frame.select([
     //     col(ONSET_TEMPERATURE),
     //     col(TEMPERATURE_STEP),
@@ -180,7 +177,7 @@ fn compute(mut lazy_frame: LazyFrame, key: Key) -> PolarsResult<LazyFrame> {
     // ]);
     lazy_frame = lazy_frame
         .group_by([col(FATTY_ACID), col(ONSET_TEMPERATURE)])
-        .agg([col(TEMPERATURE_STEP), col(POINTS)]);
+        .agg([col(TEMPERATURE_STEP), col(Y)]);
     Ok(lazy_frame)
 }
 
@@ -192,23 +189,19 @@ fn pack(data_frame: DataFrame, key: Key) -> PolarsResult<Value> {
         .into_iter()
         .zip(data_frame[ONSET_TEMPERATURE].f64()?.into_no_null_iter())
         .zip(data_frame[TEMPERATURE_STEP].list()?.into_no_null_iter())
-        .zip(data_frame[POINTS].list()?.into_no_null_iter())
+        .zip(data_frame[Y].list()?.into_no_null_iter())
     {
         let Some(fatty_acid) = fatty_acid? else {
             continue;
         };
         // let fatty_acid = fatty_acid?;
         let mut line_points = Vec::new();
-        for (temperature_step, points) in temperature_steps
+        for (x, y) in temperature_steps
             .f64()?
             .into_no_null_iter()
-            .zip(points.array()?.into_no_null_iter())
+            .zip(points.f64()?)
         {
-            let points = points.f64()?;
-            let Some(x) = points.get(0) else {
-                continue;
-            };
-            let Some(y) = points.get(1) else {
+            let Some(y) = y else {
                 continue;
             };
             line_points.push(PlotPoint::new(x, y));
@@ -218,7 +211,7 @@ fn pack(data_frame: DataFrame, key: Key) -> PolarsResult<Value> {
                 .or_default()
                 .insert(PointValue {
                     onset_temperature,
-                    temperature_step,
+                    temperature_step: x,
                 });
         }
         value.lines.temperature_step.push(TemperatureStepLine {

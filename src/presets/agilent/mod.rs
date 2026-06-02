@@ -7,7 +7,7 @@ macro ron($name:literal) {
     })
 }
 
-pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[3.31].2026-05-13.ron");
+pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[3.32].2026-06-03.ron");
 
 // fn parse(bytes: &[u8]) -> Result<HashedMetaDataFrame> {
 //     let frame = ron::de::from_bytes::<MetaDataFrame>(bytes)?;
@@ -26,10 +26,6 @@ pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[3.31].2
 //     // })
 // }
 
-// macro ipc($name:literal) {
-//     LazyLock::new(|| parse(include_bytes!($name)).expect(concat!("ipc asset ", $name)))
-// }
-
 // fn parse(bytes: &[u8]) -> Result<HashedMetaDataFrame> {
 //     let mut reader = IpcReader::new(Cursor::new(bytes));
 //     let meta = reader
@@ -46,7 +42,3 @@ pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ron!("Agilent[3.31].2
 //         data: HashedDataFrame::new(data)?,
 //     })
 // }
-
-// pub(crate) static AGILENT: LazyLock<HashedMetaDataFrame> = ipc!("Agilent.ipc");
-
-// pub(crate) static DEAD_TIME: LazyLock<HashedMetaDataFrame> = ipc!("DeadTime.ipc");

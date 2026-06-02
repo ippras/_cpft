@@ -1,4 +1,4 @@
-use crate::{app::states::source::View, localization::Text as _};
+use crate::app::states::source::settings::View;
 use egui::{Response, RichText, Ui, UiKind, Widget};
 use egui_l10n::prelude::*;
 use egui_phosphor::regular::{CHART_BAR, TABLE};

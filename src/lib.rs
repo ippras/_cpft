@@ -1,8 +1,5 @@
 #![feature(decl_macro)]
-#![feature(result_option_map_or_default)]
-// #![feature(debug_closure_helpers)]
-// #![feature(result_option_map_or_default)]
-// #![feature(tuple_trait)]
+#![feature(maybe_uninit_array_assume_init)]
 
 pub use app::App;
 
@@ -38,27 +35,13 @@ mod test {
     fn rt() -> anyhow::Result<()> {
         println!("AGILENT.meta: {:?}", AGILENT.meta);
         println!("AGILENT.data: {:?}", AGILENT.data);
-        // let onset_temperature = 70.0;
-        // let temperature_step = 10.0;
-        // let fa = C20C5C8C11C14.clone(); // 20:4Δ5c,8c,11c,14c
-        // let condition = col("Mode")
-        //     .struct_()
-        //     .field_by_name("OnsetTemperature")
-        //     .eq(lit(onset_temperature))
-        //     .and(
-        //         col("Mode")
-        //             .struct_()
-        //             .field_by_name("TemperatureStep")
-        //             .eq(lit(temperature_step)),
-        //     )
-        //     .and(col("FattyAcid").fatty_acid().equal(fa));
-        let condition = col(INDEX).eq(2468);
+        let condition = col(INDEX).eq(1374);
         let value1 = Option::<f64>::None;
         let value2 = Option::<f64>::None;
         let value3 = Option::<f64>::None;
-        let value1 = Some(13.163);
-        let value2 = Some(13.146);
-        let value3 = Some(13.138);
+        let value1 = Some(12.587);
+        let value2 = Some(12.569);
+        let value3 = Some(12.568);
         let mut lazy_frame = AGILENT.data.data_frame.clone().lazy();
         println!(
             "before: {:?}",

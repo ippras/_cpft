@@ -1,7 +1,4 @@
-pub(crate) use self::{
-    settings::{Axis, Filter, PlotSettings, Regression, Settings, Sort, View},
-    windows::Windows,
-};
+pub(crate) use self::{settings::Settings, windows::Windows};
 
 use egui::{Context, Id};
 use serde::{Deserialize, Serialize};
