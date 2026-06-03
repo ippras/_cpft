@@ -34,7 +34,10 @@ mod web {
     use egui_ext::download::{NONE, download};
 
     #[instrument(skip(frame), err)]
-    pub fn save(mut frame: MetaDataFrame<impl Borrow<Metadata>, impl BorrowMut<HashedDataFrame>>, name: &str) -> Result<()> {
+    pub fn save(
+        mut frame: MetaDataFrame<impl Borrow<Metadata>, impl BorrowMut<HashedDataFrame>>,
+        name: &str,
+    ) -> Result<()> {
         // let mut bytes = Vec::new();
         // let mut writer = CsvWriter::new(&mut bytes);
         // writer.finish(data_frame.borrow_mut())?;

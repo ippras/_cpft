@@ -11,9 +11,8 @@ use anyhow::Result;
 use data::Data;
 use eframe::{APP_KEY, CreationContext, get_value, set_value};
 use egui::{
-    Align, Align2, CentralPanel, Color32, Context, FontDefinitions, Frame, Id, LayerId, Layout,
-    MenuBar, Order, Panel, RichText, ScrollArea, Sides, TextStyle, Ui, Widget, Window,
-    warn_if_debug_build,
+    Align, Align2, CentralPanel, Color32, FontDefinitions, Frame, Id, LayerId, Layout, MenuBar,
+    Order, Panel, RichText, ScrollArea, Sides, TextStyle, Ui, Widget, Window, warn_if_debug_build,
 };
 use egui_ext::{HoveredFileExt, LightDarkButton};
 use egui_l10n::ContextExt as _;
@@ -21,15 +20,13 @@ use egui_phosphor::{
     Variant, add_to_fonts,
     regular::{DATABASE, SLIDERS_HORIZONTAL},
 };
-use egui_tiles::{ContainerKind, Tile, Tree};
+use egui_tiles::{Tile, Tree};
 use egui_tiles_ext::{TreeExt as _, VERTICAL};
 use metadata::egui::MetadataWidget;
 use serde::{Deserialize, Serialize};
 use std::{fmt::Write, str, time::Duration};
 use tracing::{error, info};
 
-/// IEEE 754-2008
-const MAX_PRECISION: usize = 16;
 const _NOTIFICATIONS_DURATION: Duration = Duration::from_secs(15);
 const ICON_SIZE: f32 = 32.0;
 const ID_SOURCE: &str = "CPFT";

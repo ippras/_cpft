@@ -21,8 +21,8 @@ use crate::{
         widgets::buttons::ViewButton,
     },
     r#const::{
-        ABSOLUTE, CORRELATION, DEAD_TIME, MEAN, MODE, ONSET_TEMPERATURE, REGRESSION,
-        RETENTION_TIME, TEMPERATURE_STEP,
+        CORRELATION, DEAD_TIME, MODE, ONSET_TEMPERATURE, REGRESSION, RETENTION_TIME,
+        TEMPERATURE_STEP,
     },
     export,
     utils::hash::{HashedDataFrame, HashedMetaDataFrame},
@@ -36,7 +36,6 @@ use egui::{
 use egui_l10n::prelude::*;
 use egui_phosphor::regular::{FLOPPY_DISK, RULER, SIGMA, SLIDERS_HORIZONTAL, TABLE, TAG, X};
 use egui_tiles::{TileId, UiResponse};
-use linfa::Error::Parameters;
 use lipid::prelude::*;
 use metadata::{egui::MetadataWidget, polars::MetaDataFrame};
 use polars::prelude::*;

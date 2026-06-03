@@ -1,4 +1,3 @@
-use anyhow::Result;
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Display, Formatter};
@@ -9,11 +8,11 @@ pub(crate) struct Data {
 }
 
 impl Data {
-    pub(crate) fn stack(&mut self, data_frame: &DataFrame) -> Result<()> {
-        // If many vstack operations are done, it is recommended to call DataFrame::align_chunks_par
-        self.data_frame.vstack_mut(data_frame)?.align_chunks_par();
-        Ok(())
-    }
+    // pub(crate) fn stack(&mut self, data_frame: &DataFrame) -> Result<()> {
+    //     // If many vstack operations are done, it is recommended to call DataFrame::align_chunks_par
+    //     self.data_frame.vstack_mut(data_frame)?.align_chunks_par();
+    //     Ok(())
+    // }
 
     // pub(crate) fn join(&mut self, data_frame: DataFrame) -> Result<()> {
     //     self.data_frame = self

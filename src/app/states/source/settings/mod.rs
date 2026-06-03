@@ -1,16 +1,12 @@
 pub(crate) use self::{export::Export, plot::Plot, sort::Sort};
 
 use crate::{
-    app::{
-        panes::source::view::table::NUM_COLUMNS, states::source::ID_SOURCE,
-        widgets::fatty_acid::FattyAcidWidget,
-    },
+    app::{panes::source::view::table::NUM_COLUMNS, widgets::fatty_acid::FattyAcidWidget},
     r#const::{EM_DASH, EXPORT, REGRESSION},
-    localization::Text,
     utils::VecExt as _,
 };
 use egui::{
-    ComboBox, Popup, PopupCloseBehavior, RichText, Slider, TextWrapMode, Ui, Vec2b, Widget,
+    ComboBox, Popup, PopupCloseBehavior, RichText, Slider, TextWrapMode, Ui, Widget,
     emath::Float as _,
 };
 use egui_dnd::dnd;

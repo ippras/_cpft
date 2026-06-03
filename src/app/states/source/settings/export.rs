@@ -9,7 +9,7 @@ use const_format::formatcp;
 use egui::{Popup, PopupCloseBehavior, RichText, Ui};
 use egui_dnd::dnd;
 use egui_l10n::prelude::*;
-use egui_phosphor::regular::{BOOKMARK, DOTS_SIX_VERTICAL};
+use egui_phosphor::regular::DOTS_SIX_VERTICAL;
 use serde::{Deserialize, Serialize};
 use std::slice::Iter;
 

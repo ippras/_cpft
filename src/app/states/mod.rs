@@ -1,5 +1,5 @@
 use self::{settings::Settings, windows::Windows};
-use egui::{Context, Id, Ui};
+use egui::{Id, Ui};
 use serde::{Deserialize, Serialize};
 
 /// State

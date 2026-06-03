@@ -1,14 +1,9 @@
 use crate::{
     app::{
-        computers::source::sum::regression::Metrics,
         panes::MARGIN,
         states::source::{ID_SOURCE, Settings},
     },
-    r#const::{
-        EQUIVALENT_CHAIN_LENGTH, MODE, ONSET_TEMPERATURE, REGRESSION, RETENTION_TIME,
-        TEMPERATURE_STEP,
-    },
-    utils::egui::ToWidgetText,
+    r#const::{EQUIVALENT_CHAIN_LENGTH, MODE, ONSET_TEMPERATURE, REGRESSION, TEMPERATURE_STEP},
 };
 use const_format::formatcp;
 use egui::{Frame, Id, Margin, Response, TextStyle, TextWrapMode, Ui, Widget};

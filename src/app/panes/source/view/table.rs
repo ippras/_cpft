@@ -13,9 +13,9 @@ use crate::{
     utils::polars::SeriesExt as _,
 };
 use const_format::formatcp;
-use egui::{Frame, Grid, Id, Label, Margin, RichText, TextStyle, TextWrapMode, Ui, Widget};
+use egui::{Frame, Grid, Id, Margin, TextStyle, TextWrapMode, Ui, Widget};
 use egui_ext::prelude::*;
-use egui_l10n::prelude::*;
+use egui_l10n::ContextExt as _;
 use egui_phosphor::regular::{HASH, PAUSE, SKIP_BACK, SKIP_FORWARD};
 use egui_table::{
     AutoSizeMode, CellInfo, Column, HeaderCellInfo, HeaderRow, Table, TableDelegate, TableState,

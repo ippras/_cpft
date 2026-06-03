@@ -8,8 +8,7 @@ use crate::{
 };
 use const_format::formatcp;
 use egui::{ComboBox, RichText, Slider, Ui, Widget as _};
-use egui_l10n::prelude::ContextExt;
-use egui_phosphor::regular::BOOKMARK;
+use egui_l10n::ContextExt as _;
 use serde::{Deserialize, Serialize};
 use widgets::settings::{MeanAndStandardDeviation, Order, Precision};
 
