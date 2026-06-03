@@ -3072,7 +3072,7 @@ dependencies = [
 [[package]]
 name = "metadata"
 version = "0.11.0"
-source = "git+https://github.com/ippras/metadata?branch=0.52.0#2585f2d20b8724e970cd7fcd19793105d46a910d"
+source = "git+https://github.com/ippras/metadata?branch=0.52#576575eb8fc78c853266e2b0aa51c83d708ec1a6"
 dependencies = [
  "egui",
  "egui-phosphor",

@@ -83,7 +83,7 @@ fatty_acid_names = { git = "https://github.com/ippras/fatty_acid_names" }
 lipid = { git = "https://github.com/ippras/lipid", branch = "0.52", features = [
     "serde",
 ] }
-metadata = { git = "https://github.com/ippras/metadata", branch = "0.52.0", features = [
+metadata = { git = "https://github.com/ippras/metadata", branch = "0.52", features = [
     "egui",
     "polars",
 ] }
