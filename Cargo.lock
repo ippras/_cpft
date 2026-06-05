@@ -3105,11 +3105,13 @@ dependencies = [
 [[package]]
 name = "metadata"
 version = "0.11.0"
-source = "git+https://github.com/ippras/metadata?branch=0.52#576575eb8fc78c853266e2b0aa51c83d708ec1a6"
+source = "git+https://github.com/ippras/metadata?branch=0.52#1c027e8efed1624fa1d6cdfba1976acf80eeb1e3"
 dependencies = [
+ "const_format",
  "egui",
  "egui-phosphor",
  "egui_extras",
+ "egui_l10n",
  "itertools",
  "jiff",
  "polars",
@@ -3117,6 +3119,7 @@ dependencies = [
  "serde",
  "thiserror 2.0.18",
  "tracing",
+ "typed-builder",
 ]
 
 [[package]]
@@ -5733,7 +5736,7 @@ dependencies = [
  "approx",
  "num-complex",
  "num-traits",
- "wide 1.4.0",
+ "wide 1.5.0",
 ]
 
 [[package]]
@@ -7182,9 +7185,9 @@ dependencies = [
 
 [[package]]
 name = "wide"
-version = "1.4.0"
+version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a7714cd0430a663154667c74da5d09325c2387695bee18b3f7f72825aa3693a"
+checksum = "dfdfe6a32973f2d1b268b8895845a8a96cac2f0191e72c27cc929036060dbf89"
 dependencies = [
  "bytemuck",
  "safe_arch 1.0.0",

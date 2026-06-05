@@ -65,7 +65,7 @@ impl Pane {
     }
 
     pub(crate) fn title(&self) -> String {
-        self.frame.meta.format(" ").to_string()
+        self.frame.meta.format().date(Some(" ")).build().to_string()
     }
 
     fn id(&self) -> impl Display {
@@ -273,7 +273,7 @@ impl Pane {
     #[instrument(skip(self, ui, state), err)]
     fn save_csv(&self, ui: &mut Ui, state: &State) -> Result<()> {
         let meta = &self.frame.meta;
-        let name = format!("{}.cpft.csv", meta.format("."));
+        let name = format!("{}.cpft.csv", meta.format().date(Some(".")).build());
         let data = ui.memory_mut(|memory| {
             memory
                 .caches
@@ -289,7 +289,7 @@ impl Pane {
     #[instrument(skip(self, ui, state), err)]
     fn save_md(&self, ui: &mut Ui, state: &State) -> Result<()> {
         let meta = &self.frame.meta;
-        let name = format!("{}.cpft.md", meta.format("."));
+        let name = format!("{}.cpft.md", meta.format().date(Some(".")).build());
         let data = ui.memory_mut(|memory| {
             memory
                 .caches
@@ -320,7 +320,7 @@ impl Pane {
     #[instrument(skip_all, err)]
     fn save_ron(&self, _ui: &mut Ui, _state: &State) -> Result<()> {
         let meta = &self.frame.meta;
-        let name = format!("{}.cpft.ron", meta.format("."));
+        let name = format!("{}.cpft.ron", meta.format().date(Some(".")).build());
         let data = self
             .frame
             .data
@@ -342,7 +342,7 @@ impl Pane {
     #[instrument(skip(self, ui, state), err)]
     fn save_xlsx(&self, ui: &mut Ui, state: &State) -> Result<()> {
         let meta = &self.frame.meta;
-        let name = format!("{}.cpft.xlsx", meta.format("."));
+        let name = format!("{}.cpft.xlsx", meta.format().date(Some(".")).build());
         let data = ui.memory_mut(|memory| {
             memory
                 .caches

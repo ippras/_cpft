@@ -58,7 +58,7 @@ impl Pane {
     }
 
     pub(crate) fn title(&self) -> String {
-        self.frame.meta.format(" ").to_string()
+        self.frame.meta.format().date(Some(" ")).build().to_string()
     }
 
     fn id(&self) -> impl Display {
@@ -173,7 +173,7 @@ impl Pane {
     /// Save button
     fn save_button(&self, ui: &mut Ui, state: &mut State) {
         ui.menu_button(RichText::new(FLOPPY_DISK).heading(), |ui| {
-            let name = self.frame.meta.format(".");
+            let name = self.frame.meta.format().date(Some(".")).build();
             if ui
                 .button((FLOPPY_DISK, "RON"))
                 .on_hover_ui(|ui| {
@@ -205,7 +205,7 @@ impl Pane {
     #[instrument(skip(self, ui, state), err)]
     fn save_md(&self, ui: &mut Ui, state: &State, name: impl Debug + Display) -> Result<()> {
         let meta = &self.frame.meta;
-        let name = format!("{}.cpft.md", meta.format("."));
+        let name = format!("{}.cpft.md", meta.format().date(Some(".")).build());
         let data = ui.memory_mut(|memory| {
             memory
                 .caches

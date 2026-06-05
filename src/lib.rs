@@ -25,7 +25,7 @@ mod test {
         utils::hash::{HashedDataFrame, HashedMetaDataFrame},
     };
     use lipid::{expr::ExprExt, prelude::*, r#trait::Atomic};
-    use metadata::{Metadata, VERSION, polars::MetaDataFrame};
+    use metadata::{Metadata, r#const::VERSION, polars::MetaDataFrame};
     use polars::prelude::*;
     use semver::Version;
 
@@ -77,7 +77,7 @@ mod test {
         let mut version = meta[VERSION].parse::<Version>()?;
         version.patch += 1;
         meta.insert(VERSION.to_owned(), version.to_string());
-        let name = format!("{}.ron", meta.format("."));
+        let name = format!("{}.ron", meta.format().date(Some(".")).build());
         let frame = MetaDataFrame::new(meta, HashedDataFrame::new(data)?);
         export::ron::save(&frame, &name)?;
         Ok(())
@@ -121,7 +121,7 @@ mod test {
         let mut version = meta[VERSION].parse::<Version>()?;
         version.patch += 1;
         meta.insert(VERSION.to_owned(), version.to_string());
-        let name = format!("{}.ron", meta.format("."));
+        let name = format!("{}.ron", meta.format().date(Some(".")).build());
         let frame = MetaDataFrame::new(meta, HashedDataFrame::new(data)?);
         export::ron::save(&frame, &name)?;
         Ok(())

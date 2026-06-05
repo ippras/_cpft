@@ -264,7 +264,11 @@ impl App {
     fn database_button(&mut self, ui: &mut Ui) {
         ui.menu_button(RichText::new(DATABASE).size(ICON_SIZE), |ui| {
             let mut response = ui.button(
-                RichText::new(format!("{DATABASE} {}", AGILENT.meta.format(" "))).heading(),
+                RichText::new(format!(
+                    "{DATABASE} {}",
+                    AGILENT.meta.format().date(Some(" ")).build()
+                ))
+                .heading(),
             );
             response = response.on_hover_ui(|ui| {
                 MetadataWidget::new(&AGILENT.meta).show(ui);

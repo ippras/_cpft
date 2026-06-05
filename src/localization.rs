@@ -19,6 +19,7 @@ impl ContextExt for Context {
             locales::EN,
             Localization::new(locales::EN)
                 .with_sources(l10n::EN)
+                .with_sources(metadata::l10n::EN)
                 .with_sources(fatty_acid_names::l10n::EN)
                 .with_sources(widgets::l10n::EN),
         );
@@ -27,6 +28,7 @@ impl ContextExt for Context {
             Localization::new(locales::RU)
                 .with_sources(l10n::RU)
                 .with_sources(fatty_acid_names::l10n::RU)
+                .with_sources(metadata::l10n::RU)
                 .with_sources(widgets::l10n::RU),
         );
         self.set_language_identifier(locales::EN)
