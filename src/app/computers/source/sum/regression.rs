@@ -166,6 +166,10 @@ impl Metrics<MaybeUninit<f64>> {
     }
 }
 
+fn polyfit<const N: usize>(mut lazy_frame: LazyFrame) -> PolarsResult<LazyFrame> {
+    Ok(lazy_frame)
+}
+
 fn regression<const N: usize>(
     mut lazy_frame: LazyFrame,
 ) -> PolarsResult<(LazyFrame, Parameters, Metrics<f64>)> {

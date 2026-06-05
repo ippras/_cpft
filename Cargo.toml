@@ -28,13 +28,6 @@ linfa-linear = "0.8.1"
 log = "0.4.30"
 nalgebra = "0.35.0"
 ndarray = "0.17.2"
-ron = "0.12.1"
-serde = { version = "1.0.228", features = ["derive"] }
-temp-env = "0.3.6"
-tracing = "0.1.44"
-typed-builder = "0.23.2"
-uom = { version = "0.38.0", features = ["serde"] }
-
 polars = { version = "=0.52.0", default-features = false, features = [
     "abs",
     "array_arithmetic",
@@ -69,7 +62,14 @@ polars = { version = "=0.52.0", default-features = false, features = [
 ] }
 polars-utils = { version = "=0.52.0", features = ["nightly"] }
 polars_excel_writer = "=0.24.0"
+ron = "0.12.1"
+serde = { version = "1.0.228", features = ["derive"] }
+temp-env = "0.3.6"
+tracing = "0.1.44"
+typed-builder = "0.23.2"
+uom = { version = "0.38.0", features = ["serde"] }
 
+polyfit = "0.11.0"
 semver = "*"
 
 egui_ext = { git = "https://github.com/kgv/egui_ext", branch = "0.6", features = [
