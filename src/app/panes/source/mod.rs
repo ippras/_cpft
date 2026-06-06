@@ -411,7 +411,7 @@ impl Pane {
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_metadata)
             .show(ui.ctx(), |ui| {
-                MetadataWidget::new(&self.frame.meta).show(ui);
+                MetadataWidget::new(&mut self.frame.meta).with_writable(true).show(ui);
             });
     }
 

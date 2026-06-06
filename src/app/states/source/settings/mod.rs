@@ -5,14 +5,17 @@ use crate::{
     r#const::{EM_DASH, EXPORT, REGRESSION},
     utils::VecExt as _,
 };
+use const_format::formatcp;
 use egui::{
-    ComboBox, Popup, PopupCloseBehavior, RichText, Slider, TextWrapMode, Ui, Widget,
-    emath::Float as _,
+    ComboBox, Popup, PopupCloseBehavior, Response, RichText, Slider, TextWrapMode, Ui, Widget,
+    emath::{Float as _, OrderedFloat},
 };
 use egui_dnd::dnd;
 use egui_l10n::prelude::*;
 use egui_phosphor::regular::{BOOKMARK, DOTS_SIX_VERTICAL, FUNNEL, FUNNEL_X, MINUS, PLUS};
+use egui_probe::{EguiProbe, Probe, Style, angle};
 use lipid::prelude::FattyAcid;
+use polars_ext::option::DisplayOption;
 use polars_utils::format_list_truncated;
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
@@ -23,9 +26,78 @@ const MARGARIC: FattyAcid = FattyAcid {
     unsaturated: Vec::new(),
 };
 
+fn custom_probe(_: &mut Temp, ui: &mut egui::Ui, _: &egui_probe::Style) -> egui::Response {
+    ui.label("This is custom probe")
+}
+
+#[derive(Clone, Debug, Default, Deserialize, EguiProbe, PartialEq, Serialize)]
+#[egui_probe(name = "")]
+struct Temp {
+    #[egui_probe(name = _ui.localize(&___0.map(|standard_deviation| standard_deviation.text()).display().to_string()))]
+    standard_deviation: Option<StandardDeviationKind>,
+}
+
+impl Temp {
+    fn new() -> Self {
+        Self {
+            standard_deviation: Some(StandardDeviationKind::Absolute),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, EguiProbe, PartialEq, Serialize)]
+#[egui_probe(tags combobox)]
+enum StandardDeviationKind {
+    #[default]
+    Absolute,
+    Relative,
+}
+
+impl StandardDeviationKind {
+    const fn text(&self) -> &'static str {
+        match self {
+            Self::Absolute => "{PREFIX}_{ABSOLUTE}",
+            Self::Relative => "{PREFIX}_{RELATIVE_STANDARD_DEVIATION}.short",
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, EguiProbe, PartialEq, Serialize)]
+struct SimpleValue {
+    boolean: bool,
+    #[egui_probe(range = 22..=55)]
+    integer: Option<i32>,
+    #[egui_probe(name = _ui.localize("BackwardSelectivityFactor"))]
+    float: f32,
+
+    #[egui_probe(name = "Mean")]
+    temp: Option<Temp>,
+}
+
+impl SimpleValue {
+    fn new() -> Self {
+        Self {
+            boolean: false,
+            integer: None,
+            float: 0.0,
+            temp: None,
+        }
+    }
+}
+
+impl Hash for SimpleValue {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.boolean.hash(state);
+        self.integer.hash(state);
+        OrderedFloat(self.float).hash(state);
+    }
+}
+
 /// Settings
 #[derive(Clone, Debug, Deserialize, Hash, PartialEq, Serialize)]
 pub(crate) struct Settings {
+    simple: SimpleValue,
+
     pub(crate) precision: Precision,
 
     pub(crate) mean_and_standard_deviation: MeanAndStandardDeviation,
@@ -54,6 +126,8 @@ pub(crate) struct Settings {
 impl Settings {
     pub(crate) fn new() -> Self {
         Self {
+            simple: SimpleValue::new(),
+
             precision: Precision::new(),
             mean_and_standard_deviation: MeanAndStandardDeviation::new(),
 
@@ -83,6 +157,8 @@ impl Settings {
 impl Settings {
     pub(crate) fn show(&mut self, ui: &mut Ui) {
         ui.visuals_mut().collapsing_header_frame = true;
+
+        Probe::new(&mut self.simple).show(ui);
 
         ui.group(|ui| {
             ui.set_width(ui.available_width());

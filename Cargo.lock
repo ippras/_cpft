@@ -942,6 +942,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d52eff69cd5e647efe296129160853a42795992097e8af39800e1060caeea9b"
 
 [[package]]
+name = "convert_case"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "baaaa0ecca5b51987b9423ccdc971514dd8b0bb7b4060b983d3664dad3f1f89f"
+dependencies = [
+ "unicode-segmentation",
+]
+
+[[package]]
 name = "core-foundation"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1010,6 +1019,7 @@ dependencies = [
  "eframe",
  "egui",
  "egui-phosphor",
+ "egui-probe 0.11.0",
  "egui_dnd",
  "egui_double_slider",
  "egui_ext",
@@ -1323,6 +1333,34 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb4e4b18e368ff336c8dd2102992e2631b118f29a2164b0d2be9d8889dcd367e"
 dependencies = [
  "egui",
+]
+
+[[package]]
+name = "egui-probe"
+version = "0.11.0"
+dependencies = [
+ "egui",
+ "egui-probe-proc",
+]
+
+[[package]]
+name = "egui-probe"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4cc89e4fd990df3e50ff7a1eb3872593cbc35e8228c840ededd478b2b299853"
+dependencies = [
+ "egui",
+]
+
+[[package]]
+name = "egui-probe-proc"
+version = "0.11.0"
+dependencies = [
+ "convert_case",
+ "proc-easy",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -3105,11 +3143,11 @@ dependencies = [
 [[package]]
 name = "metadata"
 version = "0.11.0"
-source = "git+https://github.com/ippras/metadata?branch=0.52#1c027e8efed1624fa1d6cdfba1976acf80eeb1e3"
 dependencies = [
  "const_format",
  "egui",
  "egui-phosphor",
+ "egui-probe 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "egui_extras",
  "egui_l10n",
  "itertools",
@@ -4725,6 +4763,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "479ca8adacdd7ce8f1fb39ce9ecccbfe93a3f1344b3d0d97f20bc0196208f62b"
 dependencies = [
  "proc-macro2",
+ "syn",
+]
+
+[[package]]
+name = "proc-easy"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "446f7efaa53a9589eaca5040dd749d9721e0ee60cf66f6c370e2716c031dcf7b"
+dependencies = [
+ "proc-macro2",
+ "quote",
  "syn",
 ]
 

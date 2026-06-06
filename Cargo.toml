@@ -69,6 +69,8 @@ tracing = "0.1.44"
 typed-builder = "0.23.2"
 uom = { version = "0.38.0", features = ["serde"] }
 
+# egui-probe = { git = "https://github.com/kgv/egui-probe", features = [
+egui-probe = { path = "D:/git/kgv/egui-probe", features = ["derive"] }
 polyfit = "0.11.0"
 semver = "*"
 
@@ -83,15 +85,13 @@ fatty_acid_names = { git = "https://github.com/ippras/fatty_acid_names" }
 lipid = { git = "https://github.com/ippras/lipid", branch = "0.52", features = [
     "serde",
 ] }
-metadata = { git = "https://github.com/ippras/metadata", branch = "0.52", features = [
-    "egui",
-    "polars",
-] }
+# metadata = { git = "https://github.com/ippras/metadata", branch = "0.52", features = [
+metadata = { path = "D:/git/ippras/metadata", features = ["egui", "polars"] }
 polars_ext = { git = "https://github.com/kgv/polars_ext", branch = "0.52", features = [
     "array",
     "temporal_conversions",
 ] }
-# widgets = { path = "D:/g/git/ippras/widgets", features = [
+# widgets = { path = "D:/git/ippras/widgets", features = [
 widgets = { git = "https://github.com/ippras/widgets", branch = "0.52", features = [
     "fatty_acids",
     "polars",
