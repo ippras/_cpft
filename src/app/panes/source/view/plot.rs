@@ -72,7 +72,7 @@ impl PlotView<'_> {
                             .format(","),
                     );
                 }
-                let precision = self.settings.precision.precision;
+                let precision = self.settings.precision_and_significant.precision;
                 _ = writeln!(&mut label, "{retention_time} = {x:.precision$}");
                 _ = write!(&mut label, "{equivalent_chain_length} = {y:.precision$}");
                 label

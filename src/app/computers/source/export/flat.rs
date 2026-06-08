@@ -82,8 +82,8 @@ impl<'a> Key<'a> {
             frame,
             ddof: settings.mean_and_standard_deviation.ddof,
             export: &settings.export,
-            precision: settings.precision.precision,
-            significant: settings.precision.significant,
+            precision: settings.precision_and_significant.precision,
+            significant: settings.precision_and_significant.significant,
         }
     }
 }

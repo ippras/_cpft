@@ -102,7 +102,7 @@ impl<'a> Key<'a> {
     pub(crate) fn new(frame: &'a HashedDataFrame, settings: &'a Settings) -> Self {
         Self {
             frame,
-            precision: settings.precision.precision,
+            precision: settings.precision_and_significant.precision,
             logarithmic: settings.logarithmic,
         }
     }

@@ -10,7 +10,7 @@ use const_format::formatcp;
 use egui::{ComboBox, RichText, Slider, Ui, Widget as _};
 use egui_l10n::ContextExt as _;
 use serde::{Deserialize, Serialize};
-use widgets::settings::{MeanAndStandardDeviation, Order, Precision};
+use widgets::settings::{MeanAndStandardDeviation, Order, PrecisionAndSignificant};
 
 const AGGREGATIONS: [Aggregation; 4] = [
     Aggregation::Maximum,
@@ -24,7 +24,7 @@ const DISTANCES: [Distance; 2] = [Distance::EquivalentChainLength, Distance::Sel
 /// Settings
 #[derive(Clone, Debug, Deserialize, Hash, PartialEq, Serialize)]
 pub(crate) struct Settings {
-    pub(crate) precision: Precision,
+    pub(crate) precision_and_significant: PrecisionAndSignificant,
     pub(crate) mean_and_standard_deviation: MeanAndStandardDeviation,
 
     pub(crate) resizable: bool,
@@ -46,7 +46,7 @@ pub(crate) struct Settings {
 impl Settings {
     pub(crate) fn new() -> Self {
         Self {
-            precision: Precision::new(),
+            precision_and_significant: PrecisionAndSignificant::new(),
             mean_and_standard_deviation: MeanAndStandardDeviation::new(),
 
             resizable: false,
@@ -71,7 +71,7 @@ impl Settings {
 
         ui.group(|ui| {
             ui.set_width(ui.available_width());
-            self.precision.show(ui);
+            self.precision_and_significant.show(ui);
         });
 
         ui.group(|ui| {

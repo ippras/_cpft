@@ -71,7 +71,7 @@ impl<'a> Key<'a> {
             ddof: settings.mean_and_standard_deviation.ddof,
             filter: &settings.filter,
             order: settings.order.kind,
-            precision: settings.precision.precision,
+            precision: settings.precision_and_significant.precision,
             priority: settings.priority,
             significant: false,
             sort: settings.sort,

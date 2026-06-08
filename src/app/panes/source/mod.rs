@@ -411,7 +411,9 @@ impl Pane {
             .default_pos(ui.next_widget_position())
             .open(&mut state.windows.open_metadata)
             .show(ui.ctx(), |ui| {
-                MetadataWidget::new(&mut self.frame.meta).with_writable(true).show(ui);
+                MetadataWidget::new(&mut self.frame.meta)
+                    .with_writable(true)
+                    .show(ui);
             });
     }
 
@@ -471,21 +473,23 @@ impl Pane {
                         ui.label("R^2 (Коэффициент детерминации)");
                         ui.label(format!(
                             "{:.*?}",
-                            state.settings.precision.precision, metrics.r2
+                            state.settings.precision_and_significant.precision, metrics.r2
                         ));
                         ui.end_row();
 
                         ui.label("MAE (Абсолютная ошибка)");
                         ui.label(format!(
                             "{:.*?}",
-                            state.settings.precision.precision, metrics.mean_absolute_error
+                            state.settings.precision_and_significant.precision,
+                            metrics.mean_absolute_error
                         ));
                         ui.end_row();
 
                         ui.label("MSE (Квадратичная ошибка)");
                         ui.label(format!(
                             "{:.*?}",
-                            state.settings.precision.precision, metrics.mean_squared_error
+                            state.settings.precision_and_significant.precision,
+                            metrics.mean_squared_error
                         ));
                         ui.end_row();
                     });
@@ -496,7 +500,7 @@ impl Pane {
                                 ui.label(name);
                                 ui.label(format!(
                                     "{:.*?}",
-                                    state.settings.precision.precision, parameter
+                                    state.settings.precision_and_significant.precision, parameter
                                 ));
                             });
                         }

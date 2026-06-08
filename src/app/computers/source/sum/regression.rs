@@ -123,9 +123,9 @@ impl<'a> Key<'a> {
         Self {
             frame,
             ddof: settings.mean_and_standard_deviation.ddof,
-            precision: settings.precision.precision,
+            precision: settings.precision_and_significant.precision,
             regression: &settings.regression,
-            significant: settings.precision.significant,
+            significant: settings.precision_and_significant.significant,
         }
     }
 }
