@@ -1,71 +1,8 @@
-use crate::{
-    app::{
-        computers::{matches_schema, source::process::OUTPUT_SCHEMA as INPUT_SCHEMA},
-        states::source::{Settings, settings::Regression},
-    },
-    r#const::*,
-    utils::hash::HashedDataFrame,
-};
-use const_format::formatcp;
-use egui::util::cache::{ComputerMut, FrameCache};
-use linfa::prelude::*;
-use linfa_linear::LinearRegression;
-use lipid::prelude::*;
-use polars::prelude::*;
-use polars_ext::{expr::ExprExt, prelude::*};
-use polyfit::{
-    LogarithmicFit, basis_select, plot, score::ScoringMethod::Aic, statistics::DegreeBound,
-};
-use std::{
-    collections::{BTreeMap, HashMap},
-    iter::zip,
-    mem::MaybeUninit,
-    sync::LazyLock,
-};
-use tracing::debug;
-
-pub(crate) const X1: &str = "x[1]";
-pub(crate) const X2: &str = "x[2]";
-pub(crate) const Y: &str = "y";
-pub(crate) const Z: &str = "z";
-
-const I: usize = 3;
-
-const FALSE_REGRESSION: LazyLock<Scalar> =
-    LazyLock::new(|| Scalar::new_array(Series::new(PlSmallStr::EMPTY, &[false; I]), I));
-const TRUE_REGRESSION: LazyLock<Scalar> =
-    LazyLock::new(|| Scalar::new_array(Series::new(PlSmallStr::EMPTY, &[true; I]), I));
-
-/// Regression computed
-pub(crate) type Computed = FrameCache<Value, Computer>;
-
-/// Regression computer
-#[derive(Default)]
-pub(crate) struct Computer;
-
 impl Computer {
     fn try_compute(&mut self, key: Key) -> PolarsResult<Value> {
         matches_schema(&key.frame.data_frame, &INPUT_SCHEMA)?;
         let mut lazy_frame = key.frame.data_frame.clone().lazy();
         lazy_frame = lazy_frame.select([all().exclude_cols(["^_.*$"]).as_expr()]);
-        println!("regression 0: {}", lazy_frame.clone().collect().unwrap());
-
-        // // Filter
-        // let filtered = &key
-        //     .frame
-        //     .data_frame
-        //     .filter(key.frame.data_frame[FILTER].bool()?)?[FATTY_ACID];
-        // let n_unique = filtered.n_unique()?;
-        // if n_unique != 1 {
-        //     return Ok((
-        //         HashedDataFrame::EMPTY,
-        //         Default::default(),
-        //         Default::default(),
-        //     ));
-        //     // return Err(polars_err!(ComputeError: "n_unique: {n_unique}"));
-        // }
-        // lazy_frame = lazy_frame.filter(col(FILTER));
-        // println!("regression 1: {}", lazy_frame.clone().collect().unwrap());
 
         // Rename
         lazy_frame = lazy_frame.select([
@@ -83,18 +20,7 @@ impl Computer {
                 .field_by_name(EQUIVALENT_CHAIN_LENGTH)
                 .alias(Y),
         ]);
-        println!("regression 1: {}", lazy_frame.clone().collect().unwrap());
-        // lazy_frame = lazy_frame.with_column(eval_arr(col(Y), |element| {
-        //     Ok(as_struct(vec![element, col(X2)]))
-        // })?);
-        // lazy_frame = lazy_frame.with_column(as_struct(vec![col(X2), col(Y).explode()]).implode());
-        println!("regression 2: {}", lazy_frame.clone().collect().unwrap());
-        lazy_frame = lazy_frame
-            .group_by_stable([FATTY_ACID, X1])
-            .agg([col(X2), col(Y)]);
-        println!("regression 3: {}", lazy_frame.clone().collect().unwrap());
-        let mut lazy_frame = polyfit(lazy_frame)?;
-        println!("regression 4: {}", lazy_frame.clone().collect().unwrap());
+
         // Regression
         let (mut lazy_frame, parameters, metrics) = regression::<3>(lazy_frame)?;
         // Format
@@ -183,99 +109,7 @@ impl Metrics<MaybeUninit<f64>> {
     }
 }
 
-fn polyfit(mut lazy_frame: LazyFrame) -> PolarsResult<LazyFrame> {
-    let data_frame = lazy_frame.clone().collect()?;
-    let fatty_acid = data_frame[FATTY_ACID].fatty_acid().id()?;
-    let x1 = data_frame[X1].f64()?;
-    let x2 = data_frame[X2].list()?;
-    let y = data_frame[Y].list()?;
-    let mut coeffs_builder = ListPrimitiveChunkedBuilder::<Float64Type>::new(
-        PlSmallStr::EMPTY,
-        data_frame.height(),
-        data_frame.height() * 5,
-        DataType::Float64,
-    );
-    for row in 0..data_frame.height() {
-        let Some(fatty_acid) = fatty_acid.get(row) else {
-            coeffs_builder.append_null();
-            continue;
-        };
-        let Some(x1) = x1.get(row) else {
-            coeffs_builder.append_null();
-            continue;
-        };
-        let Some(x2) = x2.get_as_series(row) else {
-            coeffs_builder.append_null();
-            continue;
-        };
-        let Some(y) = y.get_as_series(row) else {
-            coeffs_builder.append_null();
-            continue;
-        };
-        let x2 = x2.f64()?;
-        let y = y.array()?;
-        let mut rows: Vec<(Option<f64>, [Option<f64>; 3])> = Vec::with_capacity(x2.len());
-        for (x2, y) in x2.into_iter().zip(y.into_iter()) {
-            let mut y_arr = [None, None, None];
-            if let Some(y_inner_series) = y {
-                // Извлекаем 3 значения из внутреннего массива
-                if let Ok(y_f64) = y_inner_series.f64() {
-                    let vals: Vec<Option<f64>> = y_f64.into_iter().collect();
-                    for i in 0..3 {
-                        if i < vals.len() {
-                            y_arr[i] = vals[i];
-                        }
-                    }
-                }
-            }
-            rows.push((x2, y_arr));
-        }
-
-        let mut data: Vec<(f64, f64)> = Vec::with_capacity(rows.len() * 3);
-        // ПЕРВЫЙ ПРОХОД (индекс 0 массива Y): ПРЯМОЙ порядок (от 1 до 10)
-        for (x_opt, y_arr) in rows.iter() {
-            if let (Some(x), Some(y_val)) = (x_opt, y_arr[0]) {
-                if !x.is_nan() && !y_val.is_nan() {
-                    data.push((*x, y_val));
-                }
-            }
-        }
-
-        // ВТОРОЙ ПРОХОД (индекс 1 массива Y): ОБРАТНЫЙ порядок (от 10 до 1)
-        for (x_opt, y_arr) in rows.iter().rev() {
-            if let (Some(x), Some(y_val)) = (x_opt, y_arr[1]) {
-                if !x.is_nan() && !y_val.is_nan() {
-                    data.push((*x, y_val));
-                }
-            }
-        }
-
-        // ТРЕТИЙ ПРОХОД (индекс 2 массива Y): ПРЯМОЙ порядок (от 1 до 10)
-        for (x_opt, y_arr) in rows.iter() {
-            if let (Some(x), Some(y_val)) = (x_opt, y_arr[2]) {
-                if !x.is_nan() && !y_val.is_nan() {
-                    data.push((*x, y_val));
-                }
-            }
-        }
-
-        let title = format!("Logarithmic basis {{{FATTY_ACID}={fatty_acid};{X1}={x1}}}");
-        if data.len() >= 3 {
-            // basis_select!(&data, DegreeBound::Relaxed, &Aic);
-            let fit = LogarithmicFit::new_auto(&data, DegreeBound::Custom(1), &Aic).unwrap();
-            // println!("{title}: {fit}");
-            println!("{title}: {:?}|{}", fit.coefficients(), fit.r_squared(None));
-            plot!(fit, {
-                title: title.clone(),
-                x_label: Some(format!("{TEMPERATURE_STEP}")),
-                y_label: Some(format!("{EQUIVALENT_CHAIN_LENGTH}")),
-                // size: (1920, 1024),
-            }, prefix = title);
-        } else {
-            // panic!("{title}")
-            coeffs_builder.append_null();
-        }
-    }
+fn polyfit<const N: usize>(mut lazy_frame: LazyFrame) -> PolarsResult<LazyFrame> {
     Ok(lazy_frame)
 }
 
