@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>&lbrace;DegreeBound&equals;2&rbrace;</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <span id="markdown-mermaid" aria-hidden="true" data-config="{&quot;darkModeTheme&quot;:&quot;vscode&quot;,&quot;lightModeTheme&quot;:&quot;vscode&quot;,&quot;maxTextSize&quot;:50000,&quot;clickDrag&quot;:&quot;alt&quot;,&quot;showControls&quot;:&quot;onHoverOrFocus&quot;,&quot;resizable&quot;:true,&quot;maxHeight&quot;:&quot;&quot;}"></span>
+				<h1 id="degreebound2">{DegreeBound=2}</h1>
+<h2 id="numbers">Numbers</h2>
+<h3 id="r2">R^2</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">FA</th>
+<th style="text-align:left">60</th>
+<th style="text-align:left">70</th>
+<th style="text-align:left">80</th>
+<th style="text-align:left">90</th>
+<th style="text-align:left">100</th>
+<th style="text-align:left">110</th>
+<th style="text-align:left">120</th>
+<th style="text-align:left">130</th>
+<th style="text-align:left">140</th>
+<th style="text-align:left">150</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">c14c9</td>
+<td style="text-align:left">0.997907</td>
+<td style="text-align:left">0.997094</td>
+<td style="text-align:left">0.99772</td>
+<td style="text-align:left">0.997901</td>
+<td style="text-align:left">0.997634</td>
+<td style="text-align:left">0.996342</td>
+<td style="text-align:left">0.997631</td>
+<td style="text-align:left">0.997125</td>
+<td style="text-align:left">0.994062</td>
+<td style="text-align:left">0.988205</td>
+</tr>
+<tr>
+<td style="text-align:left">c15c10</td>
+<td style="text-align:left">0.992805</td>
+<td style="text-align:left">0.990762</td>
+<td style="text-align:left">0.994639</td>
+<td style="text-align:left">0.99647</td>
+<td style="text-align:left">0.996861</td>
+<td style="text-align:left">0.994357</td>
+<td style="text-align:left">0.997465</td>
+<td style="text-align:left">0.99557</td>
+<td style="text-align:left">0.995289</td>
+<td style="text-align:left">0.99465</td>
+</tr>
+<tr>
+<td style="text-align:left">c16c9</td>
+<td style="text-align:left">0.997047</td>
+<td style="text-align:left">0.995307</td>
+<td style="text-align:left">0.997023</td>
+<td style="text-align:left">0.99724</td>
+<td style="text-align:left">0.99744</td>
+<td style="text-align:left">0.996997</td>
+<td style="text-align:left">0.991308</td>
+<td style="text-align:left">0.99576</td>
+<td style="text-align:left">0.99611</td>
+<td style="text-align:left">0.996915</td>
+</tr>
+<tr>
+<td style="text-align:left">c17c10</td>
+<td style="text-align:left">0.994633</td>
+<td style="text-align:left">0.992471</td>
+<td style="text-align:left">0.995477</td>
+<td style="text-align:left">0.995284</td>
+<td style="text-align:left">0.997168</td>
+<td style="text-align:left">0.99583</td>
+<td style="text-align:left">0.993664</td>
+<td style="text-align:left">0.997305</td>
+<td style="text-align:left">0.997107</td>
+<td style="text-align:left">0.996998</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c6c9c12</td>
+<td style="text-align:left">0.995746</td>
+<td style="text-align:left">0.995903</td>
+<td style="text-align:left">0.998183</td>
+<td style="text-align:left">0.997839</td>
+<td style="text-align:left">0.99846</td>
+<td style="text-align:left">0.997071</td>
+<td style="text-align:left">0.997671</td>
+<td style="text-align:left">0.997444</td>
+<td style="text-align:left">0.996936</td>
+<td style="text-align:left">0.997518</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c9</td>
+<td style="text-align:left">0.997447</td>
+<td style="text-align:left">0.99809</td>
+<td style="text-align:left">0.996513</td>
+<td style="text-align:left">0.997479</td>
+<td style="text-align:left">0.997131</td>
+<td style="text-align:left">0.996242</td>
+<td style="text-align:left">0.996634</td>
+<td style="text-align:left">0.997068</td>
+<td style="text-align:left">0.99629</td>
+<td style="text-align:left">0.98516</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c9c12</td>
+<td style="text-align:left">0.999055</td>
+<td style="text-align:left">0.998536</td>
+<td style="text-align:left">0.998368</td>
+<td style="text-align:left">0.999064</td>
+<td style="text-align:left">0.999177</td>
+<td style="text-align:left">0.998418</td>
+<td style="text-align:left">0.999242</td>
+<td style="text-align:left">0.997873</td>
+<td style="text-align:left">0.994528</td>
+<td style="text-align:left">0.986626</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c9c12c15</td>
+<td style="text-align:left">0.99654</td>
+<td style="text-align:left">0.995992</td>
+<td style="text-align:left">0.997662</td>
+<td style="text-align:left">0.996885</td>
+<td style="text-align:left">0.99845</td>
+<td style="text-align:left">0.996104</td>
+<td style="text-align:left">0.996901</td>
+<td style="text-align:left">0.997648</td>
+<td style="text-align:left">0.998392</td>
+<td style="text-align:left">0.99878</td>
+</tr>
+<tr>
+<td style="text-align:left">c18t9</td>
+<td style="text-align:left">0.992084</td>
+<td style="text-align:left">0.994856</td>
+<td style="text-align:left">0.99149</td>
+<td style="text-align:left">0.995735</td>
+<td style="text-align:left">0.993525</td>
+<td style="text-align:left">0.995404</td>
+<td style="text-align:left">0.996318</td>
+<td style="text-align:left">0.995644</td>
+<td style="text-align:left">0.985903</td>
+<td style="text-align:left">0.978673</td>
+</tr>
+<tr>
+<td style="text-align:left">c18t9t12</td>
+<td style="text-align:left">0.990679</td>
+<td style="text-align:left">0.989467</td>
+<td style="text-align:left">0.979746</td>
+<td style="text-align:left">0.98812</td>
+<td style="text-align:left">0.983921</td>
+<td style="text-align:left">0.985313</td>
+<td style="text-align:left">0.991425</td>
+<td style="text-align:left">0.993004</td>
+<td style="text-align:left">0.976274</td>
+<td style="text-align:left">0.929681</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c11</td>
+<td style="text-align:left">0.99416</td>
+<td style="text-align:left">0.995211</td>
+<td style="text-align:left">0.996514</td>
+<td style="text-align:left">0.995421</td>
+<td style="text-align:left">0.996433</td>
+<td style="text-align:left">0.9954</td>
+<td style="text-align:left">0.996014</td>
+<td style="text-align:left">0.99622</td>
+<td style="text-align:left">0.996498</td>
+<td style="text-align:left">0.99801</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c11c14</td>
+<td style="text-align:left">0.996157</td>
+<td style="text-align:left">0.997392</td>
+<td style="text-align:left">0.997777</td>
+<td style="text-align:left">0.996805</td>
+<td style="text-align:left">0.998429</td>
+<td style="text-align:left">0.996284</td>
+<td style="text-align:left">0.996606</td>
+<td style="text-align:left">0.99743</td>
+<td style="text-align:left">0.996543</td>
+<td style="text-align:left">0.997891</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c11c14c17</td>
+<td style="text-align:left">0.994734</td>
+<td style="text-align:left">0.995834</td>
+<td style="text-align:left">0.996431</td>
+<td style="text-align:left">0.996935</td>
+<td style="text-align:left">0.9974</td>
+<td style="text-align:left">0.995913</td>
+<td style="text-align:left">0.996365</td>
+<td style="text-align:left">0.996047</td>
+<td style="text-align:left">0.996259</td>
+<td style="text-align:left">0.997739</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c5c8c11c14</td>
+<td style="text-align:left">0.996695</td>
+<td style="text-align:left">0.99708</td>
+<td style="text-align:left">0.992282</td>
+<td style="text-align:left">0.998</td>
+<td style="text-align:left">0.997687</td>
+<td style="text-align:left">0.997184</td>
+<td style="text-align:left">0.997641</td>
+<td style="text-align:left">0.997175</td>
+<td style="text-align:left">0.998116</td>
+<td style="text-align:left">0.997785</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c5c8c11c14c17</td>
+<td style="text-align:left">0.997372</td>
+<td style="text-align:left">0.997909</td>
+<td style="text-align:left">0.998204</td>
+<td style="text-align:left">0.99787</td>
+<td style="text-align:left">0.998416</td>
+<td style="text-align:left">0.997777</td>
+<td style="text-align:left">0.998495</td>
+<td style="text-align:left">0.997931</td>
+<td style="text-align:left">0.998219</td>
+<td style="text-align:left">0.998764</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c8c11c14</td>
+<td style="text-align:left">0.994122</td>
+<td style="text-align:left">0.995962</td>
+<td style="text-align:left">0.99763</td>
+<td style="text-align:left">0.992534</td>
+<td style="text-align:left">0.998149</td>
+<td style="text-align:left">0.995782</td>
+<td style="text-align:left">0.997216</td>
+<td style="text-align:left">0.997051</td>
+<td style="text-align:left">0.997821</td>
+<td style="text-align:left">0.997688</td>
+</tr>
+<tr>
+<td style="text-align:left">c22c13</td>
+<td style="text-align:left">0.985603</td>
+<td style="text-align:left">0.992578</td>
+<td style="text-align:left">0.992784</td>
+<td style="text-align:left">0.990165</td>
+<td style="text-align:left">0.994678</td>
+<td style="text-align:left">0.992118</td>
+<td style="text-align:left">0.993286</td>
+<td style="text-align:left">0.987849</td>
+<td style="text-align:left">0.993062</td>
+<td style="text-align:left">0.995583</td>
+</tr>
+<tr>
+<td style="text-align:left">c22c13c16</td>
+<td style="text-align:left">0.980279</td>
+<td style="text-align:left">0.995378</td>
+<td style="text-align:left">0.995064</td>
+<td style="text-align:left">0.996088</td>
+<td style="text-align:left">0.9952</td>
+<td style="text-align:left">0.99443</td>
+<td style="text-align:left">0.995702</td>
+<td style="text-align:left">0.993109</td>
+<td style="text-align:left">0.995192</td>
+<td style="text-align:left">0.997373</td>
+</tr>
+</tbody>
+</table>
+<h3 id="x20">x[2]^0</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">FA</th>
+<th style="text-align:left">60</th>
+<th style="text-align:left">70</th>
+<th style="text-align:left">80</th>
+<th style="text-align:left">90</th>
+<th style="text-align:left">100</th>
+<th style="text-align:left">110</th>
+<th style="text-align:left">120</th>
+<th style="text-align:left">130</th>
+<th style="text-align:left">140</th>
+<th style="text-align:left">150</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">c14c9</td>
+<td style="text-align:left">14.5941</td>
+<td style="text-align:left">14.5939</td>
+<td style="text-align:left">14.5989</td>
+<td style="text-align:left">14.6021</td>
+<td style="text-align:left">14.6093</td>
+<td style="text-align:left">14.6181</td>
+<td style="text-align:left">14.6299</td>
+<td style="text-align:left">14.6462</td>
+<td style="text-align:left">14.668</td>
+<td style="text-align:left">14.696</td>
+</tr>
+<tr>
+<td style="text-align:left">c15c10</td>
+<td style="text-align:left">15.6</td>
+<td style="text-align:left">15.5999</td>
+<td style="text-align:left">15.6024</td>
+<td style="text-align:left">15.6075</td>
+<td style="text-align:left">15.6125</td>
+<td style="text-align:left">15.6204</td>
+<td style="text-align:left">15.6317</td>
+<td style="text-align:left">15.6427</td>
+<td style="text-align:left">15.6659</td>
+<td style="text-align:left">15.6905</td>
+</tr>
+<tr>
+<td style="text-align:left">c16c9</td>
+<td style="text-align:left">16.4691</td>
+<td style="text-align:left">16.4728</td>
+<td style="text-align:left">16.4721</td>
+<td style="text-align:left">16.4751</td>
+<td style="text-align:left">16.4827</td>
+<td style="text-align:left">16.489</td>
+<td style="text-align:left">16.5007</td>
+<td style="text-align:left">16.5118</td>
+<td style="text-align:left">16.531</td>
+<td style="text-align:left">16.5526</td>
+</tr>
+<tr>
+<td style="text-align:left">c17c10</td>
+<td style="text-align:left">17.474</td>
+<td style="text-align:left">17.4744</td>
+<td style="text-align:left">17.4754</td>
+<td style="text-align:left">17.4776</td>
+<td style="text-align:left">17.484</td>
+<td style="text-align:left">17.4875</td>
+<td style="text-align:left">17.4965</td>
+<td style="text-align:left">17.5098</td>
+<td style="text-align:left">17.527</td>
+<td style="text-align:left">17.5477</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c6c9c12</td>
+<td style="text-align:left">19.6298</td>
+<td style="text-align:left">19.6289</td>
+<td style="text-align:left">19.6276</td>
+<td style="text-align:left">19.6344</td>
+<td style="text-align:left">19.6421</td>
+<td style="text-align:left">19.6501</td>
+<td style="text-align:left">19.6673</td>
+<td style="text-align:left">19.688</td>
+<td style="text-align:left">19.7222</td>
+<td style="text-align:left">19.7674</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c9</td>
+<td style="text-align:left">18.3943</td>
+<td style="text-align:left">18.3935</td>
+<td style="text-align:left">18.395</td>
+<td style="text-align:left">18.3976</td>
+<td style="text-align:left">18.4002</td>
+<td style="text-align:left">18.4055</td>
+<td style="text-align:left">18.4113</td>
+<td style="text-align:left">18.4233</td>
+<td style="text-align:left">18.4365</td>
+<td style="text-align:left">18.4493</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c9c12</td>
+<td style="text-align:left">19.1216</td>
+<td style="text-align:left">19.1244</td>
+<td style="text-align:left">19.123</td>
+<td style="text-align:left">19.1267</td>
+<td style="text-align:left">19.1332</td>
+<td style="text-align:left">19.1406</td>
+<td style="text-align:left">19.1526</td>
+<td style="text-align:left">19.1683</td>
+<td style="text-align:left">19.1922</td>
+<td style="text-align:left">19.2217</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c9c12c15</td>
+<td style="text-align:left">20.0033</td>
+<td style="text-align:left">19.9994</td>
+<td style="text-align:left">20.0029</td>
+<td style="text-align:left">20.0033</td>
+<td style="text-align:left">20.0142</td>
+<td style="text-align:left">20.0237</td>
+<td style="text-align:left">20.0412</td>
+<td style="text-align:left">20.0649</td>
+<td style="text-align:left">20.1006</td>
+<td style="text-align:left">20.1447</td>
+</tr>
+<tr>
+<td style="text-align:left">c18t9</td>
+<td style="text-align:left">18.2694</td>
+<td style="text-align:left">18.2715</td>
+<td style="text-align:left">18.2714</td>
+<td style="text-align:left">18.2713</td>
+<td style="text-align:left">18.2758</td>
+<td style="text-align:left">18.2782</td>
+<td style="text-align:left">18.2824</td>
+<td style="text-align:left">18.2873</td>
+<td style="text-align:left">18.295</td>
+<td style="text-align:left">18.3027</td>
+</tr>
+<tr>
+<td style="text-align:left">c18t9t12</td>
+<td style="text-align:left">18.8393</td>
+<td style="text-align:left">18.8404</td>
+<td style="text-align:left">18.8402</td>
+<td style="text-align:left">18.8395</td>
+<td style="text-align:left">18.8443</td>
+<td style="text-align:left">18.8466</td>
+<td style="text-align:left">18.8524</td>
+<td style="text-align:left">18.8576</td>
+<td style="text-align:left">18.8678</td>
+<td style="text-align:left">18.8784</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c11</td>
+<td style="text-align:left">20.3902</td>
+<td style="text-align:left">20.3904</td>
+<td style="text-align:left">20.3901</td>
+<td style="text-align:left">20.3915</td>
+<td style="text-align:left">20.3924</td>
+<td style="text-align:left">20.3982</td>
+<td style="text-align:left">20.4039</td>
+<td style="text-align:left">20.412</td>
+<td style="text-align:left">20.4241</td>
+<td style="text-align:left">20.4418</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c11c14</td>
+<td style="text-align:left">21.1407</td>
+<td style="text-align:left">21.1392</td>
+<td style="text-align:left">21.1405</td>
+<td style="text-align:left">21.1427</td>
+<td style="text-align:left">21.1437</td>
+<td style="text-align:left">21.15</td>
+<td style="text-align:left">21.1577</td>
+<td style="text-align:left">21.1696</td>
+<td style="text-align:left">21.19</td>
+<td style="text-align:left">21.2197</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c11c14c17</td>
+<td style="text-align:left">22.0239</td>
+<td style="text-align:left">22.0238</td>
+<td style="text-align:left">22.024</td>
+<td style="text-align:left">22.0247</td>
+<td style="text-align:left">22.0282</td>
+<td style="text-align:left">22.0349</td>
+<td style="text-align:left">22.0446</td>
+<td style="text-align:left">22.0586</td>
+<td style="text-align:left">22.0867</td>
+<td style="text-align:left">22.1238</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c5c8c11c14</td>
+<td style="text-align:left">21.9876</td>
+<td style="text-align:left">21.9921</td>
+<td style="text-align:left">21.9734</td>
+<td style="text-align:left">21.99</td>
+<td style="text-align:left">21.9946</td>
+<td style="text-align:left">22.0041</td>
+<td style="text-align:left">22.023</td>
+<td style="text-align:left">22.045</td>
+<td style="text-align:left">22.0771</td>
+<td style="text-align:left">22.1209</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c5c8c11c14c17</td>
+<td style="text-align:left">22.9487</td>
+<td style="text-align:left">22.9507</td>
+<td style="text-align:left">22.9523</td>
+<td style="text-align:left">22.952</td>
+<td style="text-align:left">22.954</td>
+<td style="text-align:left">22.9644</td>
+<td style="text-align:left">22.9788</td>
+<td style="text-align:left">22.9952</td>
+<td style="text-align:left">23.028</td>
+<td style="text-align:left">23.0748</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c8c11c14</td>
+<td style="text-align:left">21.6374</td>
+<td style="text-align:left">21.6366</td>
+<td style="text-align:left">21.6351</td>
+<td style="text-align:left">21.6345</td>
+<td style="text-align:left">21.6427</td>
+<td style="text-align:left">21.6453</td>
+<td style="text-align:left">21.6588</td>
+<td style="text-align:left">21.6746</td>
+<td style="text-align:left">21.7019</td>
+<td style="text-align:left">21.7401</td>
+</tr>
+<tr>
+<td style="text-align:left">c22c13</td>
+<td style="text-align:left">22.4009</td>
+<td style="text-align:left">22.3965</td>
+<td style="text-align:left">22.397</td>
+<td style="text-align:left">22.4005</td>
+<td style="text-align:left">22.4012</td>
+<td style="text-align:left">22.4008</td>
+<td style="text-align:left">22.4046</td>
+<td style="text-align:left">22.4097</td>
+<td style="text-align:left">22.4228</td>
+<td style="text-align:left">22.4363</td>
+</tr>
+<tr>
+<td style="text-align:left">c22c13c16</td>
+<td style="text-align:left">23.1556</td>
+<td style="text-align:left">23.1554</td>
+<td style="text-align:left">23.1548</td>
+<td style="text-align:left">23.1554</td>
+<td style="text-align:left">23.1567</td>
+<td style="text-align:left">23.1602</td>
+<td style="text-align:left">23.1662</td>
+<td style="text-align:left">23.1775</td>
+<td style="text-align:left">23.1902</td>
+<td style="text-align:left">23.2087</td>
+</tr>
+</tbody>
+</table>
+<h3 id="x21">x[2]^1</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">FA</th>
+<th style="text-align:left">60</th>
+<th style="text-align:left">70</th>
+<th style="text-align:left">80</th>
+<th style="text-align:left">90</th>
+<th style="text-align:left">100</th>
+<th style="text-align:left">110</th>
+<th style="text-align:left">120</th>
+<th style="text-align:left">130</th>
+<th style="text-align:left">140</th>
+<th style="text-align:left">150</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">c14c9</td>
+<td style="text-align:left">0.0515432</td>
+<td style="text-align:left">0.055378</td>
+<td style="text-align:left">0.0479346</td>
+<td style="text-align:left">0.0489945</td>
+<td style="text-align:left">0.0465593</td>
+<td style="text-align:left">0.0439358</td>
+<td style="text-align:left">0.0400893</td>
+<td style="text-align:left">0.0383472</td>
+<td style="text-align:left">0.0300791</td>
+<td style="text-align:left">0.0196252</td>
+</tr>
+<tr>
+<td style="text-align:left">c15c10</td>
+<td style="text-align:left">0.0526386</td>
+<td style="text-align:left">0.0572906</td>
+<td style="text-align:left">0.0563833</td>
+<td style="text-align:left">0.0508056</td>
+<td style="text-align:left">0.0496799</td>
+<td style="text-align:left">0.0482764</td>
+<td style="text-align:left">0.0444326</td>
+<td style="text-align:left">0.0511511</td>
+<td style="text-align:left">0.0349393</td>
+<td style="text-align:left">0.0289519</td>
+</tr>
+<tr>
+<td style="text-align:left">c16c9</td>
+<td style="text-align:left">0.0629247</td>
+<td style="text-align:left">0.0568441</td>
+<td style="text-align:left">0.062222</td>
+<td style="text-align:left">0.0616305</td>
+<td style="text-align:left">0.055253</td>
+<td style="text-align:left">0.0532147</td>
+<td style="text-align:left">0.0462019</td>
+<td style="text-align:left">0.0483912</td>
+<td style="text-align:left">0.0418328</td>
+<td style="text-align:left">0.0377533</td>
+</tr>
+<tr>
+<td style="text-align:left">c17c10</td>
+<td style="text-align:left">0.0635601</td>
+<td style="text-align:left">0.0634805</td>
+<td style="text-align:left">0.062847</td>
+<td style="text-align:left">0.0630126</td>
+<td style="text-align:left">0.0562902</td>
+<td style="text-align:left">0.0613005</td>
+<td style="text-align:left">0.0596181</td>
+<td style="text-align:left">0.0522386</td>
+<td style="text-align:left">0.0477885</td>
+<td style="text-align:left">0.0430204</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c6c9c12</td>
+<td style="text-align:left">0.157255</td>
+<td style="text-align:left">0.162786</td>
+<td style="text-align:left">0.163799</td>
+<td style="text-align:left">0.153377</td>
+<td style="text-align:left">0.147061</td>
+<td style="text-align:left">0.147318</td>
+<td style="text-align:left">0.141234</td>
+<td style="text-align:left">0.139224</td>
+<td style="text-align:left">0.121636</td>
+<td style="text-align:left">0.110429</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c9</td>
+<td style="text-align:left">0.0663626</td>
+<td style="text-align:left">0.0696969</td>
+<td style="text-align:left">0.0690729</td>
+<td style="text-align:left">0.0677355</td>
+<td style="text-align:left">0.0675636</td>
+<td style="text-align:left">0.0667656</td>
+<td style="text-align:left">0.0664485</td>
+<td style="text-align:left">0.0584081</td>
+<td style="text-align:left">0.0544081</td>
+<td style="text-align:left">0.0606884</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c9c12</td>
+<td style="text-align:left">0.11991</td>
+<td style="text-align:left">0.112951</td>
+<td style="text-align:left">0.119671</td>
+<td style="text-align:left">0.117688</td>
+<td style="text-align:left">0.110066</td>
+<td style="text-align:left">0.105939</td>
+<td style="text-align:left">0.103909</td>
+<td style="text-align:left">0.101762</td>
+<td style="text-align:left">0.0927564</td>
+<td style="text-align:left">0.0841807</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c9c12c15</td>
+<td style="text-align:left">0.163123</td>
+<td style="text-align:left">0.173603</td>
+<td style="text-align:left">0.165369</td>
+<td style="text-align:left">0.172149</td>
+<td style="text-align:left">0.15529</td>
+<td style="text-align:left">0.15411</td>
+<td style="text-align:left">0.147623</td>
+<td style="text-align:left">0.140635</td>
+<td style="text-align:left">0.121723</td>
+<td style="text-align:left">0.108653</td>
+</tr>
+<tr>
+<td style="text-align:left">c18t9</td>
+<td style="text-align:left">0.0437284</td>
+<td style="text-align:left">0.0387606</td>
+<td style="text-align:left">0.0386188</td>
+<td style="text-align:left">0.0444746</td>
+<td style="text-align:left">0.0379205</td>
+<td style="text-align:left">0.0377817</td>
+<td style="text-align:left">0.0367159</td>
+<td style="text-align:left">0.0364865</td>
+<td style="text-align:left">0.0348531</td>
+<td style="text-align:left">0.0350339</td>
+</tr>
+<tr>
+<td style="text-align:left">c18t9t12</td>
+<td style="text-align:left">0.0499888</td>
+<td style="text-align:left">0.0493535</td>
+<td style="text-align:left">0.0495017</td>
+<td style="text-align:left">0.0557935</td>
+<td style="text-align:left">0.0485298</td>
+<td style="text-align:left">0.0481397</td>
+<td style="text-align:left">0.0475788</td>
+<td style="text-align:left">0.0483067</td>
+<td style="text-align:left">0.0463789</td>
+<td style="text-align:left">0.0481789</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c11</td>
+<td style="text-align:left">0.0757243</td>
+<td style="text-align:left">0.073721</td>
+<td style="text-align:left">0.0740568</td>
+<td style="text-align:left">0.0731354</td>
+<td style="text-align:left">0.0734002</td>
+<td style="text-align:left">0.0708122</td>
+<td style="text-align:left">0.0698919</td>
+<td style="text-align:left">0.0684442</td>
+<td style="text-align:left">0.0661832</td>
+<td style="text-align:left">0.0578914</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c11c14</td>
+<td style="text-align:left">0.123764</td>
+<td style="text-align:left">0.128523</td>
+<td style="text-align:left">0.124346</td>
+<td style="text-align:left">0.122445</td>
+<td style="text-align:left">0.122515</td>
+<td style="text-align:left">0.12023</td>
+<td style="text-align:left">0.118365</td>
+<td style="text-align:left">0.115513</td>
+<td style="text-align:left">0.106542</td>
+<td style="text-align:left">0.0897459</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c11c14c17</td>
+<td style="text-align:left">0.179252</td>
+<td style="text-align:left">0.179853</td>
+<td style="text-align:left">0.179271</td>
+<td style="text-align:left">0.178918</td>
+<td style="text-align:left">0.177194</td>
+<td style="text-align:left">0.174764</td>
+<td style="text-align:left">0.172528</td>
+<td style="text-align:left">0.170006</td>
+<td style="text-align:left">0.153902</td>
+<td style="text-align:left">0.136024</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c5c8c11c14</td>
+<td style="text-align:left">0.237704</td>
+<td style="text-align:left">0.228398</td>
+<td style="text-align:left">0.245824</td>
+<td style="text-align:left">0.236556</td>
+<td style="text-align:left">0.235051</td>
+<td style="text-align:left">0.230966</td>
+<td style="text-align:left">0.208345</td>
+<td style="text-align:left">0.201112</td>
+<td style="text-align:left">0.187209</td>
+<td style="text-align:left">0.172258</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c5c8c11c14c17</td>
+<td style="text-align:left">0.28734</td>
+<td style="text-align:left">0.286557</td>
+<td style="text-align:left">0.278044</td>
+<td style="text-align:left">0.279029</td>
+<td style="text-align:left">0.284762</td>
+<td style="text-align:left">0.272804</td>
+<td style="text-align:left">0.263716</td>
+<td style="text-align:left">0.257534</td>
+<td style="text-align:left">0.242392</td>
+<td style="text-align:left">0.216262</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c8c11c14</td>
+<td style="text-align:left">0.175433</td>
+<td style="text-align:left">0.176739</td>
+<td style="text-align:left">0.177487</td>
+<td style="text-align:left">0.172688</td>
+<td style="text-align:left">0.168184</td>
+<td style="text-align:left">0.173901</td>
+<td style="text-align:left">0.163605</td>
+<td style="text-align:left">0.158715</td>
+<td style="text-align:left">0.145071</td>
+<td style="text-align:left">0.130817</td>
+</tr>
+<tr>
+<td style="text-align:left">c22c13</td>
+<td style="text-align:left">0.072693</td>
+<td style="text-align:left">0.0828125</td>
+<td style="text-align:left">0.0812483</td>
+<td style="text-align:left">0.0727585</td>
+<td style="text-align:left">0.0726262</td>
+<td style="text-align:left">0.0803486</td>
+<td style="text-align:left">0.0808052</td>
+<td style="text-align:left">0.0813795</td>
+<td style="text-align:left">0.0676466</td>
+<td style="text-align:left">0.0640252</td>
+</tr>
+<tr>
+<td style="text-align:left">c22c13c16</td>
+<td style="text-align:left">0.126092</td>
+<td style="text-align:left">0.136307</td>
+<td style="text-align:left">0.138557</td>
+<td style="text-align:left">0.136059</td>
+<td style="text-align:left">0.135138</td>
+<td style="text-align:left">0.13501</td>
+<td style="text-align:left">0.132352</td>
+<td style="text-align:left">0.119025</td>
+<td style="text-align:left">0.115049</td>
+<td style="text-align:left">0.112503</td>
+</tr>
+</tbody>
+</table>
+<h3 id="x22">x[2]^2</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">FA</th>
+<th style="text-align:left">60</th>
+<th style="text-align:left">70</th>
+<th style="text-align:left">80</th>
+<th style="text-align:left">90</th>
+<th style="text-align:left">100</th>
+<th style="text-align:left">110</th>
+<th style="text-align:left">120</th>
+<th style="text-align:left">130</th>
+<th style="text-align:left">140</th>
+<th style="text-align:left">150</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">c14c9</td>
+<td style="text-align:left">0.00161374</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.0028949</td>
+<td style="text-align:left">0.00228287</td>
+<td style="text-align:left">0.00269511</td>
+<td style="text-align:left">0.00312877</td>
+<td style="text-align:left">0.00457884</td>
+<td style="text-align:left">0.00395379</td>
+<td style="text-align:left">0.00658968</td>
+<td style="text-align:left">0.0101779</td>
+</tr>
+<tr>
+<td style="text-align:left">c15c10</td>
+<td style="text-align:left">0.00189208</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00210881</td>
+<td style="text-align:left">0.00242631</td>
+<td style="text-align:left">0.00239397</td>
+<td style="text-align:left">0.00353187</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00611302</td>
+<td style="text-align:left">0.00748636</td>
+</tr>
+<tr>
+<td style="text-align:left">c16c9</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00245745</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00190868</td>
+<td style="text-align:left">0.00246555</td>
+<td style="text-align:left">0.0043404</td>
+<td style="text-align:left">0.00332791</td>
+<td style="text-align:left">0.00491242</td>
+<td style="text-align:left">0.00568311</td>
+</tr>
+<tr>
+<td style="text-align:left">c17c10</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00243868</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00278987</td>
+<td style="text-align:left">0.00330579</td>
+<td style="text-align:left">0.00456561</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c6c9c12</td>
+<td style="text-align:left">0.00228136</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00400259</td>
+<td style="text-align:left">0.00583477</td>
+<td style="text-align:left">0.00463935</td>
+<td style="text-align:left">0.0058505</td>
+<td style="text-align:left">0.00551993</td>
+<td style="text-align:left">0.0110269</td>
+<td style="text-align:left">0.0133318</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c9</td>
+<td style="text-align:left">0.00122071</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00250779</td>
+<td style="text-align:left">0.0031537</td>
+<td style="text-align:left">0</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c9c12</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00299351</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00307762</td>
+<td style="text-align:left">0.00413711</td>
+<td style="text-align:left">0.00409749</td>
+<td style="text-align:left">0.0036832</td>
+<td style="text-align:left">0.00581097</td>
+<td style="text-align:left">0.0087413</td>
+</tr>
+<tr>
+<td style="text-align:left">c18c9c12c15</td>
+<td style="text-align:left">0.00432196</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00355471</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00648111</td>
+<td style="text-align:left">0.00558791</td>
+<td style="text-align:left">0.0068428</td>
+<td style="text-align:left">0.00762316</td>
+<td style="text-align:left">0.0130213</td>
+<td style="text-align:left">0.0153748</td>
+</tr>
+<tr>
+<td style="text-align:left">c18t9</td>
+<td style="text-align:left">-0.0021519</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">-0.0028803</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+</tr>
+<tr>
+<td style="text-align:left">c18t9t12</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">-0.00299098</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c11</td>
+<td style="text-align:left">-0.000762558</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00233585</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c11c14</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">-0.00221221</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00176769</td>
+<td style="text-align:left">0.00777352</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c11c14c17</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00416824</td>
+<td style="text-align:left">0.00976371</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c5c8c11c14</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00371716</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00840347</td>
+<td style="text-align:left">0.00913824</td>
+<td style="text-align:left">0.0120111</td>
+<td style="text-align:left">0.0150967</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c5c8c11c14c17</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00365303</td>
+<td style="text-align:left">0.00362856</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00384554</td>
+<td style="text-align:left">0.00576159</td>
+<td style="text-align:left">0.00792647</td>
+<td style="text-align:left">0.0101403</td>
+<td style="text-align:left">0.0188285</td>
+</tr>
+<tr>
+<td style="text-align:left">c20c8c11c14</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00260308</td>
+<td style="text-align:left">0.00299761</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.00334249</td>
+<td style="text-align:left">0.00409523</td>
+<td style="text-align:left">0.00783224</td>
+<td style="text-align:left">0.0118468</td>
+</tr>
+<tr>
+<td style="text-align:left">c22c13</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">-0.00383053</td>
+<td style="text-align:left">-0.00317544</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">-0.00332516</td>
+<td style="text-align:left">-0.00398931</td>
+<td style="text-align:left">-0.00512749</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.000802195</td>
+</tr>
+<tr>
+<td style="text-align:left">c22c13c16</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">-0.00474997</td>
+<td style="text-align:left">-0.0058235</td>
+<td style="text-align:left">-0.00469646</td>
+<td style="text-align:left">-0.00457378</td>
+<td style="text-align:left">-0.00544446</td>
+<td style="text-align:left">-0.00494468</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0</td>
+</tr>
+</tbody>
+</table>
+<h2 id="images">Images</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">FA</th>
+<th style="text-align:left">60</th>
+<th style="text-align:left">70</th>
+<th style="text-align:left">80</th>
+<th style="text-align:left">90</th>
+<th style="text-align:left">100</th>
+<th style="text-align:left">110</th>
+<th style="text-align:left">120</th>
+<th style="text-align:left">130</th>
+<th style="text-align:left">140</th>
+<th style="text-align:left">150</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">c14c9</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c14c9;x_1=60%7D.png" title="{0=14.594071463446271;1=0.05154315414899191;2=0.0016137351738727546;R^2=0.997906769629516}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c14c9;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c15c10;x_1=140%7D.png" title="{0=14.59386446396155;1=0.055377966729510675;2=0.0;R^2=0.9970942474606267}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c15c10;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c17c10;x_1=120%7D.png" title="{0=14.598922919151027;1=0.047934626545588443;2=0.0028948960820629477;R^2=0.9977200024654123}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c17c10;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9;x_1=100%7D.png" title="{0=14.602090700338838;1=0.04899447216457009;2=0.00228287449973541;R^2=0.9979014878098824}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12c15;x_1=80%7D.png" title="{0=14.609258480175498;1=0.046559265012104056;2=0.0026951074813055254;R^2=0.9976339659994734}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12c15;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9t12;x_1=60%7D.png" title="{0=14.618072393689232;1=0.043935771170298565;2=0.003128770037356121;R^2=0.9963419282449665}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9t12;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14;x_1=140%7D.png" title="{0=14.629872972168135;1=0.04008933755572475;2=0.004578839992569694;R^2=0.997630963479554}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c8c11c14;x_1=120%7D.png" title="{0=14.646237548002107;1=0.03834724996626626;2=0.003953789817075171;R^2=0.9971252127558821}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c8c11c14;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14;x_1=100%7D.png" title="{0=14.667985916231167;1=0.03007908249687219;2=0.006589683858022832;R^2=0.9940618833580701}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13;x_1=80%7D.png" title="{0=14.69596797926436;1=0.019625210991094377;2=0.010177884696404016;R^2=0.9882049309175112}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13;x_1=80%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c15c10</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c14c9;x_1=70%7D.png" title="{0=15.60004466206138;1=0.05263861063816755;2=0.0018920814885694526;R^2=0.9928053739691538}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c14c9;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c15c10;x_1=150%7D.png" title="{0=15.599913408390947;1=0.0572905931005776;2=0.0;R^2=0.9907618235506941}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c15c10;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c17c10;x_1=130%7D.png" title="{0=15.602385805091643;1=0.0563832666493278;2=0.0;R^2=0.9946394498002151}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c17c10;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9;x_1=110%7D.png" title="{0=15.607484789255519;1=0.05080563471605615;2=0.0021088148417836017;R^2=0.9964699141231048}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12c15;x_1=90%7D.png" title="{0=15.612534674598555;1=0.04967988193782702;2=0.002426309827399109;R^2=0.9968607953171753}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12c15;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9t12;x_1=70%7D.png" title="{0=15.620395847870585;1=0.048276422443447764;2=0.0023939681608924346;R^2=0.9943565595671294}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9t12;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14;x_1=150%7D.png" title="{0=15.63169811684455;1=0.04443264017291959;2=0.0035318724275814617;R^2=0.9974648223136027}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c8c11c14;x_1=130%7D.png" title="{0=15.6427284415787;1=0.05115107826886511;2=0.0;R^2=0.9955699816954231}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c8c11c14;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14;x_1=110%7D.png" title="{0=15.665892055119741;1=0.034939329130171615;2=0.006113023886030078;R^2=0.9952894424657915}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13;x_1=90%7D.png" title="{0=15.690543562345965;1=0.02895194888113206;2=0.007486358236150181;R^2=0.9946499338702898}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13;x_1=90%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c16c9</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c14c9;x_1=80%7D.png" title="{0=16.469123006508337;1=0.06292473493214334;2=0.0;R^2=0.9970466410171414}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c14c9;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c16c9;x_1=60%7D.png" title="{0=16.472794843718777;1=0.056844145694465276;2=0.002457451175281733;R^2=0.9953070616203377}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c16c9;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c17c10;x_1=140%7D.png" title="{0=16.472124156971084;1=0.06222204718015334;2=0.0;R^2=0.9970234675145893}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c17c10;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9;x_1=120%7D.png" title="{0=16.475130028848188;1=0.061630480898844375;2=0.0;R^2=0.9972396106966533}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12c15;x_1=100%7D.png" title="{0=16.4827207585666;1=0.05525298183513172;2=0.0019086811262534198;R^2=0.9974401349399996}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12c15;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9t12;x_1=80%7D.png" title="{0=16.488996990520707;1=0.05321473719766612;2=0.002465554974291795;R^2=0.9969966894423768}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9t12;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14c17;x_1=60%7D.png" title="{0=16.50074713812479;1=0.046201940492538895;2=0.004340400006248579;R^2=0.9913084748788767}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14c17;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c8c11c14;x_1=140%7D.png" title="{0=16.511754064097182;1=0.0483911910008219;2=0.003327909172923249;R^2=0.9957597648512917}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c8c11c14;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14;x_1=120%7D.png" title="{0=16.530953745275646;1=0.041832811678369275;2=0.004912415639743095;R^2=0.9961096778009007}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13;x_1=100%7D.png" title="{0=16.552606418484505;1=0.03775326902226439;2=0.0056831062450029;R^2=0.9969153080352006}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13;x_1=100%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c17c10</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c14c9;x_1=90%7D.png" title="{0=17.4739526815808;1=0.0635600533068903;2=0.0;R^2=0.9946325856772502}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c14c9;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c16c9;x_1=70%7D.png" title="{0=17.474410416949233;1=0.06348053299468681;2=0.0;R^2=0.9924708134032408}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c16c9;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c17c10;x_1=150%7D.png" title="{0=17.47535353572047;1=0.06284696112846433;2=0.0;R^2=0.9954774198690595}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c17c10;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9;x_1=130%7D.png" title="{0=17.47763531536347;1=0.06301257570067254;2=0.0;R^2=0.9952844915154109}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12c15;x_1=110%7D.png" title="{0=17.48404003648141;1=0.056290215044867864;2=0.002438675242530053;R^2=0.9971678137420481}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12c15;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9t12;x_1=90%7D.png" title="{0=17.487489890976278;1=0.061300496932900295;2=0.0;R^2=0.99583042908722}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9t12;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14c17;x_1=70%7D.png" title="{0=17.496539814141094;1=0.059618085004142785;2=0.0;R^2=0.9936635518847243}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14c17;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c8c11c14;x_1=150%7D.png" title="{0=17.509764355658408;1=0.05223862079349928;2=0.0027898723772996625;R^2=0.9973046342224801}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c8c11c14;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14;x_1=130%7D.png" title="{0=17.527011380696933;1=0.04778851378648952;2=0.0033057863859586867;R^2=0.9971069723196865}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13;x_1=110%7D.png" title="{0=17.54772904674224;1=0.04302037794573188;2=0.004565609334133747;R^2=0.9969983837701298}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13;x_1=110%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c18c6c9c12</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c14c9;x_1=140%7D.png" title="{0=19.629788440832847;1=0.15725520505537727;2=0.0022813567938873014;R^2=0.9957456600800653}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c14c9;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c16c9;x_1=120%7D.png" title="{0=19.628865089899534;1=0.1627863425021534;2=0.0;R^2=0.9959032330697385}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c16c9;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c6c9c12;x_1=100%7D.png" title="{0=19.627644501393192;1=0.16379860342156682;2=0.0;R^2=0.9981829087559341}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c6c9c12;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12;x_1=80%7D.png" title="{0=19.634372060283027;1=0.15337658420787648;2=0.004002591299117064;R^2=0.9978387593356832}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9;x_1=60%7D.png" title="{0=19.64207625190727;1=0.14706062250802265;2=0.005834768881713082;R^2=0.9984600002543584}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9t12;x_1=140%7D.png" title="{0=19.650077127152624;1=0.14731849152374377;2=0.004639352862675139;R^2=0.9970706084165444}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9t12;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14c17;x_1=120%7D.png" title="{0=19.66728181855124;1=0.1412338373892963;2=0.00585049527016146;R^2=0.9976708588391524}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14c17;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11;x_1=100%7D.png" title="{0=19.687977430455952;1=0.1392243315120032;2=0.005519928403295182;R^2=0.9974443762600966}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14c17;x_1=80%7D.png" title="{0=19.72222831075828;1=0.12163642430198696;2=0.011026872855428138;R^2=0.996936154180464}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14c17;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13c16;x_1=60%7D.png" title="{0=19.767401138615654;1=0.11042934609431931;2=0.01333180272898371;R^2=0.9975184196170662}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13c16;x_1=60%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c18c9</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c14c9;x_1=110%7D.png" title="{0=18.394309510531713;1=0.06636257978006377;2=0.001220708068586429;R^2=0.9974470006020154}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c14c9;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c16c9;x_1=90%7D.png" title="{0=18.39349918984357;1=0.06969685002079373;2=0.0;R^2=0.998089971335638}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c16c9;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c6c9c12;x_1=70%7D.png" title="{0=18.3950289902646;1=0.06907289938273209;2=0.0;R^2=0.996512640884142}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c6c9c12;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9;x_1=150%7D.png" title="{0=18.397555860290908;1=0.06773552357450896;2=0.0;R^2=0.9974792108973708}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12c15;x_1=130%7D.png" title="{0=18.400221805934336;1=0.06756357793232848;2=0.0;R^2=0.997131205167403}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12c15;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9t12;x_1=110%7D.png" title="{0=18.40553109893189;1=0.06676563289609572;2=0.0;R^2=0.9962419399858147}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9t12;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14c17;x_1=90%7D.png" title="{0=18.411348579774796;1=0.06644846381678349;2=0.0;R^2=0.9966341753509543}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14c17;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11;x_1=70%7D.png" title="{0=18.423298256668403;1=0.05840811524823053;2=0.0025077903444747918;R^2=0.9970682498691}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14;x_1=150%7D.png" title="{0=18.436501884039295;1=0.054408099786745545;2=0.0031536966371361608;R^2=0.9962904573474438}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13;x_1=130%7D.png" title="{0=18.449305282429666;1=0.060688390329805664;2=0.0;R^2=0.985160167784347}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13;x_1=130%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c18c9c12</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c14c9;x_1=130%7D.png" title="{0=19.121568339148023;1=0.11990970538413315;2=0.0;R^2=0.9990551590315015}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c14c9;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c16c9;x_1=110%7D.png" title="{0=19.12444038338183;1=0.11295129415652294;2=0.0029935104090137443;R^2=0.9985364880266}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c16c9;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c6c9c12;x_1=90%7D.png" title="{0=19.122967488655004;1=0.11967084832569874;2=0.0;R^2=0.9983676674345763}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c6c9c12;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12;x_1=70%7D.png" title="{0=19.126666131347584;1=0.11768849318110242;2=0.0;R^2=0.9990641821033441}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12c15;x_1=150%7D.png" title="{0=19.13315247534166;1=0.11006619559098052;2=0.0030776218437180702;R^2=0.9991765616812669}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12c15;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9t12;x_1=130%7D.png" title="{0=19.14059697809858;1=0.10593858307804904;2=0.004137111136283345;R^2=0.9984178094256586}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9t12;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14c17;x_1=110%7D.png" title="{0=19.15257895019372;1=0.10390886032945268;2=0.004097493491744597;R^2=0.9992415778281039}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14c17;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11;x_1=90%7D.png" title="{0=19.168280201976863;1=0.10176201580064603;2=0.0036831991616605997;R^2=0.9978725609622853}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14c17;x_1=70%7D.png" title="{0=19.192242451834748;1=0.092756366676225;2=0.005810969394244303;R^2=0.9945277318998185}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14c17;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13;x_1=150%7D.png" title="{0=19.22167583197369;1=0.08418067724843503;2=0.0087413031663095;R^2=0.9866259814215365}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13;x_1=150%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c18c9c12c15</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c14c9;x_1=150%7D.png" title="{0=20.003318101680083;1=0.16312328774563856;2=0.004321963280206287;R^2=0.9965402199555324}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c14c9;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c16c9;x_1=130%7D.png" title="{0=19.999421232642753;1=0.17360291794696536;2=0.0;R^2=0.9959917157098837}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c16c9;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c6c9c12;x_1=110%7D.png" title="{0=20.00285632676279;1=0.16536943303845497;2=0.003554710964682073;R^2=0.9976618874609983}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c6c9c12;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12;x_1=90%7D.png" title="{0=20.00333776772429;1=0.17214907783122158;2=0.0;R^2=0.9968845431198832}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9;x_1=70%7D.png" title="{0=20.014155560493656;1=0.1552896776624877;2=0.006481112762534824;R^2=0.9984495468316815}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9t12;x_1=150%7D.png" title="{0=20.023712093702258;1=0.15410999361519373;2=0.005587911855076122;R^2=0.9961043908707414}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9t12;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14c17;x_1=130%7D.png" title="{0=20.041237488351843;1=0.14762290175265846;2=0.006842795777855404;R^2=0.9969009077848555}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14c17;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11;x_1=110%7D.png" title="{0=20.0649426525128;1=0.14063531350692404;2=0.007623160829026254;R^2=0.9976478662695967}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14c17;x_1=90%7D.png" title="{0=20.100567822188296;1=0.12172335662773914;2=0.013021283355860724;R^2=0.9983916973568399}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14c17;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13c16;x_1=70%7D.png" title="{0=20.144700449193955;1=0.10865262805128495;2=0.01537477595317327;R^2=0.9987800613758804}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13c16;x_1=70%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c18t9</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c14c9;x_1=100%7D.png" title="{0=18.269374073104935;1=0.043728358869841166;2=-0.002151896085017313;R^2=0.9920839564859519}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c14c9;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c16c9;x_1=80%7D.png" title="{0=18.27148165481862;1=0.03876056139536743;2=0.0;R^2=0.9948558237575801}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c16c9;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c6c9c12;x_1=60%7D.png" title="{0=18.271364012088423;1=0.03861879201273499;2=0.0;R^2=0.9914904762238279}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c6c9c12;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9;x_1=140%7D.png" title="{0=18.27129414466486;1=0.044474625627065834;2=-0.0028803029636068622;R^2=0.9957350144109911}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12c15;x_1=120%7D.png" title="{0=18.2758304468141;1=0.03792049279347509;2=0.0;R^2=0.9935247540900404}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12c15;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9t12;x_1=100%7D.png" title="{0=18.27819322109893;1=0.03778167501515117;2=0.0;R^2=0.9954036729989839}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9t12;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14c17;x_1=80%7D.png" title="{0=18.282377727576556;1=0.036715924205184436;2=0.0;R^2=0.9963181971789264}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14c17;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11;x_1=60%7D.png" title="{0=18.287343399785932;1=0.036486533021451883;2=0.0;R^2=0.9956443245949731}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14;x_1=140%7D.png" title="{0=18.29495464818038;1=0.034853098610387434;2=0.0;R^2=0.9859029268825061}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13;x_1=120%7D.png" title="{0=18.30269547914293;1=0.03503387937037061;2=0.0;R^2=0.9786734530057977}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13;x_1=120%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c18t9t12</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c14c9;x_1=120%7D.png" title="{0=18.839265696292088;1=0.04998878328720302;2=0.0;R^2=0.990679327130553}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c14c9;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c16c9;x_1=100%7D.png" title="{0=18.840396732817617;1=0.04935351015861755;2=0.0;R^2=0.9894666793520732}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c16c9;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c6c9c12;x_1=80%7D.png" title="{0=18.84024257604561;1=0.049501663074558166;2=0.0;R^2=0.9797457695532659}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c6c9c12;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12;x_1=60%7D.png" title="{0=18.839472658047573;1=0.05579354916500279;2=-0.0029909772266503154;R^2=0.9881195061489754}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12c15;x_1=140%7D.png" title="{0=18.844258864547456;1=0.048529784272748344;2=0.0;R^2=0.9839210229925586}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12c15;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9t12;x_1=120%7D.png" title="{0=18.8465566476982;1=0.048139669191691326;2=0.0;R^2=0.9853126999020148}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9t12;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14c17;x_1=100%7D.png" title="{0=18.85244423170127;1=0.04757877830639856;2=0.0;R^2=0.9914249220603346}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14c17;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11;x_1=80%7D.png" title="{0=18.85757859503415;1=0.048306706237040586;2=0.0;R^2=0.9930036287604151}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14c17;x_1=60%7D.png" title="{0=18.867762821396237;1=0.04637888620994346;2=0.0;R^2=0.9762735568155148}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14c17;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13;x_1=140%7D.png" title="{0=18.878390378674283;1=0.0481788571944719;2=0.0;R^2=0.9296813631870432}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13;x_1=140%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c20c11</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c15c10;x_1=60%7D.png" title="{0=20.39020955150726;1=0.07572425728761889;2=-0.000762558240516853;R^2=0.9941601698480154}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c15c10;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c16c9;x_1=140%7D.png" title="{0=20.390377371431782;1=0.0737209541237025;2=0.0;R^2=0.995210579631298}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c16c9;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c6c9c12;x_1=120%7D.png" title="{0=20.39010486575432;1=0.07405676560560082;2=0.0;R^2=0.9965135591029459}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c6c9c12;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12;x_1=100%7D.png" title="{0=20.39154809770341;1=0.07313539405050484;2=0.0;R^2=0.9954214488057914}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9;x_1=80%7D.png" title="{0=20.392383555353618;1=0.073400163796002;2=0.0;R^2=0.9964328245506567}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14;x_1=60%7D.png" title="{0=20.39817410953788;1=0.07081221642656566;2=0.0;R^2=0.9954002838475985}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14c17;x_1=140%7D.png" title="{0=20.403879833660657;1=0.06989185496982486;2=0.0;R^2=0.9960138984788578}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14c17;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11;x_1=120%7D.png" title="{0=20.41199068191602;1=0.06844422135424111;2=0.0;R^2=0.9962198850280255}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14c17;x_1=100%7D.png" title="{0=20.424120588873826;1=0.06618322709857338;2=0.0;R^2=0.9964982240378537}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14c17;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13c16;x_1=80%7D.png" title="{0=20.44181432054509;1=0.05789139453737491;2=0.0023358525840424527;R^2=0.9980104347358697}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13c16;x_1=80%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c20c11c14</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c15c10;x_1=70%7D.png" title="{0=21.14072590702205;1=0.12376398080168016;2=0.0;R^2=0.9961574838289813}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c15c10;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c16c9;x_1=150%7D.png" title="{0=21.139196594036168;1=0.12852308521841138;2=-0.0022122110073414802;R^2=0.9973921237278636}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c16c9;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c6c9c12;x_1=130%7D.png" title="{0=21.14046711676347;1=0.12434605623480266;2=0.0;R^2=0.9977768041118441}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c6c9c12;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12;x_1=110%7D.png" title="{0=21.142745234034898;1=0.12244545662060524;2=0.0;R^2=0.9968049571713773}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9;x_1=90%7D.png" title="{0=21.143738663649412;1=0.12251546868116847;2=0.0;R^2=0.9984287929858915}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14;x_1=70%7D.png" title="{0=21.150024490389036;1=0.1202300371900975;2=0.0;R^2=0.9962844120801174}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14c17;x_1=150%7D.png" title="{0=21.15765521976573;1=0.11836512448786429;2=0.0;R^2=0.9966063740985707}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14c17;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11;x_1=130%7D.png" title="{0=21.169599251324613;1=0.11551253183066379;2=0.0;R^2=0.9974296144320998}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14c17;x_1=110%7D.png" title="{0=21.189970128125562;1=0.1065421009672951;2=0.0017676879456356431;R^2=0.9965427725633438}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14c17;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13c16;x_1=90%7D.png" title="{0=21.219734176116223;1=0.08974590638143809;2=0.007773521679696138;R^2=0.9978910288185886}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13c16;x_1=90%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c20c11c14c17</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c15c10;x_1=100%7D.png" title="{0=22.02393469555413;1=0.17925184830355967;2=0.0;R^2=0.9947342168643306}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c15c10;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c17c10;x_1=80%7D.png" title="{0=22.023818515000357;1=0.17985303602250546;2=0.0;R^2=0.9958339631867559}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c17c10;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9;x_1=60%7D.png" title="{0=22.023980651778317;1=0.17927104628102342;2=0.0;R^2=0.996431496667286}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12;x_1=140%7D.png" title="{0=22.024706939791102;1=0.17891758446481099;2=0.0;R^2=0.996935150893009}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9;x_1=120%7D.png" title="{0=22.0282385840602;1=0.1771941161254862;2=0.0;R^2=0.997400067835454}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14;x_1=100%7D.png" title="{0=22.034938760169787;1=0.1747635942195398;2=0.0;R^2=0.9959132471172487}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c8c11c14;x_1=80%7D.png" title="{0=22.04460243181655;1=0.17252809142295789;2=0.0;R^2=0.9963649316827382}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c8c11c14;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14;x_1=60%7D.png" title="{0=22.058581913207906;1=0.170006395881245;2=0.0;R^2=0.9960465307743657}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14c17;x_1=140%7D.png" title="{0=22.086678292854884;1=0.15390211243923346;2=0.0041682400801574815;R^2=0.996259463619907}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14c17;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13c16;x_1=120%7D.png" title="{0=22.123766809367783;1=0.13602437092890174;2=0.009763713924670459;R^2=0.9977388041963869}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13c16;x_1=120%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c20c5c8c11c14</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c15c10;x_1=90%7D.png" title="{0=21.987644043467043;1=0.23770388907172624;2=0.0;R^2=0.996695448060796}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c15c10;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c17c10;x_1=70%7D.png" title="{0=21.99207840365072;1=0.22839768142412176;2=0.003717164169068532;R^2=0.9970804973785105}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c17c10;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c6c9c12;x_1=150%7D.png" title="{0=21.97343482690911;1=0.24582355238343823;2=0.0;R^2=0.9922824350112417}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c6c9c12;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12;x_1=130%7D.png" title="{0=21.989996273297468;1=0.23655645218956955;2=0.0;R^2=0.9979998072924253}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9;x_1=110%7D.png" title="{0=21.994627260950814;1=0.23505148573799772;2=0.0;R^2=0.997687056453345}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14;x_1=90%7D.png" title="{0=22.004061348153208;1=0.23096597607734282;2=0.0;R^2=0.9971844770299655}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c8c11c14;x_1=70%7D.png" title="{0=22.022979917567767;1=0.2083446818931476;2=0.008403467955672372;R^2=0.9976413461744683}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c8c11c14;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11;x_1=150%7D.png" title="{0=22.04496388074334;1=0.201111697239015;2=0.009138241114326817;R^2=0.9971746419035865}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14c17;x_1=130%7D.png" title="{0=22.077128764830643;1=0.1872093523123155;2=0.01201112120370329;R^2=0.9981158753604544}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14c17;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13c16;x_1=110%7D.png" title="{0=22.120941965585565;1=0.17225756673601733;2=0.01509669715168016;R^2=0.9977853741721479}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13c16;x_1=110%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c20c5c8c11c14c17</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c15c10;x_1=120%7D.png" title="{0=22.948724024157137;1=0.28734000788964664;2=0.0;R^2=0.9973721880523211}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c15c10;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c17c10;x_1=100%7D.png" title="{0=22.950731375573767;1=0.2865572802719676;2=0.0;R^2=0.9979085137780166}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c17c10;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9;x_1=80%7D.png" title="{0=22.952276697647928;1=0.27804448040288854;2=0.003653026126705594;R^2=0.9982040375825055}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12c15;x_1=60%7D.png" title="{0=22.952002723860016;1=0.2790291619715015;2=0.003628556571353858;R^2=0.9978698903278713}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12c15;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9;x_1=140%7D.png" title="{0=22.953956219144203;1=0.28476170929338807;2=0.0;R^2=0.998416023578891}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14;x_1=120%7D.png" title="{0=22.964410518717607;1=0.2728039801372377;2=0.003845540529741509;R^2=0.9977770467566619}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c8c11c14;x_1=100%7D.png" title="{0=22.978761284507396;1=0.26371598747832437;2=0.005761590535736438;R^2=0.9984950765269124}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c8c11c14;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14;x_1=80%7D.png" title="{0=22.99523293207706;1=0.2575340734487197;2=0.007926465577691388;R^2=0.9979306234236023}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13;x_1=60%7D.png" title="{0=23.028007668958484;1=0.24239171301802287;2=0.01014032594813763;R^2=0.9982191957096617}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13c16;x_1=140%7D.png" title="{0=23.074755244845772;1=0.21626245224093665;2=0.018828493949693215;R^2=0.9987639557121123}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13c16;x_1=140%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c20c8c11c14</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c15c10;x_1=80%7D.png" title="{0=21.637406412888996;1=0.17543259473890593;2=0.0;R^2=0.9941220295780353}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c15c10;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c17c10;x_1=60%7D.png" title="{0=21.63662680048455;1=0.17673930191700826;2=0.0;R^2=0.9959615283338838}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c17c10;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c6c9c12;x_1=140%7D.png" title="{0=21.63514983151702;1=0.1774870532885373;2=0.0;R^2=0.9976297556725087}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c6c9c12;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12;x_1=120%7D.png" title="{0=21.634469332900373;1=0.17268771860469112;2=0.0026030754704811088;R^2=0.9925340642565125}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9;x_1=100%7D.png" title="{0=21.642729061272703;1=0.16818436514627955;2=0.002997605667781844;R^2=0.9981492514573361}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9;x_1=100%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14;x_1=80%7D.png" title="{0=21.64533263194314;1=0.17390147420892887;2=0.0;R^2=0.9957817513636694}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14;x_1=80%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c8c11c14;x_1=60%7D.png" title="{0=21.65877196284267;1=0.16360508250010408;2=0.0033424880292858283;R^2=0.9972159164446969}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c8c11c14;x_1=60%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11;x_1=140%7D.png" title="{0=21.674623543366188;1=0.15871524625260225;2=0.004095225233939459;R^2=0.9970506548992909}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11;x_1=140%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14c17;x_1=120%7D.png" title="{0=21.70186067261861;1=0.14507137653761593;2=0.007832239272948627;R^2=0.9978210419050465}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14c17;x_1=120%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13c16;x_1=100%7D.png" title="{0=21.74006766208165;1=0.13081726644236014;2=0.011846787725888763;R^2=0.9976881308773043}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13c16;x_1=100%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c22c13</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c15c10;x_1=110%7D.png" title="{0=22.400877538451738;1=0.07269304013622424;2=0.0;R^2=0.9856030868997189}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c15c10;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c17c10;x_1=90%7D.png" title="{0=22.396509279785427;1=0.08281254928378701;2=-0.0038305349423999324;R^2=0.9925784316401426}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c17c10;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9;x_1=70%7D.png" title="{0=22.397017154026674;1=0.0812482896809934;2=-0.0031754431168131703;R^2=0.9927837801902266}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12;x_1=150%7D.png" title="{0=22.400540866347008;1=0.07275849875981244;2=0.0;R^2=0.9901649097053137}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9;x_1=130%7D.png" title="{0=22.401217425837654;1=0.07262622046405554;2=0.0;R^2=0.9946783349172615}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14;x_1=110%7D.png" title="{0=22.400752965259258;1=0.08034857979074417;2=-0.0033251610708058266;R^2=0.9921177401142095}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c8c11c14;x_1=90%7D.png" title="{0=22.40458335608327;1=0.08080521549878839;2=-0.003989312661116351;R^2=0.9932863801908669}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c8c11c14;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14;x_1=70%7D.png" title="{0=22.409741692064305;1=0.08137946205552105;2=-0.005127489012924702;R^2=0.987848838239805}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14c17;x_1=150%7D.png" title="{0=22.422813475799604;1=0.0676465731875453;2=0.0;R^2=0.9930619897598972}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14c17;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13c16;x_1=130%7D.png" title="{0=22.436250437085643;1=0.06402515178413548;2=0.0008021950094065922;R^2=0.9955834087034192}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13c16;x_1=130%7D.png" alt=""></a></td>
+</tr>
+<tr>
+<td style="text-align:left">c22c13c16</td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c15c10;x_1=130%7D.png" title="{0=23.15562330181565;1=0.12609172622457976;2=0.0;R^2=0.9802793705809775}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c15c10;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c17c10;x_1=110%7D.png" title="{0=23.15540571808942;1=0.1363069530264429;2=-0.004749974676453217;R^2=0.9953777609195402}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c17c10;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9;x_1=90%7D.png" title="{0=23.15479108717125;1=0.13855746104041344;2=-0.005823495305802506;R^2=0.995063601777956}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18c9c12c15;x_1=70%7D.png" title="{0=23.15539526985465;1=0.13605891654805014;2=-0.004696462010101765;R^2=0.9960877560184818}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18c9c12c15;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c18t9;x_1=150%7D.png" title="{0=23.156709555686675;1=0.13513801937541103;2=-0.004573776727162748;R^2=0.9951996050343727}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c18t9;x_1=150%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c5c8c11c14;x_1=130%7D.png" title="{0=23.16015986888149;1=0.13501024627177216;2=-0.005444459875829644;R^2=0.9944302319283175}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c5c8c11c14;x_1=130%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c8c11c14;x_1=110%7D.png" title="{0=23.16623686284516;1=0.13235166048467484;2=-0.0049446781629627345;R^2=0.9957024147266473}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c8c11c14;x_1=110%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c20c11c14;x_1=90%7D.png" title="{0=23.17746460019392;1=0.11902512664060971;2=0.0;R^2=0.99310863774054}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c20c11c14;x_1=90%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13;x_1=70%7D.png" title="{0=23.19023597108312;1=0.11504903780860865;2=0.0;R^2=0.9951922884262592}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13;x_1=70%7D.png" alt=""></a></td>
+<td style="text-align:left"><a href="./png/%7BFattyAcid=c22c13c16;x_1=150%7D.png" title="{0=23.208650184655394;1=0.1125029545355467;2=0.0;R^2=0.997373317354854}"><img src="file:///d:\git\ippras\_cpft\examples\{DegreeBound=2}\png\%7BFattyAcid=c22c13c16;x_1=150%7D.png" alt=""></a></td>
+</tr>
+</tbody>
+</table>
+
+            
+            
+        </body>
+        </html>
