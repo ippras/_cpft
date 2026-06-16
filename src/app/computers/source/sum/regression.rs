@@ -14,7 +14,8 @@ use lipid::prelude::*;
 use polars::prelude::*;
 use polars_ext::{expr::ExprExt, prelude::*};
 use polyfit::{
-    LogarithmicFit, basis_select, plot, score::ScoringMethod::Aic, statistics::DegreeBound,
+    ChebyshevFit, LogarithmicFit, PhysicistsHermiteFit, basis_select, plot,
+    score::ScoringMethod::Aic, statistics::DegreeBound,
 };
 use std::{
     collections::{BTreeMap, HashMap},
@@ -71,11 +72,11 @@ impl Computer {
         lazy_frame = lazy_frame.select([
             col(MODE)
                 .struct_()
-                .field_by_name(ONSET_TEMPERATURE)
+                .field_by_name(TEMPERATURE_STEP)
                 .alias(X1),
             col(MODE)
                 .struct_()
-                .field_by_name(TEMPERATURE_STEP)
+                .field_by_name(ONSET_TEMPERATURE)
                 .alias(X2),
             col(FATTY_ACID),
             col(CHAIN_LENGTH)
@@ -185,7 +186,7 @@ impl Metrics<MaybeUninit<f64>> {
 
 fn polyfit(mut lazy_frame: LazyFrame) -> PolarsResult<LazyFrame> {
     let data_frame = lazy_frame.clone().collect()?;
-    let fatty_acid = data_frame[FATTY_ACID].fatty_acid().id()?;
+    let fatty_acid = data_frame[FATTY_ACID].fatty_acid();
     let x1 = data_frame[X1].f64()?;
     let x2 = data_frame[X2].list()?;
     let y = data_frame[Y].list()?;
@@ -196,10 +197,14 @@ fn polyfit(mut lazy_frame: LazyFrame) -> PolarsResult<LazyFrame> {
         DataType::Float64,
     );
     for row in 0..data_frame.height() {
-        let Some(fatty_acid) = fatty_acid.get(row) else {
+        let Some(fatty_acid) = fatty_acid.get(row)? else {
             coeffs_builder.append_null();
             continue;
         };
+        if fatty_acid.unsaturated.is_empty() {
+            continue;
+        }
+        let fatty_acid = fatty_acid.id();
         let Some(x1) = x1.get(row) else {
             coeffs_builder.append_null();
             continue;
@@ -259,15 +264,15 @@ fn polyfit(mut lazy_frame: LazyFrame) -> PolarsResult<LazyFrame> {
             }
         }
 
-        let title = format!("Logarithmic basis {{{FATTY_ACID}={fatty_acid};{X1}={x1}}}");
+        let title = format!("Chebyshev basis {{{FATTY_ACID}={fatty_acid};{X1}={x1}}}");
         if data.len() >= 3 {
             // basis_select!(&data, DegreeBound::Relaxed, &Aic);
-            let fit = LogarithmicFit::new_auto(&data, DegreeBound::Custom(1), &Aic).unwrap();
-            // println!("{title}: {fit}");
-            println!("{title}: {:?}|{}", fit.coefficients(), fit.r_squared(None));
+            let fit = PhysicistsHermiteFit::new_auto(&data, DegreeBound::Custom(3), &Aic).unwrap();
+            println!("{title}: {fit}");
+            // println!("{title}: {:?}|{}", fit.coefficients(), fit.r_squared(None));
             plot!(fit, {
                 title: title.clone(),
-                x_label: Some(format!("{TEMPERATURE_STEP}")),
+                x_label: Some(format!("{ONSET_TEMPERATURE}")),
                 y_label: Some(format!("{EQUIVALENT_CHAIN_LENGTH}")),
                 // size: (1920, 1024),
             }, prefix = title);
@@ -275,6 +280,23 @@ fn polyfit(mut lazy_frame: LazyFrame) -> PolarsResult<LazyFrame> {
             // panic!("{title}")
             coeffs_builder.append_null();
         }
+
+        // let title = format!("Logarithmic basis {{{FATTY_ACID}={fatty_acid};{X1}={x1}}}");
+        // if data.len() >= 3 {
+        //     basis_select!(&data, DegreeBound::Relaxed, &Aic);
+        //     // let fit = LogarithmicFit::new_auto(&data, DegreeBound::Custom(1), &Aic).unwrap();
+        //     // println!("{title}: {fit}");
+        //     // println!("{title}: {:?}|{}", fit.coefficients(), fit.r_squared(None));
+        //     // plot!(fit, {
+        //     //     title: title.clone(),
+        //     //     x_label: Some(format!("{TEMPERATURE_STEP}")),
+        //     //     y_label: Some(format!("{EQUIVALENT_CHAIN_LENGTH}")),
+        //     //     size: (1920, 1024),
+        //     // }, prefix = title);
+        // } else {
+        //     // panic!("{title}")
+        //     coeffs_builder.append_null();
+        // }
     }
     Ok(lazy_frame)
 }

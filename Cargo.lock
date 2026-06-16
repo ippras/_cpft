@@ -1565,7 +1565,7 @@ dependencies = [
 [[package]]
 name = "egui_variant"
 version = "0.1.0"
-source = "git+https://github.com/kgv/egui_variant#4466d5bffbecbfc5181e52d30b9eca8ee8d674f0"
+source = "git+https://github.com/kgv/egui_variant#83d7ee63d5a9df21cc21d8a376e24226d6ba660d"
 dependencies = [
  "egui",
  "egui-phosphor",
@@ -1577,7 +1577,7 @@ dependencies = [
 [[package]]
 name = "egui_variant_proc"
 version = "0.1.0"
-source = "git+https://github.com/kgv/egui_variant#4466d5bffbecbfc5181e52d30b9eca8ee8d674f0"
+source = "git+https://github.com/kgv/egui_variant#83d7ee63d5a9df21cc21d8a376e24226d6ba660d"
 dependencies = [
  "const_format",
  "proc-easy",
@@ -2302,9 +2302,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.4.14"
+version = "0.4.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "171fefbc92fe4a4de27e0698d6a5b392d6a0e333506bc49133760b3bcf948733"
+checksum = "6cb093c84e8bd9b188d4c4a8cb6579fc016968d14c99882163cd3ff402a4f155"
 dependencies = [
  "atomic-waker",
  "bytes",
@@ -3152,6 +3152,7 @@ dependencies = [
 [[package]]
 name = "metadata"
 version = "0.11.0"
+source = "git+https://github.com/ippras/metadata?branch=0.52#f41222e30c80ca24c0c46544c08f372369be77b8"
 dependencies = [
  "const_format",
  "egui",
